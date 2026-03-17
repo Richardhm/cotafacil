@@ -370,6 +370,528 @@
 
                function handleOperadoraChange(e) {
                    e.preventDefault();
+
+                   let valor = $(this).val(); // ID da administradora
+                   let cidade = $("#cidade").val(); // ID da tabela de origem
+
+                   if ($("#resultado").is(":visible")) {
+                       $("input[name='planos-radio']").prop("checked", false);
+                       $("#resultado").hide().empty();
+                   }
+
+                   $.ajax({
+                       url: '{{route('buscar_planos')}}',
+                       type: 'POST',
+                       data: {
+                           administradora_id: valor,
+                           tabela_origens_id: cidade
+                       },
+                       headers: {
+                           "X-Requested-With": "XMLHttpRequest",
+                           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                       },
+                       success: function (response) {
+                           // Limpa o contêiner dos planos
+                           let planosContainer = $("#planos");
+                           planosContainer.empty();
+
+                           // Adiciona o botão "Planos" no topo
+                           planosContainer.append(`
+                <button id="show-planos-button" class="py-1.5 w-full px-1 me-2 mb-2 text-sm font-medium dark:text-white text-white bg-white rounded-lg border border-white dark:border-gray-200 bg-gray-500 bg-opacity-10">
+                    Planos
+                </button>
+            `);
+
+                           // Adiciona o fundo translúcido ao contêiner principal
+                           planosContainer.addClass("bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] p-3 rounded-lg");
+
+                           // 1. Renderiza os planos organizados por grupos
+                           let grupos = response.planos_por_grupo;
+                           $.each(grupos, function (grupoNome, planos) {
+                               // Ignorar grupos vazios por segurança
+                               if (!grupoNome) return;
+
+                               // Criar o título do accordion
+                               let accordionHeader = `
+                    <button class="accordion-header flex justify-between items-center w-full p-2 text-sm rounded-lg font-bold bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] text-white transition focus:outline-none">
+                        <span>${grupoNome}</span>
+                        <svg class="accordion-icon w-4 h-4 transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>`;
+
+                               // Criar o corpo do accordion com os planos
+                               let accordionBody = `<div class="accordion-body hidden space-y-3 p-3 divide-y divide-transparent">`;
+
+                               // Configurando os sub-itens/planos
+                               $.each(planos, function (i, plano) {
+                                   accordionBody += `
+                                        <label class="flex items-center p-2 rounded-lg w-full" style="border:2px solid #3b82f6;">
+                                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                                            <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                                        </label>`;
+                               });
+
+                               accordionBody += `</div>`;
+
+                               // Adicionar o bloco completo do Accordion (header + body)
+                               planosContainer.append(`
+                    <div class="border border-gray-300 rounded-lg shadow-sm mb-3">
+                        ${accordionHeader}
+                        ${accordionBody}
+                    </div>`);
+                           });
+
+                           // 2. Renderiza planos sem grupo diretamente
+                           let planosSemGrupo = response.planos_sem_grupo;
+                           if (planosSemGrupo.length > 0) {
+
+
+                               $.each(planosSemGrupo, function (i, plano) {
+                                   planosContainer.append(`
+                        <label class="flex items-center p-2 border border-gray-300 rounded-lg mb-2">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                        </label>`);
+                               });
+                           }
+
+                           // Inicializa interatividade dos Accordions
+                           initAccordion();
+                           planosContainer.removeClass("hidden");
+                       },
+                       error: function () {
+                           alert("Erro ao buscar os planos. Tente novamente.");
+                       }
+                   });
+
+                   return false;
+               }
+
+
+
+
+
+
+
+
+
+
+
+
+
+               function handleOperadoraChangeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee(e) {
+                   e.preventDefault();
+
+                   let valor = $(this).val(); // ID da administradora
+                   let cidade = $("#cidade").val(); // ID da tabela de origem
+
+                   if ($("#resultado").is(":visible")) {
+                       $("input[name='planos-radio']").prop("checked", false);
+                       $("#resultado").hide().empty();
+                   }
+
+                   $.ajax({
+                       url: '{{route('buscar_planos')}}',
+                       type: 'POST',
+                       data: {
+                           administradora_id: valor,
+                           tabela_origens_id: cidade
+                       },
+                       headers: {
+                           "X-Requested-With": "XMLHttpRequest",
+                           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                       },
+                       success: function (response) {
+                           // Limpa o contêiner dos planos
+                           let planosContainer = $("#planos");
+                           planosContainer.empty();
+
+                           // Adiciona o botão "Planos" no topo
+                           planosContainer.append(`
+                <button id="show-planos-button" class="py-1.5 w-full px-1 me-2 mb-2 text-sm font-medium dark:text-white text-white bg-white rounded-lg border border-white dark:border-gray-200 bg-gray-500 bg-opacity-10">
+                    Planos
+                </button>
+            `);
+
+                           // 1. Renderiza os planos organizados por grupos
+                           let grupos = response.planos_por_grupo;
+                           $.each(grupos, function (grupoNome, planos) {
+                               // Ignorar grupos vazios por segurança
+                               if (!grupoNome) return;
+
+                               // Criar o título do accordion
+                               let accordionHeader = `
+                    <button class="accordion-header flex justify-between items-center w-full p-2 text-sm rounded-lg font-bold bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] text-white transition focus:outline-none">
+                        <span>${grupoNome}</span>
+                        <svg class="accordion-icon w-4 h-4 transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>`;
+
+                               // Criar o corpo do accordion com os planos
+                               let accordionBody = `<div class="accordion-body bg-white hidden divide-y divide-gray-200">`; // Sem fundo para o container principal
+
+                               $.each(planos, function (i, plano) {
+                                   accordionBody += `
+                        <label class="flex items-center p-2 mb-2 rounded-lg bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                        </label>`;
+                               });
+
+                               accordionBody += `</div>`;
+
+                               // Adicionar o bloco completo do Accordion (header + body)
+                               planosContainer.append(`
+                    <div class="border border-gray-300 rounded-lg shadow-sm mb-3">
+                        ${accordionHeader}
+                        ${accordionBody}
+                    </div>`);
+                           });
+
+                           // 2. Renderiza planos sem grupo diretamente
+                           let planosSemGrupo = response.planos_sem_grupo;
+                           if (planosSemGrupo.length > 0) {
+
+
+                               $.each(planosSemGrupo, function (i, plano) {
+                                   planosContainer.append(`
+                        <label class="flex items-center p-2 bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] mb-2 rounded-lg">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                        </label>`);
+                               });
+                           }
+
+                           // Inicializa interatividade dos Accordions
+                           initAccordion();
+                           planosContainer.removeClass("hidden");
+                       },
+                       error: function () {
+                           alert("Erro ao buscar os planos. Tente novamente.");
+                       }
+                   });
+
+                   return false;
+               }
+
+
+
+
+
+
+
+
+               function handleOperadoraChangeTheLast(e) {
+                   e.preventDefault();
+
+                   let valor = $(this).val(); // ID da administradora
+                   let cidade = $("#cidade").val(); // ID da tabela de origem
+
+                   if ($("#resultado").is(":visible")) {
+                       $("input[name='planos-radio']").prop("checked", false);
+                       $("#resultado").hide().empty();
+                   }
+
+                   $.ajax({
+                       url: '{{route('buscar_planos')}}',
+                       type: 'POST',
+                       data: {
+                           administradora_id: valor,
+                           tabela_origens_id: cidade
+                       },
+                       headers: {
+                           "X-Requested-With": "XMLHttpRequest",
+                           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                       },
+                       success: function (response) {
+                           // Limpa o contêiner dos planos
+                           let planosContainer = $("#planos");
+                           planosContainer.empty();
+
+                           // Adiciona o botão "Planos" no topo
+                           planosContainer.append(`
+                                <button id="show-planos-button" class="py-1.5 w-full px-1 me-2 mb-2 text-sm font-medium dark:text-white text-white bg-white rounded-lg border border-white dark:border-gray-200 bg-gray-500 bg-opacity-10">
+                                    Planos
+                                </button>
+                           `);
+
+                           // 1. Renderiza planos agrupados em Accordions
+                           let grupos = response.planos_por_grupo;
+                           $.each(grupos, function (grupoNome, planos) {
+                               // Ignorar grupos vazios por segurança
+                               if (!grupoNome) return;
+
+                               // Criar o título do accordion
+                               let accordionHeader = `
+                    <button class="accordion-header flex justify-between items-center w-full p-2 text-sm rounded-lg font-bold bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] text-white transition focus:outline-none">
+                        <span>${grupoNome}</span>
+                        <svg class="accordion-icon w-4 h-4 transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>`;
+
+                               // Criar o corpo do accordion com os planos
+                               let accordionBody = `<div class="accordion-body hidden bg-gray-50 divide-y divide-gray-200">`;
+                               $.each(planos, function (i, plano) {
+                                   accordionBody += `
+                                         <label class="flex items-center p-2 mb-2 rounded-lg bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
+                                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                                            <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                                        </label>`;
+                                   });
+                                   accordionBody += `</div>`;
+
+                               // Adicionar o bloco completo do Accordion (header + body)
+                               planosContainer.append(`
+                                    <div class="border border-gray-300 rounded-lg shadow-sm mb-3">
+                                        ${accordionHeader}
+                                        ${accordionBody}
+                                    </div>`);
+                               });
+
+                                // 2. Renderiza planos sem grupo diretamente
+                                let planosSemGrupo = response.planos_sem_grupo;
+                                   if (planosSemGrupo.length > 0) {
+
+                                       $.each(planosSemGrupo, function (i, plano) {
+                                           planosContainer.append(`
+                                <label class="flex items-center p-2 bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] mb-2 rounded-lg">
+                                    <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                                    <span class="ml-2 text-white text-sm">${plano.nome}</span>
+                                </label>`);
+                                       });
+                           }
+
+                           // Inicializa interatividade dos Accordions
+                           initAccordion();
+                           planosContainer.removeClass("hidden");
+                       },
+                       error: function () {
+                           alert("Erro ao buscar os planos. Tente novamente.");
+                       }
+                   });
+
+                   return false;
+               }
+
+// Iniciar Accordion
+               function initAccordion() {
+                   // Adicione o evento de clique para os Accordions
+                   $(".accordion-header").off("click").on("click", function () {
+                       let body = $(this).next(".accordion-body"); // Próximo corpo do Accordion
+                       let icon = $(this).find(".accordion-icon"); // Ícone do Accordion
+
+                       // Fechar todos os outros Accordions
+                       $(".accordion-body").not(body).slideUp(); // Esconde outros corpos
+                       $(".accordion-icon").not(icon).removeClass("rotate-180"); // Restaura o estado de outros ícones
+
+                       // Alternar o estado do Accordion clicado
+                       if (body.is(":visible")) {
+                           body.slideUp(); // Esconde caso visível
+                           icon.removeClass("rotate-180"); // Ícone volta ao estado inicial
+                       } else {
+                           body.slideDown(); // Exibe accordion clicado
+                           icon.addClass("rotate-180"); // Ícone rotaciona
+                       }
+                   });
+               }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               function handleOperadoraChangeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee(e) {
+                   e.preventDefault();
+
+                   let valor = $(this).val(); // ID da administradora
+                   let cidade = $("#cidade").val(); // ID da tabela de origem
+
+                   if ($("#resultado").is(":visible")) {
+                       $("input[name='planos-radio']").prop("checked", false);
+                       $("#resultado").hide().empty();
+                   }
+
+                   $.ajax({
+                       url: '{{route('buscar_planos')}}',
+                       type: 'POST',
+                       data: {
+                           administradora_id: valor,
+                           tabela_origens_id: cidade
+                       },
+                       headers: {
+                           "X-Requested-With": "XMLHttpRequest",
+                           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                       },
+                       success: function (response) {
+                           // Limpa o contêiner dos planos
+                           let planosContainer = $("#planos");
+                           planosContainer.empty();
+
+                           // 1. Renderiza planos agrupados em Accordions
+                           let grupos = response.planos_por_grupo;
+                           $.each(grupos, function (grupoNome, planos) {
+                               // Criar o título do accordion
+                               let accordionHeader = `
+                    <button class="accordion-header flex justify-between items-center w-full p-4 text-lg font-bold bg-white text-gray-800 hover:bg-gray-100 transition focus:outline-none">
+                        <span>${grupoNome}</span>
+                        <svg class="accordion-icon w-6 h-6 transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>`;
+
+                               // Criar o corpo do accordion com os planos
+                               let accordionBody = `<div class="accordion-body hidden bg-gray-50 divide-y divide-gray-200">`;
+                               $.each(planos, function (i, plano) {
+                                   accordionBody += `
+                        <label class="flex items-center p-4">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-gray-700">${plano.nome}</span>
+                        </label>`;
+                               });
+                               accordionBody += `</div>`;
+
+                               // Adicionar o bloco completo do Accordion (header + body)
+                               planosContainer.append(`
+                    <div class="border border-gray-300 rounded-lg shadow-sm mb-3">
+                        ${accordionHeader}
+                        ${accordionBody}
+                    </div>`);
+                           });
+
+                           // 2. Renderiza planos sem grupo diretamente
+                           let planosSemGrupo = response.planos_sem_grupo;
+                           if (planosSemGrupo.length > 0) {
+                               let semGrupoHeader = `<div class="text-lg font-bold text-gray-800 mt-4">Outros Planos</div>`;
+                               let semGrupoBody = `<div class="bg-gray-50 divide-y divide-gray-200">`;
+
+                               $.each(planosSemGrupo, function (i, plano) {
+                                   semGrupoBody += `
+                        <label class="flex items-center p-4">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-gray-700">${plano.nome}</span>
+                        </label>`;
+                               });
+
+                               semGrupoBody += `</div>`;
+
+                               planosContainer.append(`${semGrupoHeader}${semGrupoBody}`);
+                           }
+
+                           // Inicializa interatividade dos Accordions
+                           initAccordion();
+                           planosContainer.removeClass("hidden");
+                       },
+                       error: function () {
+                           alert("Erro ao buscar os planos. Tente novamente.");
+                       }
+                   });
+
+                   return false;
+               }
+
+
+
+
+
+
+
+
+               function handleOperadoraChangejshfkjshdfkjshfjkshfjk(e) {
+                   e.preventDefault();
+
+                   let valor = $(this).val(); // Obtém o ID da administradora
+                   let cidade = $("#cidade").val(); // Obtém o ID da tabela de origem
+
+                   if ($("#resultado").is(":visible")) {
+                       $("input[name='planos-radio']").prop("checked", false);
+                       $("#resultado").hide().empty();
+                   }
+
+                   $.ajax({
+                       url: '{{route('buscar_planos')}}', // URL para a requisição
+                       type: 'POST',
+                       data: {
+                           administradora_id: valor,
+                           tabela_origens_id: cidade
+                       },
+                       headers: {
+                           "X-Requested-With": "XMLHttpRequest", // Requisição AJAX
+                           "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") // CSRF Token
+                       },
+                       success: function (response) {
+                           // Limpa os dados existentes no contêiner de planos
+                           let planosContainer = $("#planos");
+                           planosContainer.empty();
+
+                           // Recupera os grupos e seus planos
+                           let grupos = response.planos_por_grupo;
+
+                           // Percorre cada grupo para criar os Accordions
+                           $.each(grupos, function (grupoNome, planos) {
+                               // Criar o título do accordion
+                               let accordionHeader = `
+                    <button class="accordion-header flex justify-between items-center w-full p-4 text-lg font-bold bg-white text-gray-800 hover:bg-gray-100 transition focus:outline-none">
+                        <span>${grupoNome}</span>
+                        <svg class="accordion-icon w-6 h-6 transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>`;
+
+                               // Criar o corpo do accordion com os planos
+                               let accordionBody = `<div class="accordion-body hidden bg-gray-50 divide-y divide-gray-200">`;
+                               $.each(planos, function (i, plano) {
+                                   accordionBody += `
+                        <label class="flex items-center p-4">
+                            <input type="radio" name="planos-radio" value="${plano.id}" class="w-4 h-4 text-purple-600 border-gray-300">
+                            <span class="ml-2 text-gray-700">${plano.nome}</span>
+                        </label>`;
+                               });
+                               accordionBody += `</div>`;
+
+                               // Montar o bloco completo do accordion (header + body)
+                               planosContainer.append(`
+                    <div class="border border-gray-300 rounded-lg shadow-sm mb-3">
+                        ${accordionHeader}
+                        ${accordionBody}
+                    </div>`);
+                           });
+
+                           // Torna os Accordions interativos
+                           initAccordion();
+                           planosContainer.removeClass("hidden");
+                       },
+                       error: function () {
+                           alert("Erro ao buscar os planos. Tente novamente.");
+                       }
+                   });
+
+                   return false;
+               }
+
+// Função para inicializar o comportamento dos Accordions
+
+
+
+
+
+
+
+
+
+               function handleOperadoraChangeSemAccordion(e) {
+                   e.preventDefault();
                    let valor = $(this).val();
                    let cidade = $("#cidade").val();
 

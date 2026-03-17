@@ -135,10 +135,10 @@
                             <label for="nome_titular" class="block mb-1 font-medium text-white text-sm">Nome do Titular</label>
                             <input type="text" name="nome_titular" required id="nome_titular" placeholder="Nome do Titular do Cartão" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 focus:border-transparent focus:ring-0 focus:outline-none rounded-lg">
                         </div>
-                        <div class="mb-2">
-                            <label for="data_nascimento" class="block mb-1 font-medium text-white text-sm">Data Nascimento</label>
-                            <input type="date" name="data_nascimento" required id="data_nascimento" placeholder="data_nascimento" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 focus:border-transparent focus:ring-0 focus:outline-none rounded-lg">
-                        </div>
+{{--                        <div class="mb-2">--}}
+{{--                            <label for="data_nascimento" class="block mb-1 font-medium text-white text-sm">Data Nascimento</label>--}}
+{{--                            <input type="date" name="data_nascimento" required id="data_nascimento" placeholder="data_nascimento" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 focus:border-transparent focus:ring-0 focus:outline-none rounded-lg">--}}
+{{--                        </div>--}}
                         <div class="flex justify-between gap-2">
                             <div class="w-1/3">
                                 <label for="mes" class="block mb-1 font-medium text-white text-sm">Mês</label>
@@ -165,46 +165,46 @@
                         </div>
                     </fieldset>
 
-                        <fieldset id="cardFields" class="border border-gray-300 p-1 rounded-lg w-full">
-                            <legend class="text-lg font-semibold text-white">Endereço</legend>
+{{--                        <fieldset id="cardFields" class="border border-gray-300 p-1 rounded-lg w-full">--}}
+{{--                            <legend class="text-lg font-semibold text-white">Endereço</legend>--}}
 
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="w-full md:w-1/3">
-                                    <label for="zipcode" class="block mb-1 font-medium text-white text-sm">CEP</label>
-                                    <input type="text" name="zipcode" id="zipcode" placeholder="XXXXX-XXX"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
+{{--                            <div class="flex flex-col md:flex-row gap-4">--}}
+{{--                                <div class="w-full md:w-1/3">--}}
+{{--                                    <label for="zipcode" class="block mb-1 font-medium text-white text-sm">CEP</label>--}}
+{{--                                    <input type="text" name="zipcode" id="zipcode" placeholder="XXXXX-XXX"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>--}}
+{{--                                </div>--}}
 
-                                <div class="w-full md:w-1/2">
-                                    <label for="street" class="block mb-1 font-medium text-white text-sm">Rua</label>
-                                    <input type="text" name="street" id="street" placeholder="Rua"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/4">
-                                    <label for="number" class="block mb-1 font-medium text-white text-sm">Nº <small>(Opcional)</small></label>
-                                    <input type="text" name="number" id="number" placeholder="Nº"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg">
-                                </div>
-                            </div>
+{{--                                <div class="w-full md:w-1/2">--}}
+{{--                                    <label for="street" class="block mb-1 font-medium text-white text-sm">Rua</label>--}}
+{{--                                    <input type="text" name="street" id="street" placeholder="Rua"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>--}}
+{{--                                </div>--}}
+{{--                                <div class="w-full md:w-1/4">--}}
+{{--                                    <label for="number" class="block mb-1 font-medium text-white text-sm">Nº <small>(Opcional)</small></label>--}}
+{{--                                    <input type="text" name="number" id="number" placeholder="Nº"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg">--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
 
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="w-full md:w-1/3">
-                                    <label for="city" class="block mb-1 font-medium text-white text-sm">Cidade</label>
-                                    <input type="text" name="city" id="city" placeholder="Cidade"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/2">
-                                    <label for="neighborhood" class="block mb-1 font-medium text-white text-sm">Bairro</label>
-                                    <input type="text" name="neighborhood" id="neighborhood" placeholder="Bairro"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/4">
-                                    <label for="state" class="block mb-1 font-medium text-white text-sm">Estado</label>
-                                    <input type="text" name="state" id="state" placeholder="UF"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                            </div>
-                        </fieldset>
+{{--                            <div class="flex flex-col md:flex-row gap-4">--}}
+{{--                                <div class="w-full md:w-1/3">--}}
+{{--                                    <label for="city" class="block mb-1 font-medium text-white text-sm">Cidade</label>--}}
+{{--                                    <input type="text" name="city" id="city" placeholder="Cidade"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>--}}
+{{--                                </div>--}}
+{{--                                <div class="w-full md:w-1/2">--}}
+{{--                                    <label for="neighborhood" class="block mb-1 font-medium text-white text-sm">Bairro</label>--}}
+{{--                                    <input type="text" name="neighborhood" id="neighborhood" placeholder="Bairro"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>--}}
+{{--                                </div>--}}
+{{--                                <div class="w-full md:w-1/4">--}}
+{{--                                    <label for="state" class="block mb-1 font-medium text-white text-sm">Estado</label>--}}
+{{--                                    <input type="text" name="state" id="state" placeholder="UF"--}}
+{{--                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
+{{--                        </fieldset>--}}
 
 
                     <input type="hidden" name="bandeira" id="bandeira">

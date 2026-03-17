@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\Auth;
 class GerenciadorController extends Controller
 {
 
-
-
     public function index()
     {
         $user = Auth::user();

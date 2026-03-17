@@ -9,6 +9,7 @@
     <h4 class="text-white">{{$plano_nome}}</h4>
     <p class="text-white text-center mr-2">{{$cidade_nome}}</p>
 </div>
+@if($status_odonto)
 <div class="flex justify-center items-center w-full
 py-0.5 mb-1 text-sm font-medium
 text-white focus:outline-none bg-gray-700 rounded-lg border
@@ -16,14 +17,15 @@ border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10
 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity-10 dark:hover:text-gray-900">
     Com Odonto
 </div>
+@endif
 
 <table class="min-w-full bg-gray-300 bg-opacity-20 rounded-lg bordered" id="tabela_aqui">
     <thead>
 
     <tr>
         <td rowspan="2" style="vertical-align:middle;text-align:center;font-size:0.7em;border-right:1px solid #ccc;border-bottom:1px solid #ccc;color:#FFF;">Faixa Etária</td>
-        <td colspan="2" style="text-align:center;font-size:0.7em;border-bottom:1px solid #ccc;border-right:1px solid #ccc;color:#FFF;" class="">Com Copar</td>
-        <td colspan="2" style="text-align:center;font-size:0.7em;border-bottom:1px solid #ccc;color:#FFF;" class="">Sem Copar</td>
+        <td colspan="3" style="text-align:center;font-size:0.7em;border-bottom:1px solid #ccc;border-right:1px solid #ccc;color:#FFF;" class="">Com Copar</td>
+        <td colspan="3" style="text-align:center;font-size:0.7em;border-bottom:1px solid #ccc;color:#FFF;" class="">Sem Copar</td>
     </tr>
     <tr>
         <td style="text-align:center;font-size:0.7em;border-right:1px solid #ccc;border-bottom:1px solid #ccc;color:#FFF;" class="">APART</td>
@@ -74,6 +76,7 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
         @endphp
     @endforeach
 
+    @if($status_odonto)
 
     @foreach($dadosComOdonto as $faixaEtaria => $valores)
         @for($i=0;$i<$valores['quantidade'];$i++)
@@ -137,11 +140,13 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
 
 </table>
 
-<button data-odonto="1" class="gerar_imagem text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 w-100" style="width:100%;">Gera Imagem</button>
+<div class="h-1 my-1 w-full bg-white rounded-lg"></div>
+@endif
+
 
 @if($status)
 
-    <div class="h-1 my-1 w-full bg-white rounded-lg"></div>
+
     {{--Sem Odotno--}}
     {{-- Tabela sem Odonto --}}
     <div class="flex justify-center items-center w-full py-0.5 mb-1 text-sm font-medium text-white focus:outline-none bg-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity-10 dark:hover:text-gray-900">
@@ -263,7 +268,7 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
         </table>
     </table>
 
-    <button data-odonto="0" class="gerar_imagem text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 w-100" style="width:100%;">Gera Imagem</button>
+
 
 
 @endif

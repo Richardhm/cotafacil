@@ -35,6 +35,8 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
         $totalApartamentoSemOdonto_com_copar = 0;
         $totalApartamentoSemOdonto_sem_copar = 0;
         $sem_copar = 0;
+
+
     @endphp
 
     @foreach($dados as $dado)
@@ -114,8 +116,6 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
     </table>
 
 </table>
-
-<button data-odonto="1" class="gerar_imagem_ambulatorial text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 w-100" style="width:100%;">Gera Imagem</button>
 
 
 @if($status)
@@ -217,15 +217,28 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
     </table>
 
 
-    <button data-odonto="0" class="gerar_imagem_ambulatorial text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 w-100" style="width:100%;">Gera Imagem</button>
+
 
 @endif
 
+
+
+
+
+
+
+
+
+
 <div class="flex justify-around items-center w-full mt-4">
+
+
     <div>
         <button class="btn_normal focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">
             Individual
         </button>
     </div>
+
 </div>
+
 </div>

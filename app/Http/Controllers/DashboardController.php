@@ -21,6 +21,186 @@ use Barryvdh\DomPDF\Facade\Pdf as PDFFile;
 
 class DashboardController extends Controller
 {
+    public function tabelaCompletaAmbulatorial()
+    {
+        $layout = auth()->user()->layout_id;
+        $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
+        $viewName   = "cotacao.modelotabelaambulatorial".$layout_user;
+        $cidade     = request()->cidade;
+        $plano      = request()->plano;
+        $operadora  = request()->operadora;
+        $odonto     = request()->odonto;
+        $plano_nome = Plano::find($plano)->nome;
+        $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
+        $frase = "Ambulatorial/".$odonto_frase;
+
+        $sql = "";
+        $chaves = [];
+
+        foreach(request()->faixas[0] as $k => $v) {
+            if($v != null AND $v != 0) {
+                $sql .= " WHEN tabelas.faixa_etaria_id = {$k} THEN ${v} ";
+                $chaves[] = $k;
+            }
+        }
+
+        $keys = implode(",",$chaves);
+        $cidade_nome = TabelaOrigens::find($cidade)->nome;
+        $dados = Tabela::select('tabelas.*')
+            ->selectRaw("CASE $sql END AS quantidade")
+            ->join('faixa_etarias', 'faixa_etarias.id', '=', 'tabelas.faixa_etaria_id')
+            ->where('tabelas.tabela_origens_id', $cidade)
+            ->where('tabelas.plano_id', $plano)
+            ->where('tabelas.administradora_id', $operadora)
+            ->where("tabelas.odonto",$odonto)
+            ->where("acomodacao_id","=",3)
+            ->whereIn('tabelas.faixa_etaria_id', explode(',', $keys))
+            ->orderBy('tabelas.faixa_etaria_id')
+            ->get();
+
+        $imagem_user = "";
+        $image = auth()->user()->image;
+        if($image != "") {
+            $imagem_user = auth()->user()->image;
+        }
+        $nome = auth()->user()->name;
+        $celular = auth()->user()->phone;
+
+        $view = \Illuminate\Support\Facades\View::make($viewName,[
+            "dados" => $dados,
+            "image" => $imagem_user,
+            "nome" => $nome,
+            "celular" => $celular,
+            "cidade_nome" => $cidade_nome,
+            "frase" => $frase
+        ]);
+
+        $pdfPath = storage_path('app/temp/temp.pdf');
+        $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
+        $pdf->save($pdfPath);
+
+        $nomeArquivo = 'tabela-ambulatorial-' . date('dmY-His') . '.png';
+
+        $imagemPath = storage_path("app/temp/{$nomeArquivo}");
+
+        if (file_exists($imagemPath)) {
+            unlink($imagemPath);
+        }
+
+        $command = "gs -sDEVICE=pngalpha -r300 -o {$imagemPath} {$pdfPath}";  // -r150 é a resolução, pode ser ajustada
+        exec($command, $output, $status);
+
+        if ($status !== 0 || !file_exists($imagemPath)) {
+            return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);
+        }
+
+        return response()->download($imagemPath)->deleteFileAfterSend(true);
+
+
+
+
+
+
+    }
+
+
+
+    public function tabelaCompleta()
+    {
+        $layout = auth()->user()->layout_id;
+        $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
+
+
+        $viewName   = "cotacao.modelotabela".$layout_user;
+
+        $cidade     = request()->cidade;
+        $plano      = request()->plano;
+        $operadora  = request()->operadora;
+        $odonto     = request()->odonto;
+
+        $plano_nome = Plano::find($plano)->nome;
+        $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
+        $frase = $plano_nome."/".$odonto_frase;
+
+        $sql = "";
+        $chaves = [];
+
+        foreach(request()->faixas[0] as $k => $v) {
+            if($v != null AND $v != 0) {
+                $sql .= " WHEN tabelas.faixa_etaria_id = {$k} THEN ${v} ";
+                $chaves[] = $k;
+            }
+        }
+
+        $keys = implode(",",$chaves);
+        $cidade_nome = TabelaOrigens::find($cidade)->nome;
+        $dados = Tabela::select('tabelas.*')
+            ->selectRaw("CASE $sql END AS quantidade")
+            ->join('faixa_etarias', 'faixa_etarias.id', '=', 'tabelas.faixa_etaria_id')
+            ->where('tabelas.tabela_origens_id', $cidade)
+            ->where('tabelas.plano_id', $plano)
+            ->where('tabelas.administradora_id', $operadora)
+            ->where("tabelas.odonto",$odonto)
+            ->where("acomodacao_id","!=",3)
+            ->whereIn('tabelas.faixa_etaria_id', explode(',', $keys))
+            ->orderBy('tabelas.faixa_etaria_id')
+            ->get();
+
+        $imagem_user = "";
+        $image = auth()->user()->image;
+        if($image != "") {
+            $imagem_user = auth()->user()->image;
+        }
+        $nome = auth()->user()->name;
+        $celular = auth()->user()->phone;
+
+        $view = \Illuminate\Support\Facades\View::make($viewName,[
+            "dados" => $dados,
+            "image" => $imagem_user,
+            "nome" => $nome,
+            "celular" => $celular,
+            "cidade_nome" => $cidade_nome,
+            "frase" => $frase
+        ]);
+
+        $pdfPath = storage_path('app/temp/temp.pdf');
+        $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
+        $pdf->save($pdfPath);
+
+        $nomeArquivo = 'tabela-' . date('dmY-His') . '.png';
+
+
+        $imagemPath = storage_path("app/temp/{$nomeArquivo}");
+
+        if (file_exists($imagemPath)) {
+            unlink($imagemPath);
+        }
+
+        $command = "gs -sDEVICE=pngalpha -r300 -o {$imagemPath} {$pdfPath}";  // -r150 é a resolução, pode ser ajustada
+        exec($command, $output, $status);
+
+        if ($status !== 0 || !file_exists($imagemPath)) {
+            return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);
+        }
+
+        return response()->download($imagemPath)->deleteFileAfterSend(true);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public function index()
     {
 
@@ -43,15 +223,7 @@ class DashboardController extends Controller
         // Buscar cidades pela assinatura
         //$cidades = $user->assinaturas->tabelasOrigens ?? collect();
         $cidades = $vinculos->pluck('cidade')->unique('id')->values();
-
-
         $estados = $vinculos->pluck('cidade')->unique('uf')->sortBy('uf')->values();
-
-
-
-
-
-
         return view('dashboard',[
             'cidades' => $cidades,
             'administradoras' => $administradoras,
@@ -102,16 +274,122 @@ class DashboardController extends Controller
     }
 
 
+//    public function buscar_planos(Request $request)
+//    {
+//        $administradora_id = $request->input('administradora_id');
+//        $tabela_origens_id = $request->input('tabela_origens_id');
+//        $planos = DB::table('administradora_planos')
+//            ->where('administradora_id', $administradora_id)
+//            ->where('tabela_origens_id', $tabela_origens_id)
+//            ->pluck('plano_id');
+//        return response()->json(['planos' => $planos]);
+//    }
+
     public function buscar_planos(Request $request)
     {
         $administradora_id = $request->input('administradora_id');
         $tabela_origens_id = $request->input('tabela_origens_id');
-        $planos = DB::table('administradora_planos')
-            ->where('administradora_id', $administradora_id)
-            ->where('tabela_origens_id', $tabela_origens_id)
-            ->pluck('plano_id');
-        return response()->json(['planos' => $planos]);
+
+        $assinaturaId = \App\Models\EmailAssinatura::where('email', auth()->user()->email)->first()->assinatura_id;
+
+        // Buscar todos os planos (com grupo ou sem grupo)
+        $grupos = DB::table('planos')
+            ->leftJoin('plano_group', 'planos.plano_group_id', '=', 'plano_group.id')
+            ->join('administradora_planos', 'planos.id', '=', 'administradora_planos.plano_id')
+            ->where('administradora_planos.administradora_id', $administradora_id)
+            ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
+            ->where('administradora_planos.assinatura_id', $assinaturaId)
+            ->select(
+                'planos.id as plano_id',
+                'planos.nome as plano_nome',
+                'plano_group.id as grupo_id',
+                'plano_group.nome as grupo_nome'
+            )
+            ->orderBy('plano_group.nome') // Ordena os grupos
+            ->orderBy('planos.nome') // Ordena os planos dentro de cada grupo
+            ->get();
+
+        // Deduplicar planos para evitar repetição
+        $grupos = $grupos->unique(function ($item) {
+            return $item->plano_id . '-' . $item->grupo_id;
+        });
+
+        // Separar os planos por grupo (e descartar grupos vazios "")
+        $planosPorGrupo = $grupos->filter(function ($plano) {
+            return $plano->grupo_id !== null; // Apenas planos com grupo
+        })->groupBy('grupo_nome')->map(function ($grupo) {
+            return $grupo->map(function ($plano) {
+                return [
+                    'id' => $plano->plano_id,
+                    'nome' => $plano->plano_nome,
+                ];
+            });
+        });
+
+        // Filtrar planos sem grupo
+        $planosSemGrupo = $grupos->filter(function ($plano) {
+            return $plano->grupo_id === null; // Planos sem grupo
+        })->map(function ($plano) {
+            return [
+                'id' => $plano->plano_id,
+                'nome' => $plano->plano_nome,
+            ];
+        });
+
+        return response()->json([
+            'planos_por_grupo' => $planosPorGrupo,
+            'planos_sem_grupo' => $planosSemGrupo,
+        ]);
     }
+
+
+
+
+
+
+
+
+
+
+
+    public function buscar_planosoldddddd222(Request $request)
+    {
+        $administradora_id = $request->input('administradora_id');
+        $tabela_origens_id = $request->input('tabela_origens_id');
+
+        //$assinaturaId = \App\Models\EmailAssinatura::where('email', auth()->user()->email)->first()->assinatura_id;
+
+        // Buscar os planos e grupos vinculados
+        $grupos = DB::table('planos')
+            ->join('plano_group', 'planos.plano_group_id', '=', 'plano_group.id')
+            ->join('administradora_planos', 'planos.id', '=', 'administradora_planos.plano_id')
+            ->where('administradora_planos.administradora_id', $administradora_id)
+            ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
+            //->where('administradora_planos.assinatura_id', $assinaturaId)
+            ->select('planos.id as plano_id', 'planos.nome as plano_nome', 'plano_group.id as grupo_id', 'plano_group.nome as grupo_nome')
+            ->orderBy('plano_group.nome') // Ordena os grupos
+            ->orderBy('planos.nome') // Ordena os planos dentro de cada grupo
+            ->get();
+
+        // Agrupar os dados para retornar como JSON organizado por grupos
+        $planosPorGrupo = $grupos->groupBy('grupo_nome')->map(function ($grupo) {
+            return $grupo->map(function ($plano) {
+                return [
+                    'id' => $plano->plano_id,
+                    'nome' => $plano->plano_nome,
+                ];
+            });
+        });
+
+        return response()->json(['planos_por_grupo' => $planosPorGrupo]);
+    }
+
+
+
+
+
+
+
 
     public function orcamento(Request $request)
     {
@@ -134,11 +412,6 @@ class DashboardController extends Controller
         $imagem_plano = Administradora::find($operadora)->logo;
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
 
-
-
-
-
-
         if($ambulatorial == 0) {
             $dados = Tabela::select('tabelas.*')
                 ->selectRaw("CASE $sql END AS quantidade")
@@ -154,12 +427,6 @@ class DashboardController extends Controller
             if($desconto == 1) {
                 $status_desconto = 1;
             }
-
-
-
-
-
-
 
             $status = $dados->contains('odonto', 0);
             $status_odonto = $dados->contains('odonto',1);
@@ -305,11 +572,8 @@ class DashboardController extends Controller
             } else {
                 $layout_folder = auth()->user()->isFolder() ?: '';
             }
-
-
             $quantidade_cop = 0;
-
-            $viewName = "cotacao.modelo{$layout_user}";
+            $viewName = "cotacao.modelo2";
             if($apenasvalores == 0) {
                 $pdf_excecao = PdfExcecao::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->count();
                 if($pdf_excecao == 1) {
@@ -353,12 +617,7 @@ class DashboardController extends Controller
 
 
                 $carencia = Carencia::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->get();
-
-
                 $quantidade_carencia = Carencia::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->count();
-
-
-
                 $view = \Illuminate\Support\Facades\View::make($viewName,[
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,

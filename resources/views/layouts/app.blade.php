@@ -35,6 +35,19 @@
         };
     </script>
     <style>
+
+        .border-blue-500 {
+            border-bottom: 2px !important;
+            border-top: 2px !important;
+            border-left: 2px !important;
+            border-right: 2px !important;
+            border-color: #3b82f6 !important; /* Usa Tailwind blue-500 com prioridade */
+        }
+
+
+
+
+
         .whatsapp-container {
             position: fixed;
             bottom: 20px;
@@ -135,6 +148,30 @@
                 background-repeat: no-repeat;
                 background-color: #ffffff; /* fundo branco para não ficar vazio */
             }
+        }
+
+        /* Estilização da barra de rolagem vertical */
+        .custom-scrollbar {
+            scrollbar-width: thin; /* Para navegadores Firefox */
+            scrollbar-color: #add8e6 transparent; /* Barra azul claro com fundo transparente */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px; /* Barra mais fina */
+            background-color: transparent; /* Fundo transparente */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #add8e6; /* Azul claro */
+            border-radius: 4px; /* Bordas arredondadas */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #87ceeb; /* Azul escuro ao passar o mouse */
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent; /* Remove track de fundo para discrição */
         }
 
     </style>

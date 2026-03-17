@@ -55,10 +55,15 @@ Route::get('/', function () {
 Route::post('/callback', [CallbackController::class,'index']);
 Route::get('/bem-vindo/{user}', [BemvindoController::class, 'index'])->name('bemvindo');
 
-
 Route::post('/buscar_planos',[DashboardController::class,'buscar_planos'])->middleware(['auth', 'verified'])->name('buscar_planos');
 Route::post('/dashboard/orcamento',[DashboardController::class,'orcamento'])->middleware(['auth', 'verified'])->name('orcamento.montarOrcamento');
 Route::post("/pdf",[DashboardController::class,'criarPDF'])->middleware(['auth', 'verified'])->name('gerar.imagem');
+
+Route::post("/tabela/pdf",[DashboardController::class,'tabelaCompleta'])->middleware(['auth', 'verified'])->name('tabela.gerar');
+Route::post("/tabela/ambulatorial/pdf",[DashboardController::class,'tabelaCompletaAmbulatorial'])->middleware(['auth', 'verified'])->name('tabela.gerar-ambulatorial');
+
+
+
 
 Route::get('/assinaturas/plano', [AssinaturaController::class, 'createIndividual'])->name('assinaturas.individual.create');
 Route::post('/assinaturas/individual', [AssinaturaController::class, 'storeIndividual'])->name('assinaturas.individual.store');
@@ -87,7 +92,7 @@ Route::post('/assinaturas/promocional', [AssinaturaController::class, 'storeProm
 //})->name('csrf-token');
 
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth','email.verified.afterDeadline'])->group(function () {
     Route::post('cupom/validar', [ConfiguracoesController::class, 'validar'])->name('cupom.validar');
     /********* Configurações **************/
     Route::middleware(['apenasDesenvolvedores'])->group(function () {

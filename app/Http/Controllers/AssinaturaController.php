@@ -144,12 +144,12 @@ class AssinaturaController extends Controller
 
         $this->administradoraPlanos($assinatura->id);
 
-        SendVerificationEmail::dispatch($user);
-
+        //SendVerificationEmail::dispatch($user);
+        Auth::login($user);
 
         return response()->json([
             'success' => true,
-            'redirect' => route('bemvindo', ['user' => $user->id])
+            'redirect' => route('dashboard')
         ]);
     }
 
@@ -187,6 +187,8 @@ class AssinaturaController extends Controller
                 "city" => $request->city, // Adicionar campo no formulário
                 "state" => $request->state, // Adicionar campo no formulário
             ];
+
+
 
             $body = [
                 "items" => $items,
@@ -245,12 +247,13 @@ class AssinaturaController extends Controller
 
             $this->administradoraPlanos($assinatura->id);
 
-            SendVerificationEmail::dispatch($user);
+            //SendVerificationEmail::dispatch($user);
+            Auth::login($user);
 
             return response()->json([
                 'success' => true,
                 'data' => $response,
-                'redirect' => route('bemvindo', ['user' => $user->id])
+                'redirect' => route('dashboard')
             ]);
 
         } catch (EfiException $e) {
@@ -409,10 +412,10 @@ class AssinaturaController extends Controller
             ],
             "devedor" => [
                 "cpf" => $cpf,
-                "nome" => 'Richard Lopes'
+                "nome" => $request->nome
             ],
             "valor" => [
-                "original" => "29.90"
+                "original" => "0.05"
             ],
             "chave" => "130ceaee-b233-481e-8feb-6029a5429b75", // Pix key registered in the authenticated Efí account
             "solicitacaoPagador" => "Informe o número do identificador de pedido",
@@ -426,11 +429,49 @@ class AssinaturaController extends Controller
                 "id" => $responsePix['loc']['id']
             ];
             $responseQrcode = $this->efi->pixGenerateQRCode($params);
-            return [
-              "imagem" => $responseQrcode['imagemQrcode'],
-              "copiacola" => $responseQrcode['qrcode'],
-              "txid" => $responsePix['txid']
+
+            $response = $this->efi->pixCreateLocationRecurrenceAutomatic();
+
+            $id_loc = $response['id'];
+            $txid = $responsePix['txid'];
+
+
+
+            $body_pix = [
+                "vinculo" => [
+                    "contrato" => "63100864",
+                    "devedor" => [
+                        "cpf" => $cpf,
+                        // "cnpj" => "11122233344444",
+                        "nome" => $request->nome
+                    ],
+                    "objeto" => "Assinatura"
+                ],
+                "calendario" => [
+                    "dataInicial" => date("Y-m-d"),
+                    "periodicidade" => "MENSAL" // SEMANAL/MENSAL/TRIMESTRAL/SEMESTRAL/ANUAL
+                ],
+                "valor" => [
+                    "valorRec" => "0.05",
+                    // "valorMinimoRecebedor" => "30.00"
+                ],
+                "politicaRetentativa" => "NAO_PERMITE", // PERMITE_3R_7D
+                "loc" => $id_loc,
+                "ativacao" => [
+                    "dadosJornada" => [
+                        "txid" => $txid
+                    ]
+                ]
             ];
+
+            return $body_pix;
+
+
+//            return [
+//              "imagem" => $responseQrcode['imagemQrcode'],
+//              "copiacola" => $responseQrcode['qrcode'],
+//              "txid" => $responsePix['txid']
+//            ];
         }
         return "Erro";
     }
@@ -528,12 +569,12 @@ class AssinaturaController extends Controller
 
             $this->administradoraPlanos($assinatura->id);
 
-            SendVerificationEmail::dispatch($user);
-
+            //SendVerificationEmail::dispatch($user);
+            Auth::login($user);
 
             return response()->json([
                 'success' => true,
-                'redirect' => route('bemvindo', ['user' => $user->id])
+                'redirect' => route('dashboard')
             ]);
 
 
@@ -575,20 +616,20 @@ class AssinaturaController extends Controller
                 // Dados do cliente
                 $customer = [
                     "name" => $user->name,
-                    "cpf" => $user->cpf,
+                    "cpf" => "01375583174",
                     "phone_number" => preg_replace('/[^0-9]/', '', $user->phone),
                     "email" => $user->email,
-                    "birth" => $request->data_nascimento
+                    "birth" => '1986-10-24'
                 ];
 
                 // Endereço (também necessário)
                 $billingAddress = [
-                    "street" => $request->street,
-                    "number" => !empty($request->number) ? $request->number : "S/N",
-                    "neighborhood" => $request->neighborhood, // Adicionar campo no formulário
-                    "zipcode" => str_replace('-', '', $request->zipcode), // Adicionar campo no formulário
-                    "city" => $request->city, // Adicionar campo no formulário
-                    "state" => $request->state, // Adicionar campo no formulário
+                    "street" => "Avenida José Leandro da Cruz",
+                    "number" => "S/N",
+                    "neighborhood" => "Jardim Luz", // Adicionar campo no formulário
+                    "zipcode" => "74915130", // Adicionar campo no formulário
+                    "city" => "Aparecida de Goiânia", // Adicionar campo no formulário
+                    "state" => "GO", // Adicionar campo no formulário
                 ];
 
 
@@ -959,12 +1000,13 @@ class AssinaturaController extends Controller
             }
 
             // Dispara o email
-            SendVerificationEmail::dispatch($user);
+            //SendVerificationEmail::dispatch($user);
+            Auth::login($user);
 
             return response()->json([
                 'success' => true,
                 'data' => $response,
-                'redirect' => route('bemvindo', ['user' => $user->id])
+                'redirect' => route('dashboard')
             ]);
 
 
@@ -1089,7 +1131,9 @@ class AssinaturaController extends Controller
 
 
             // Dispara o email
-            SendVerificationEmail::dispatch($user);
+            //SendVerificationEmail::dispatch($user);
+            Auth::login($user);
+
 
             return response()->json([
                 'success' => true,

@@ -1,6 +1,6 @@
 <div class="mt-2 rounded p-1 bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] border border-white dark:border-white w-full lg:w-[22%]" id="container_informacoes">
     <button class="py-2 w-full px-1 me-2 mb-2 text-sm font-medium dark:text-white text-white rounded-lg border border-white dark:border-gray-200 dark:bg-gray-500 dark:bg-opacity-10">
-        Tabela de Origema
+        Tabela de Origem
 
     </button>
 

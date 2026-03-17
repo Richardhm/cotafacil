@@ -495,18 +495,18 @@
                         </div>
 
 
-                        <div class="flex w-[45%] flex-wrap">
+                       <div class="flex w-[45%] flex-wrap">
 
-                            <div class="w-full mb-2">
-                                <input type="text" class="rounded-lg w-[10%]">
-                                <span class="text-sm text-white">Parto</span>
-                            </div>
+                           <div class="w-full mb-2">
+                               <input type="text" class="rounded-lg w-[10%]">
+                               <span class="text-sm text-white">Parto</span>
+                           </div>
 
-                            <div class="w-full">
-                                <input type="text" class="rounded-lg w-[10%]">
-                                <span class="text-sm text-white">Doenças E Lesões Pré-Existentes</span>
-                            </div>
-                        </div>
+                           <div class="w-full">
+                               <input type="text" class="rounded-lg w-[10%]">
+                               <span class="text-sm text-white">Doenças E Lesões Pré-Existentes</span>
+                           </div>
+                       </div>
                     </div>
                     <button class="salvar_coparticipacao text-white w-full mt-4 bg-yellow-500 font-medium rounded-lg text-lg py-2.5 text-center">Salvar</button>
                 </div>
@@ -541,65 +541,65 @@
                         }
 
                         $.ajax({
-                            url:"{{route('coparticipacao.ja.existe')}}",
-                            method:"POST",
-                            data: {
-                                planoSelecionado,
-                                cidadeSelecionada
-                            },
-                            success:function(res) {
-                                if(res != "nada" && cidadeSelecionada != 3 && cidadeSelecionada != 4 && cidadeSelecionada != 5 && cidadeSelecionada != 6 && cidadeSelecionada != 7) {
+                           url:"{{route('coparticipacao.ja.existe')}}",
+                           method:"POST",
+                           data: {
+                               planoSelecionado,
+                               cidadeSelecionada
+                           },
+                           success:function(res) {
+                               if(res != "nada" && cidadeSelecionada != 3 && cidadeSelecionada != 4 && cidadeSelecionada != 5 && cidadeSelecionada != 6 && cidadeSelecionada != 7) {
 
-                                    $("#linha01").val(res.linha01);
-                                    $("#linha02").val(res.linha02);
-                                    $("#linha03").val(res.linha03);
+                                   $("#linha01").val(res.linha01);
+                                   $("#linha02").val(res.linha02);
+                                   $("#linha03").val(res.linha03);
 
-                                    $("#consultas_eletiva_total").val(res.consultas_eletivas_total);
-                                    $("#consultas_eletiva_parcial").val(res.consultas_eletivas_parcial);
+                                   $("#consultas_eletiva_total").val(res.consultas_eletivas_total);
+                                   $("#consultas_eletiva_parcial").val(res.consultas_eletivas_parcial);
 
-                                    $("#consultas_urgencia_total").val(res.consultas_de_urgencia_total);
-                                    $("#consultas_urgencia_parcial").val(res.consultas_de_urgencia_parcial);
+                                   $("#consultas_urgencia_total").val(res.consultas_de_urgencia_total);
+                                   $("#consultas_urgencia_parcial").val(res.consultas_de_urgencia_parcial);
 
-                                    $("#exames_simples_total").val(res.exames_simples_total);
-                                    $("#exames_simples_parcial").val(res.exames_simples_parcial);
+                                   $("#exames_simples_total").val(res.exames_simples_total);
+                                   $("#exames_simples_parcial").val(res.exames_simples_parcial);
 
-                                    $("#exames_complexos_total").val(res.exames_complexos_total);
-                                    $("#exames_complexos_parcial").val(res.exames_complexos_parcial);
+                                   $("#exames_complexos_total").val(res.exames_complexos_total);
+                                   $("#exames_complexos_parcial").val(res.exames_complexos_parcial);
 
-                                    $("#terapias_especiais_total").val(res.terapias_especiais_total);
-                                    $("#terapias_especiais_parcial").val(res.terapias_especiais_parcial);
+                                   $("#terapias_especiais_total").val(res.terapias_especiais_total);
+                                   $("#terapias_especiais_parcial").val(res.terapias_especiais_parcial);
 
-                                    $("#demais_terapias_total").val(res.demais_terapias_total);
-                                    $("#demais_terapias_parcial").val(res.demais_terapias_parcial);
-                                    $("#internacoes_total").val(res.internacoes_total);
-                                    $("#internacoes_parcial").val(res.internacoes_parcial);
-                                    $("#cirurgia_total").val(res.cirurgia_total);
-                                    $("#cirurgia_parcial").val(res.cirurgia_parcial);
+                                   $("#demais_terapias_total").val(res.demais_terapias_total);
+                                   $("#demais_terapias_parcial").val(res.demais_terapias_parcial);
+                                   $("#internacoes_total").val(res.internacoes_total);
+                                   $("#internacoes_parcial").val(res.internacoes_parcial);
+                                   $("#cirurgia_total").val(res.cirurgia_total);
+                                   $("#cirurgia_parcial").val(res.cirurgia_parcial);
                                 } else if(res != "nada" && (cidadeSelecionada != 3 || cidadeSelecionada != 4 || cidadeSelecionada != 5 || cidadeSelecionada != 6 || cidadeSelecionada != 7)) {
 
-                                    $("#linha01_excecao").val(res.linha01);
-                                    $("#linha02_excecao").val(res.linha02);
-                                    $("#linha03_excecao").val(res.linha03);
+                                   $("#linha01_excecao").val(res.linha01);
+                                   $("#linha02_excecao").val(res.linha02);
+                                   $("#linha03_excecao").val(res.linha03);
 
-                                    $("#consultas_eletiva_total_excecao").val(res.consultas_eletivas_total);
-                                    $("#consultas_eletiva_parcial_excecao").val(res.consultas_eletivas_parcial);
+                                   $("#consultas_eletiva_total_excecao").val(res.consultas_eletivas_total);
+                                   $("#consultas_eletiva_parcial_excecao").val(res.consultas_eletivas_parcial);
 
-                                    $("#pronto_atendimento_excecao_total").val(res.pronto_atendimento);
-                                    $("#pronto_atendimento_excecao_parcial").val(0);
+                                   $("#pronto_atendimento_excecao_total").val(res.pronto_atendimento);
+                                   $("#pronto_atendimento_excecao_parcial").val(0);
 
-                                    $("#faixa_01").val(res.faixa_1);
+                                   $("#faixa_01").val(res.faixa_1);
 
-                                    $("#faixa_2").val(res.faixa_2);
-                                    $("#faixa_02_parcial").val(0);
+                                   $("#faixa_2").val(res.faixa_2);
+                                   $("#faixa_02_parcial").val(0);
 
-                                    $("#faixa_3").val(res.faixa_3);
-                                    $("#faixa_03_parcial").val(0);
+                                   $("#faixa_3").val(res.faixa_3);
+                                   $("#faixa_03_parcial").val(0);
 
-                                    $("#faixa_4").val(res.faixa_4);
-                                    $("#faixa_04_parcial").val(0);
+                                   $("#faixa_4").val(res.faixa_4);
+                                   $("#faixa_04_parcial").val(0);
 
-                                }
-                            }
+                               }
+                           }
                         });
 
 
@@ -702,39 +702,39 @@
                     let cirurgia_parcial = $("#cirurgia_parcial").val();
 
                     $.ajax({
-                        url:"{{route('cadastrar.coparticipacao.tabela')}}",
-                        method:"POST",
-                        data: {
-                            plano_coparticipacao,
-                            cidade_coparticipacao,
-                            linha01,
-                            linha02,
-                            linha03,
-                            consultas_eletiva_total,
-                            consultas_eletiva_parcial,
-                            consultas_urgencia_total,
-                            consultas_urgencia_parcial,
+                       url:"{{route('cadastrar.coparticipacao.tabela')}}",
+                       method:"POST",
+                       data: {
+                           plano_coparticipacao,
+                           cidade_coparticipacao,
+                           linha01,
+                           linha02,
+                           linha03,
+                           consultas_eletiva_total,
+                           consultas_eletiva_parcial,
+                           consultas_urgencia_total,
+                           consultas_urgencia_parcial,
 
-                            exames_simples_total,
-                            exames_simples_parcial,
-                            exames_complexos_total,
-                            exames_complexos_parcial,
+                           exames_simples_total,
+                           exames_simples_parcial,
+                           exames_complexos_total,
+                           exames_complexos_parcial,
 
-                            terapias_especiais_total,
-                            terapias_especiais_parcial,
+                           terapias_especiais_total,
+                           terapias_especiais_parcial,
 
-                            demais_terapias_total,
-                            demais_terapias_parcial,
+                           demais_terapias_total,
+                           demais_terapias_parcial,
 
-                            internacoes_total,
-                            internacoes_parcial,
+                           internacoes_total,
+                           internacoes_parcial,
 
-                            cirurgia_total,
-                            cirurgia_parcial
+                           cirurgia_total,
+                           cirurgia_parcial
 
-                        },
+                       },
                         success:function(res) {
-                            console.log(res);
+                           console.log(res);
                         }
                     });
 
@@ -1097,7 +1097,7 @@
             });
 
         </script>
-    @endsection
+   @endsection
 
     @section('css')
         <style>

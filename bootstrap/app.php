@@ -5,6 +5,9 @@ use App\Http\Middleware\ApenasDesenvolvedor;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\CheckSubscriptionExpired;
 use App\Http\Middleware\PreventSimultaneousLogins;
+
+
+
 use App\Http\Middleware\MobileSessionFix;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -31,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'apenasAdministradores' => ApenasAdministrador::class,
             'check' => CheckSubscription::class,
             'checkExpired' => CheckSubscriptionExpired::class,
+            'email.verified.afterDeadline' => \App\Http\Middleware\EnsureEmailIsVerifiedAfterDeadline::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

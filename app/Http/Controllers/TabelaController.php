@@ -97,10 +97,7 @@ class TabelaController extends Controller
                 return "error";
             }
         }
-
         return "sucesso";
-
-
     }
 
 
@@ -271,19 +268,8 @@ class TabelaController extends Controller
                 return $pdf->first();
             }
             return "nada";
-
-
         }
-
-
-
-
     }
-
-
-
-
-
 
     public function orcamento(Request $request)
     {
@@ -346,9 +332,6 @@ class TabelaController extends Controller
                 "status" => $status
             ]);
         }
-
-
-
     }
 
 
