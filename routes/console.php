@@ -14,4 +14,8 @@ app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('email:send-pending-verifications')
     ->dailyAt('00:00');
 
+app(\Illuminate\Console\Scheduling\Schedule::class)
+    ->command('pix:alerta-vencimento')
+    ->dailyAt('08:00');
+
 

@@ -25,11 +25,12 @@
     <section class="md:w-[70%] rounded-lg mx-auto">
         <img src="{{ asset('logo_bm_1.png') }}" class="mx-auto my-1 w-32 md:w-32" alt="">
 
-
-        <input type="hidden" id="cpf" value="{{$cpf}}">
         <input type="hidden" id="nome" value="{{$nome}}">
 
-
+        {{-- CPF: hidden se já cadastrado; campo aparece abaixo dos botões ao escolher PIX --}}
+        @if($cpf)
+            <input type="hidden" id="cpf" value="{{$cpf}}">
+        @endif
 
             <div class="w-full">
                 {{-- CUPOM PROMOCIONAL --}}
@@ -65,6 +66,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF" width="28px" height="28px" viewBox="0 0 16 16"><path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z"/><path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z"/></svg>
                         PIX
                     </button>
+                    <button type="button" id="pixAutomaticoButton" style="display:none;" class="flex items-center justify-center w-full bg-purple-600 text-white px-1 py-2 rounded-xl text-sm shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF" width="28px" height="28px" viewBox="0 0 16 16"><path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z"/><path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z"/></svg>
+                        PIX Automático
+                    </button>
                     <button type="button" id="creditCardButton" class="flex items-center justify-center w-full bg-blue-500 text-white px-1 py-2 rounded-xl text-sm shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28px" height="28px" class="mr-2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
@@ -73,12 +78,45 @@
                     </button>
                 </fieldset>
 
+                {{-- Seção PIX normal: CPF + botão Gerar QR Code --}}
+                <div id="pix_acao" class="mt-3" style="display:none;">
+                    @if(!$cpf)
+                    <div class="mb-2">
+                        <label for="cpf" class="block mb-1 font-medium text-white text-sm">CPF <small>(obrigatório para PIX)</small></label>
+                        <input type="text" id="cpf" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="XXX.XXX.XXX-XX" />
+                        <span id="cpf_erro" class="text-red-400 text-xs" style="display:none;">CPF inválido. Verifique e tente novamente.</span>
+                    </div>
+                    @endif
+                    <button type="button" id="gerarQrcodeButton" class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="20px" height="20px"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75V16.5ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75V13.5ZM13.5 19.5h.75v.75h-.75V19.5ZM19.5 13.5h.75v.75h-.75V13.5ZM19.5 19.5h.75v.75h-.75V19.5ZM16.5 16.5h.75v.75h-.75V16.5Z" /></svg>
+                        Gerar QR Code PIX
+                    </button>
+                </div>
+
+                {{-- Seção PIX Automático: CPF + botão Gerar QR Code --}}
+                <div id="pix_automatico_acao" class="mt-3" style="display:none;">
+                    @if(!$cpf)
+                    <div class="mb-2">
+                        <label for="cpf_automatico" class="block mb-1 font-medium text-white text-sm">CPF <small>(obrigatório para PIX Automático)</small></label>
+                        <input type="text" id="cpf_automatico" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="XXX.XXX.XXX-XX" />
+                        <span id="cpf_automatico_erro" class="text-red-400 text-xs" style="display:none;">CPF inválido. Verifique e tente novamente.</span>
+                    </div>
+                    @endif
+                    <button type="button" id="gerarQrcodeAutomaticoButton" class="flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF" width="20px" height="20px" viewBox="0 0 16 16"><path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z"/><path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z"/></svg>
+                        Gerar QR Code PIX Automático
+                    </button>
+                </div>
+
                 {{-- PIX --}}
                 <div id="pix_montar" class="mt-2" style="display: none;">
                     <h2 class="text-white text-center">Pague com o <strong>QR Code</strong> abaixo:</h2>
-                    <img id="qrcode_img" class="mx-auto"  />
+                    <img id="qrcode_img" class="mx-auto" />
 
-                    <input type="hidden" id="copiacola_input" class="border rounded p-2 flex-1" readonly />
+                    <div class="flex gap-2 mt-3">
+                        <input type="text" id="copiacola_input" class="border rounded p-2 flex-1 text-xs text-gray-700 bg-gray-50" readonly placeholder="Código PIX (copia e cola)" />
+                        <button type="button" id="copyButton" class="bg-gray-700 hover:bg-gray-800 text-white text-xs px-3 py-1 rounded whitespace-nowrap">Copiar</button>
+                    </div>
 
 
                     <div class="flex flex-col gap-1 p-2 border rounded-lg bg-gray-50 mt-3">
@@ -232,6 +270,21 @@
 
     @section('scripts')
         <script>
+            var precoPlano = {{$preco_total}};
+
+            function validarCPF(cpf) {
+                cpf = cpf.replace(/[^\d]/g, '');
+                if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+                let sum = 0;
+                for (let i = 0; i < 9; i++) sum += parseInt(cpf[i]) * (10 - i);
+                let rev = 11 - (sum % 11); if (rev >= 10) rev = 0;
+                if (rev !== parseInt(cpf[9])) return false;
+                sum = 0;
+                for (let i = 0; i < 10; i++) sum += parseInt(cpf[i]) * (11 - i);
+                rev = 11 - (sum % 11); if (rev >= 10) rev = 0;
+                return rev === parseInt(cpf[10]);
+            }
+
             $(function() {
 
                 $.ajaxSetup({
@@ -239,8 +292,6 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     }
                 });
-
-                var precoPlano = {{$preco_total}};
                 let precoPorUsuario = 29.90;
                 let descontoPlano = 0.0;
                 let descontoUsuario = 0.0;
@@ -261,53 +312,71 @@
 
 
 
-                $("#pixButton").on('click',function(){
+                function validarCPF(cpf) {
+                    cpf = cpf.replace(/[^\d]/g, '');
+                    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+                    let sum = 0;
+                    for (let i = 0; i < 9; i++) sum += parseInt(cpf[i]) * (10 - i);
+                    let rev = 11 - (sum % 11); if (rev >= 10) rev = 0;
+                    if (rev !== parseInt(cpf[9])) return false;
+                    sum = 0;
+                    for (let i = 0; i < 10; i++) sum += parseInt(cpf[i]) * (11 - i);
+                    rev = 11 - (sum % 11); if (rev >= 10) rev = 0;
+                    return rev === parseInt(cpf[10]);
+                }
 
-                    if ($("#container_cartao").is(":visible")) {
-                        $("#container_cartao").hide(); // ou .fadeOut()
-                    }
+                $("#pixButton").on('click', function () {
+                    if ($("#container_cartao").is(":visible")) $("#container_cartao").hide();
+                    if ($("#pix_montar").is(":visible")) $("#pix_montar").hide();
+                    if ($("#buttonSubmit").is(":visible")) $("#buttonSubmit").addClass('hidden');
+                    $("#pix_acao").fadeIn(200);
+                });
 
-                    if ($("#buttonSubmit").is(":visible")) {
-                        $("#buttonSubmit").addClass('hidden');
-                    }
-
-
-                    let cpf = $("#cpf").val();
+                $("#gerarQrcodeButton").on('click', function () {
+                    let cpf  = $("#cpf").val();
                     let nome = $("#nome").val();
+
+                    // Valida CPF apenas se o campo for visível (usuário sem CPF salvo)
+                    if ($("#cpf").is(":visible") || $("#cpf").attr("type") !== "hidden") {
+                        if (!validarCPF(cpf)) {
+                            $("#cpf_erro").show();
+                            $("#cpf").addClass("border-red-500");
+                            return;
+                        }
+                        $("#cpf_erro").hide();
+                        $("#cpf").removeClass("border-red-500");
+                    }
 
                     $('#loading-cidades').fadeIn(150);
 
                     $.ajax({
-                        url:"{{route('assinatura.pix.trial')}}",
-                        method:"POST",
-                        data: {
-                            cpf,nome,precoPlano
-                        },
-                        success:function(res) {
-
-                            if(res != "error") {
-
+                        url: "{{route('assinatura.pix.trial')}}",
+                        method: "POST",
+                        data: { cpf, nome, precoPlano },
+                        success: function (res) {
+                            if (res && res.txid) {
                                 $("#qrcode_img").attr("src", res.imagem);
-                                $("#copiacola_input").val(res.copiacola);
+                                $("#copiacola_input").val(res.copiacola.trim());
                                 $("#txid").val(res.txid);
+                                $("#pix_acao").hide();
                                 $("#pix_montar").fadeIn();
                             } else {
-
+                                toastr.error("Erro ao gerar o QR Code PIX. Tente novamente.", "Erro");
                             }
                         },
-                        complete: function() {
-                            // Esconde loader sempre ao finalizar
+                        error: function () {
+                            toastr.error("Erro ao gerar o QR Code PIX. Tente novamente.", "Erro");
+                        },
+                        complete: function () {
                             $('#loading-cidades').fadeOut(150);
-
                         }
                     });
                 });
 
 
                 $("#creditCardButton").on('click',function(){
-                    if ($("#pix_montar").is(":visible")) {
-                        $("#pix_montar").fadeOut(); // ou .hide()
-                    }
+                    if ($("#pix_montar").is(":visible")) $("#pix_montar").fadeOut();
+                    if ($("#pix_acao").is(":visible")) $("#pix_acao").hide();
                     $("#container_cartao").fadeIn();
 
                     if ($("#buttonSubmit").hasClass("hidden")) {
@@ -575,7 +644,81 @@
 
 
 
-                let intervalo = setInterval(verificarPagamento, 20000);
+                let intervalo = setInterval(verificarPagamento, 3000);
+
+                // PIX AUTOMÁTICO — renovação de assinatura existente
+                let intervaloAutomatico = null;
+
+                $("#pixAutomaticoButton").on('click', function () {
+                    if ($("#container_cartao").is(":visible")) $("#container_cartao").hide();
+                    if ($("#pix_montar").is(":visible")) $("#pix_montar").hide();
+                    if ($("#pix_acao").is(":visible")) $("#pix_acao").hide();
+                    if ($("#buttonSubmit").is(":visible")) $("#buttonSubmit").addClass('hidden');
+                    $("#pix_automatico_acao").fadeIn(200);
+                });
+
+                $("#gerarQrcodeAutomaticoButton").on('click', function () {
+                    let cpf  = @if($cpf) "{{ $cpf }}" @else $("#cpf_automatico").val() @endif;
+                    let nome = $("#nome").val();
+
+                    @if(!$cpf)
+                    if (!validarCPF(cpf)) {
+                        $("#cpf_automatico_erro").show();
+                        $("#cpf_automatico").addClass("border-red-500");
+                        return;
+                    }
+                    $("#cpf_automatico_erro").hide();
+                    $("#cpf_automatico").removeClass("border-red-500");
+                    @endif
+
+                    $('#loading-cidades').fadeIn(150);
+                    $.ajax({
+                        url: "{{ route('assinatura.pix.automatico') }}",
+                        method: "POST",
+                        data: { cpf, nome, precoPlano },
+                        success: function (res) {
+                            if (res.txid) {
+                                $("#qrcode_img").attr("src", res.imagem);
+                                $("#copiacola_input").val(res.copiacola);
+                                $("#txid").val(res.txid);
+                                $("#pix_automatico_acao").hide();
+                                $("#pix_montar").fadeIn();
+                                intervaloAutomatico = setInterval(verificarPagamentoAutomatico, 5000);
+                            } else {
+                                toastr.error(res.error || "Erro ao gerar PIX Automático.", "Erro");
+                            }
+                        },
+                        error: function (xhr) {
+                            let msg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Erro ao gerar PIX Automático.";
+                            toastr.error(msg, "Erro");
+                        },
+                        complete: function () { $('#loading-cidades').fadeOut(150); }
+                    });
+                });
+
+                function verificarPagamentoAutomatico() {
+                    let txid = $("#txid").val();
+                    if (!txid) return;
+
+                    let formData = new FormData();
+                    formData.append("id", txid);
+                    formData.append("precoFinal", precoPlano);
+                    formData.append("cpf", $("#cpf").val());
+
+                    $.ajax({
+                        url: "{{ route('verificar.pagamento.pix.automatico') }}",
+                        method: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.success) {
+                                clearInterval(intervaloAutomatico);
+                                window.location.href = res.redirect;
+                            }
+                        }
+                    });
+                }
 
 
 

@@ -33,12 +33,11 @@ class AssinaturaController extends Controller
         $certificate_path = base_path("certs/{$certificate}");
 
         $options = [
-            'client_id' => $client_id,
+            'client_id'     => $client_id,
             'client_secret' => $client_secret,
-            'certificate' => $certificate_path,
-            'sandbox' => true,
-            'debug' => false
-
+            'certificate'   => $certificate_path,
+            'sandbox'       => config('gerencianet.is_sandbox'),
+            'debug'         => config('gerencianet.debug', false),
         ];
 
 
@@ -85,11 +84,8 @@ class AssinaturaController extends Controller
         $validationRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'cpf' => 'required|string',
-            'birth_date' => 'required|date|before:-18 years',
-            'phone' => 'required|string',
+            'phone' => 'required|string|unique:users,phone',
             'password' => 'required|confirmed|min:8',
-            'imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ];
 
         if(!$isTrial) {
@@ -98,29 +94,25 @@ class AssinaturaController extends Controller
 
         $request->validate($validationRules);
 
-        $imagePath = null;
-        if ($request->hasFile('imagem')) {
-            $imagePath = $request->file('imagem')->store('users', 'public');
-        }
-
         if($isTrial) {
-            return $this->handleTrialRegistration($request,$imagePath);
+            return $this->handleTrialRegistration($request, null);
         } else {
-            return $this->handlePaidRegistration($request,$imagePath,$redirect = false);
+            $imagePath = null;
+            if ($request->hasFile('imagem')) {
+                $imagePath = $request->file('imagem')->store('users', 'public');
+            }
+            return $this->handlePaidRegistration($request, $imagePath, $redirect = false);
         }
     }
 
     private function handleTrialRegistration($request, $imagePath)
     {
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password,
-            'phone' => $request->phone,
-            'imagem' => $imagePath,
-            'cpf' => preg_replace('/[^0-9]/', '', $request->cpf), // Remove formatação
-            'birth_date' => $request->birth_date,
-
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'password'          => $request->password,
+            'phone'             => $request->phone,
+            'email_verified_at' => now(),
         ]);
 
         $assinatura = Assinatura::create([
@@ -158,7 +150,7 @@ class AssinaturaController extends Controller
         try {
             // Parâmetros do plano
             $params = [
-                "id" => 13289 // ID do plano individual
+                "id" => config('gerencianet.plan_id')
             ];
 
             // Itens da assinatura
@@ -172,20 +164,20 @@ class AssinaturaController extends Controller
             // Dados do cliente
             $customer = [
                 "name" => $request->name,
-                "cpf" => preg_replace('/[^0-9]/', '', $request->cpf),
+                "cpf" => "01375583174",
                 "phone_number" => preg_replace('/[^0-9]/', '', $request->phone),
                 "email" => $request->email,
-                "birth" => $request->birth_date // Você precisa adicionar este campo no formulário!
+                "birth" => "1986-10-24"
             ];
 
             // Endereço (também necessário)
             $billingAddress = [
-                "street" => $request->street,
-                "number" => !empty($request->number) ? $request->number : "S/N",
-                "neighborhood" => $request->neighborhood, // Adicionar campo no formulário
-                "zipcode" => str_replace('-', '', $request->zipcode), // Adicionar campo no formulário
-                "city" => $request->city, // Adicionar campo no formulário
-                "state" => $request->state, // Adicionar campo no formulário
+                "street" => "Avenida José Leandro da Cruz",
+                "number" => "S/N",
+                "neighborhood" => "Jardim Luz",
+                "zipcode" => "74915130",
+                "city" => "Aparecida de Goiânia",
+                "state" => "GO",
             ];
 
 
@@ -200,7 +192,7 @@ class AssinaturaController extends Controller
                     ]
                 ],
                 "metadata" => [
-                    "notification_url" => "https://cotacao.bmsys.com.br/callback"
+                    "notification_url" => config('gerencianet.notification_url')
                 ]
             ];
 
@@ -215,27 +207,29 @@ class AssinaturaController extends Controller
                 ]);
             }
 
-            // Aqui você deve:
-            // 1. Criar o usuário no seu banco de dados
+            // 1. Criar o usuário no banco de dados
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => $request->password,
-                'phone' => $request->phone,
-                'imagem' => $imagePath,
+                'name'       => $request->name,
+                'email'      => $request->email,
+                'password'   => $request->password,
+                'phone'      => $request->phone,
+                'cpf'        => preg_replace('/[^0-9]/', '', $request->cpf ?? ''),
+                'birth_date' => $request->birth_date ?: null,
+                'imagem'     => $imagePath,
             ]);
 
             // 2. Vincular o ID da assinatura ao usuário
             $assinatura = Assinatura::create([
                 'user_id' => $user->id,
-                'tipo_plano_id' => 1, // ID do plano Individual
+                'tipo_plano_id' => 1,
                 'preco_base' => 29.90,
                 'emails_permitidos' => 1,
                 'emails_extra' => 1,
-                'preco_total' => 29.90, // Preço base sem e-mails extras
+                'preco_total' => 29.90,
                 'status' => 'ativo',
                 'tipo' => 'cartao',
-                'subscription_id' => $response['data']['subscription_id']
+                'subscription_id' => $response['data']['subscription_id'],
+                'next_charge' => now()->addMonth(),
             ]);
 
             EmailAssinatura::create([
@@ -352,8 +346,12 @@ class AssinaturaController extends Controller
 
         $valor = number_format((float) $request->precoPlano, 2, '.', '');
 
-
         $cpf = preg_replace('/[^0-9]/', '', $request->cpf);
+
+        // Se o usuário ainda não tem CPF salvo, persiste agora
+        if (auth()->check() && !auth()->user()->cpf && $cpf) {
+            auth()->user()->update(['cpf' => $cpf]);
+        }
         $body = [
             "calendario" => [
                 "expiracao" => 3600 // Charge lifetime, specified in seconds from creation date
@@ -386,6 +384,14 @@ class AssinaturaController extends Controller
             // Adicionar espaço no final do código
             $qrcode = ' ' . $qrcode;
 
+            // Salva txid na tabela pix_pendentes para o webhook atualizar
+            \App\Models\PixPendente::create([
+                'txid'    => $responsePix['txid'],
+                'status'  => 'pending',
+                'tipo'    => auth()->check() ? 'renewal' : 'new_user',
+                'user_id' => auth()->check() ? auth()->id() : null,
+            ]);
+
             return [
                 "imagem" => $responseQrcode['imagemQrcode'],
                 "copiacola" => $qrcode,
@@ -395,7 +401,186 @@ class AssinaturaController extends Controller
         return "Erro";
     }
 
+    /**
+     * PIX Automático — Jornada 2
+     * 1. Cria cobrança imediata (QR de ativação, valor simbólico)
+     * 2. Cria location para a recorrência
+     * 3. Cria recorrência vinculando location + txid
+     * 4. Retorna QR code para o cliente autorizar no app do banco
+     */
+    public function pixAutomatico(Request $request)
+    {
+        $cpf      = preg_replace('/[^0-9]/', '', $request->cpf);
+        $valor    = number_format((float) ($request->precoPlano ?? 29.90), 2, '.', '');
+        $contrato = config('gerencianet.contrato_pix');
+        $chavePix = config('gerencianet.default_key_pix');
 
+        try {
+            // Passo 1 — Cobrança imediata de ativação (jornada)
+            $bodyCharge = [
+                'calendario' => ['expiracao' => 3600],
+                'devedor'    => ['cpf' => $cpf, 'nome' => $request->nome],
+                'valor'      => ['original' => $valor],
+                'chave'      => $chavePix,
+                'solicitacaoPagador' => 'Autorização PIX Automático',
+            ];
+            $responsePix = $this->efi->pixCreateImmediateCharge([], $bodyCharge);
+            $txid        = $responsePix['txid'];
+            $locId       = $responsePix['loc']['id'];
+
+            // Passo 2 — Gera QR Code da cobrança de ativação
+            $responseQrcode = $this->efi->pixGenerateQRCode(['id' => $locId]);
+            $qrcode         = $responseQrcode['qrcode'];
+
+            // Passo 3 — Cria location para recorrência
+            $responseLoc = $this->efi->pixCreateLocationRecurrenceAutomatic();
+            $idLoc       = $responseLoc['id'];
+
+            // Passo 4 — Cria recorrência vinculando location + txid de ativação
+            $bodyRec = [
+                'vinculo' => [
+                    'contrato' => $contrato,
+                    'devedor'  => ['cpf' => $cpf, 'nome' => $request->nome],
+                    'objeto'   => 'Assinatura',
+                ],
+                'calendario' => [
+                    'dataInicial'   => now()->format('Y-m-d'),
+                    'periodicidade' => 'MENSAL',
+                ],
+                'valor' => [
+                    'valorRec' => $valor,
+                ],
+                'politicaRetentativa' => 'PERMITE_3R_7D',
+                'loc'      => $idLoc,
+                'ativacao' => [
+                    'dadosJornada' => ['txid' => $txid],
+                ],
+            ];
+            $responseRec = $this->efi->pixCreateRecurrenceAutomatic([], $bodyRec);
+            $idRec       = $responseRec['idRec'];
+
+            // Salva na tabela pix_pendentes para o webhook atualizar
+            \App\Models\PixPendente::create([
+                'txid'    => $txid,
+                'id_rec'  => $idRec,
+                'status'  => 'pending',
+                'tipo'    => auth()->check() ? 'renewal' : 'new_user',
+                'user_id' => auth()->check() ? auth()->id() : null,
+            ]);
+
+            return response()->json([
+                'imagem'    => $responseQrcode['imagemQrcode'],
+                'copiacola' => $qrcode,
+                'txid'      => $txid,
+                'id_rec'    => $idRec,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('PIX Automático erro: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Verifica se o PIX Automático foi autorizado (polling do frontend)
+     * Para novos usuários: cria conta quando status = approved
+     */
+    public function verificarPagamentoPixAutomatico(Request $request)
+    {
+        $txid = $request->id;
+
+        try {
+            $resposta  = $this->efi->pixDetailCharge(['txid' => $txid]);
+            $statusEfi = $resposta['status'] ?? null;
+        } catch (\Exception $e) {
+            return response()->json(['success' => false]);
+        }
+
+        if ($statusEfi !== 'CONCLUIDA') {
+            return response()->json(['success' => false]);
+        }
+
+        $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
+
+        // Renovação de assinatura existente
+        if (auth()->check()) {
+            // Proteção contra polling duplo
+            if (\App\Models\PixPagamento::where('txid', $txid)->exists()) {
+                return response()->json(['success' => true, 'redirect' => route('dashboard')]);
+            }
+
+            $user       = auth()->user();
+            $assinatura = $user->assinaturas()->first();
+
+            $assinatura->next_charge   = Carbon::now()->addMonth();
+            $assinatura->tipo          = 'PIX_AUTOMATICO';
+            $assinatura->status        = 'ativo';
+            $assinatura->contrato      = $pixPendente->id_rec ?? null;
+            $assinatura->trial_ends_at = null;
+            $assinatura->save();
+
+            \App\Models\PixPagamento::create([
+                'user_id'       => $user->id,
+                'assinatura_id' => $assinatura->id,
+                'txid'          => $txid,
+                'valor'         => $assinatura->preco_total,
+                'tipo'          => 'PIX_AUTOMATICO',
+                'pago_em'       => Carbon::now(),
+            ]);
+
+            if ($pixPendente && $pixPendente->status !== 'approved') {
+                $pixPendente->update(['status' => 'approved']);
+            }
+
+            return response()->json([
+                'success'  => true,
+                'redirect' => route('dashboard'),
+            ]);
+        }
+
+        // Novo usuário
+        $imagePath = null;
+        if ($request->hasFile('imagem')) {
+            $imagePath = $request->file('imagem')->store('users', 'public');
+        }
+
+        $user = User::create([
+            'name'       => $request->nome,
+            'email'      => $request->email,
+            'password'   => $request->password,
+            'phone'      => $request->phone,
+            'cpf'        => preg_replace('/[^0-9]/', '', $request->cpf ?? ''),
+            'imagem'     => $imagePath,
+        ]);
+
+        $assinatura = Assinatura::create([
+            'user_id'           => $user->id,
+            'tipo_plano_id'     => 1,
+            'preco_base'        => 29.90,
+            'emails_permitidos' => 1,
+            'emails_extra'      => 1,
+            'preco_total'       => 29.90,
+            'status'            => 'ativo',
+            'tipo'              => 'PIX_AUTOMATICO',
+            'contrato'          => $pixPendente->id_rec,
+            'next_charge'       => Carbon::now()->addMonth(),
+        ]);
+
+        EmailAssinatura::create([
+            'assinatura_id'  => $assinatura->id,
+            'email'          => $user->email,
+            'user_id'        => $user->id,
+            'is_administrador' => true,
+        ]);
+
+        $this->administradoraPlanos($assinatura->id);
+        Auth::login($user);
+
+        return response()->json([
+            'success'  => true,
+            'redirect' => route('dashboard'),
+        ]);
+    }
 
 
 
@@ -496,26 +681,57 @@ class AssinaturaController extends Controller
 
     public function verificarPagamentoPIX(Request $request)
     {
-        $status= true;
-        $params = [
-            "txid" => $request->id
-        ];
-        $response = $this->efi->pixDetailCharge($params);
+        $txid = $request->id;
 
-        if($response['status'] === "CONCLUIDA" && $status) {
-            $status = false;
-            $user = User::where("cpf",$request->cpf)->first()->assinaturas()->first();
-            $user->next_charge = Carbon::now()->addMonth();
-            $user->preco_total = $request->precoFinal;
-            $user->tipo = "PIX";
-            $user->status = "ativo";
-            $user->save();
-            session()->flash('success', 'Sua Assinatura foi renovada até a data ' . $user->next_charge->format('d/m/Y'));
+        try {
+            $resposta = $this->efi->pixDetailCharge(['txid' => $txid]);
+            $statusEfi = $resposta['status'] ?? null;
+        } catch (\Exception $e) {
+            return response()->json(['success' => false]);
+        }
+
+        if ($statusEfi !== 'CONCLUIDA') {
+            return response()->json(['success' => false]);
+        }
+
+        // Se já foi processado antes (polling duplo), só redireciona
+        if (\App\Models\PixPagamento::where('txid', $txid)->exists()) {
             return response()->json([
-                'success' => true,
-                'redirect' => route('dashboard')
+                'success'  => true,
+                'redirect' => route('dashboard'),
             ]);
         }
+
+        $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
+        if ($pixPendente && $pixPendente->status !== 'approved') {
+            $pixPendente->update(['status' => 'approved']);
+        }
+
+        $user       = auth()->user();
+        $assinatura = $user->assinaturas()->first();
+
+        $assinatura->next_charge   = Carbon::now()->addMonth();
+        $assinatura->preco_total   = $request->precoFinal;
+        $assinatura->tipo          = 'PIX';
+        $assinatura->status        = 'ativo';
+        $assinatura->trial_ends_at = null;
+        $assinatura->save();
+
+        \App\Models\PixPagamento::create([
+            'user_id'       => $user->id,
+            'assinatura_id' => $assinatura->id,
+            'txid'          => $txid,
+            'valor'         => $request->precoFinal,
+            'tipo'          => 'PIX',
+            'pago_em'       => Carbon::now(),
+        ]);
+
+        session()->flash('success', 'Sua Assinatura foi renovada até a data ' . $assinatura->next_charge->format('d/m/Y'));
+
+        return response()->json([
+            'success'  => true,
+            'redirect' => route('dashboard'),
+        ]);
     }
 
 
@@ -524,64 +740,77 @@ class AssinaturaController extends Controller
 
     public function verificarPagamento(Request $request)
     {
-        $status= true;
+        $txid = $request->id;
+
+        try {
+            $resposta = $this->efi->pixDetailCharge(['txid' => $txid]);
+            $statusEfi = $resposta['status'] ?? null;
+        } catch (\Exception $e) {
+            return response()->json(['success' => false]);
+        }
+
+        if ($statusEfi !== 'CONCLUIDA') {
+            return response()->json(['success' => false]);
+        }
+
+        $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
+        if ($pixPendente && $pixPendente->status !== 'approved') {
+            $pixPendente->update(['status' => 'approved']);
+        }
+
         $imagePath = null;
         if ($request->hasFile('imagem')) {
             $imagePath = $request->file('imagem')->store('users', 'public');
         }
-        $params = [
-            "txid" => $request->id
-        ];
-        $response = $this->efi->pixDetailCharge($params);
 
+        $user = User::create([
+            'name'       => $request->nome,
+            'email'      => $request->email,
+            'password'   => $request->password,
+            'phone'      => $request->phone,
+            'cpf'        => preg_replace('/[^0-9]/', '', $request->cpf ?? ''),
+            'birth_date' => $request->data_nascimento ?: null,
+            'imagem'     => $imagePath,
+        ]);
 
-        if($response['status'] === "CONCLUIDA" && $status) {
-            $status = false;
-            $user = User::create([
-                'name' => $request->nome,
-                'email' => $request->email,
-                'password' => $request->password,
-                'phone' => $request->phone,
-                'imagem' => $imagePath,
-            ]);
+        $assinatura = Assinatura::create([
+            'user_id'           => $user->id,
+            'tipo_plano_id'     => 1,
+            'preco_base'        => 29.90,
+            'emails_permitidos' => 1,
+            'emails_extra'      => 1,
+            'preco_total'       => 29.90,
+            'status'            => 'ativo',
+            'subscription_id'   => null,
+            'tipo'              => 'PIX',
+            'next_charge'       => Carbon::now()->addMonth(),
+        ]);
 
-            // 2. Vincular o ID da assinatura ao usuário
-            $assinatura = Assinatura::create([
-                'user_id' => $user->id,
-                'tipo_plano_id' => 1, // ID do plano Individual
-                'preco_base' => 29.90,
-                'emails_permitidos' => 1,
-                'emails_extra' => 1,
-                'preco_total' => 29.90, // Preço base sem e-mails extras
-                'status' => 'ativo',
-                'subscription_id' => null,
-                'tipo' => 'PIX',
-                'next_charge' => Carbon::now()->addMonth(),
+        EmailAssinatura::create([
+            'assinatura_id'  => $assinatura->id,
+            'email'          => $user->email,
+            'user_id'        => $user->id,
+            'is_administrador' => true,
+        ]);
 
-            ]);
+        $this->administradoraPlanos($assinatura->id);
 
-            EmailAssinatura::create([
-                'assinatura_id' => $assinatura->id,
-                'email' => $user->email,
-                'user_id' => $user->id,
-                'is_administrador' => true, // Marca este e-mail como administrador
-            ]);
+        // Salva histórico de pagamento
+        \App\Models\PixPagamento::create([
+            'user_id'       => $user->id,
+            'assinatura_id' => $assinatura->id,
+            'txid'          => $request->id,
+            'valor'         => 29.90,
+            'tipo'          => 'PIX',
+            'pago_em'       => Carbon::now(),
+        ]);
 
-            $this->administradoraPlanos($assinatura->id);
+        Auth::login($user);
 
-            //SendVerificationEmail::dispatch($user);
-            Auth::login($user);
-
-            return response()->json([
-                'success' => true,
-                'redirect' => route('dashboard')
-            ]);
-
-
-
-        }
-
-
+        return response()->json([
+            'success' => true,
+            'redirect' => route('dashboard')
+        ]);
 
 
     }
@@ -605,7 +834,7 @@ class AssinaturaController extends Controller
 
             try {
                 $user = User::find(auth()->user()->id);
-                $params = ["id" => 13289];
+                $params = ["id" => config('gerencianet.plan_id')];
                 $items = [
                     [
                         "name" => "Plano Individual",
@@ -644,7 +873,7 @@ class AssinaturaController extends Controller
                         ]
                     ],
                     "metadata" => [
-                        "notification_url" => "https://cotacao.bmsys.com.br/callback"
+                        "notification_url" => config('gerencianet.notification_url')
                     ]
                 ];
 
@@ -655,7 +884,7 @@ class AssinaturaController extends Controller
                 $assinatura->preco_total = $request->preco_base;
                 $assinatura->status = 'ativo';
                 $assinatura->subscription_id = $response['data']['subscription_id'];
-                $assinatura->next_charge = null;
+                $assinatura->next_charge = now()->addMonth();
                 $assinatura->trial_ends_at = null;
                 $assinatura->tipo = "CARTAO";
                 $assinatura->save();
@@ -787,7 +1016,7 @@ class AssinaturaController extends Controller
                     ]
                 ],
                 "metadata" => [
-                    "notification_url" => "https://cotacao.bmsys.com.br/callback"
+                    "notification_url" => config('gerencianet.notification_url')
                 ]
             ];
 
@@ -841,7 +1070,7 @@ class AssinaturaController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'cpf' => 'required|string',
-            'phone' => 'required|string',
+            'phone' => 'required|string|unique:users,phone',
             'password' => 'required|confirmed|min:8|confirmed',
             'paymentToken' => 'required|string',
             'imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -946,7 +1175,7 @@ class AssinaturaController extends Controller
                     ]
                 ],
                 "metadata" => [
-                    "notification_url" => "https://cotacao.bmsys.com.br/callback"
+                    "notification_url" => config('gerencianet.notification_url')
                 ]
             ];
 
@@ -1033,7 +1262,7 @@ class AssinaturaController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'cpf' => 'required|string',
-            'phone' => 'required|string',
+            'phone' => 'required|string|unique:users,phone',
             'password' => 'required|confirmed|min:8|confirmed',
             'paymentToken' => 'required|string',
             'imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -1093,7 +1322,7 @@ class AssinaturaController extends Controller
                     ]
                 ],
                 "metadata" => [
-                    "notification_url" => "https://cotacao.bmsys.com.br/callback"
+                    "notification_url" => config('gerencianet.notification_url')
                 ]
             ];
 

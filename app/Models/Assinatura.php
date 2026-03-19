@@ -8,7 +8,8 @@ class Assinatura extends Model
 {
 
     protected $casts = [
-        'next_charge' => 'datetime',
+        'next_charge'            => 'datetime',
+        'alerta_pix_enviado_at'  => 'datetime',
     ];
 
     protected $fillable = [
@@ -25,7 +26,9 @@ class Assinatura extends Model
         'last_payment',
         'next_charge',
         'tipo',
-        'trial_ends_at'
+        'trial_ends_at',
+        'alerta_pix_enviado_at',
+        'contrato',
     ];
 
     public function emails()
@@ -72,9 +75,10 @@ class Assinatura extends Model
 
     public function calcularPrecoTotal()
     {
-        $emailsExtras = max(0, $this->emails()->count() - $this->emails_permitidos);
+        $totalUsers = $this->emails()->count();
+        $emailsExtras = max(0, $totalUsers - $this->emails_permitidos);
         $this->emails_extra = $emailsExtras;
-        $this->preco_total = $this->preco_base + ($emailsExtras * 30);
+        $this->preco_total = $totalUsers * $this->preco_base;
         $this->save();
     }
 }

@@ -14,6 +14,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\SendSuggestionEmail;
 use App\Http\Controllers\BemvindoController;
+use App\Http\Controllers\PixWebhookController;
+use App\Http\Controllers\FinanceiroController;
 
 
 Route::get('/teste-tz', function () {
@@ -53,6 +55,24 @@ Route::get('/', function () {
 
 
 Route::post('/callback', [CallbackController::class,'index']);
+Route::post('/pix/webhook', [CallbackController::class, 'pixWebhook'])->name('pix.webhook');
+Route::post('/pix/webhook-rec', [CallbackController::class, 'pixWebhookRec'])->name('pix.webhook.rec');
+
+Route::post('/assinatura/pix-automatico', [AssinaturaController::class, 'pixAutomatico'])->name('assinatura.pix.automatico');
+Route::post('/pix-automatico/verificar-pagamento', [AssinaturaController::class, 'verificarPagamentoPixAutomatico'])->name('verificar.pagamento.pix.automatico');
+
+// Dashboard financeiro (apenas desenvolvedores)
+Route::middleware(['auth', 'apenasDesenvolvedores'])->group(function () {
+    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
+    Route::post('/financeiro/toggle-status', [FinanceiroController::class, 'toggleStatus'])->name('financeiro.toggle.status');
+});
+
+// Gerenciamento do webhook PIX (apenas desenvolvedores)
+Route::middleware(['auth', 'apenasDesenvolvedores'])->group(function () {
+    Route::get('/pix/webhook/registrar', [PixWebhookController::class, 'registrar'])->name('pix.webhook.registrar');
+    Route::get('/pix/webhook/registrar-rec', [PixWebhookController::class, 'registrarRec'])->name('pix.webhook.registrar.rec');
+    Route::get('/pix/webhook/consultar', [PixWebhookController::class, 'consultar'])->name('pix.webhook.consultar');
+});
 Route::get('/bem-vindo/{user}', [BemvindoController::class, 'index'])->name('bemvindo');
 
 Route::post('/buscar_planos',[DashboardController::class,'buscar_planos'])->middleware(['auth', 'verified'])->name('buscar_planos');
@@ -92,7 +112,7 @@ Route::post('/assinaturas/promocional', [AssinaturaController::class, 'storeProm
 //})->name('csrf-token');
 
 
-Route::middleware(['auth','email.verified.afterDeadline'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::post('cupom/validar', [ConfiguracoesController::class, 'validar'])->name('cupom.validar');
     /********* Configurações **************/
     Route::middleware(['apenasDesenvolvedores'])->group(function () {

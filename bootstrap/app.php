@@ -25,7 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'login',
             'logout',
             '/callback',
-            '/callback/*'
+            '/callback/*',
+            '/pix/webhook',
+            '/pix/webhook-rec',
         ]);
         $middleware->append(MobileSessionFix::class);
         $middleware->alias([

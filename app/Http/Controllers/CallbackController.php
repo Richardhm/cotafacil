@@ -24,10 +24,10 @@ class CallbackController extends Controller
         $certificate_path = base_path("certs/{$certificate}");
 
         $options = [
-            'client_id' => $client_id,
+            'client_id'     => $client_id,
             'client_secret' => $client_secret,
-            'sandbox' => true,
-            'debug' => false
+            'sandbox'       => config('gerencianet.is_sandbox'),
+            'debug'         => config('gerencianet.debug', false),
         ];
 
         $this->efi = new EfiPay($options);
@@ -115,6 +115,62 @@ class CallbackController extends Controller
                 'last_updated' => $subscriptionEvent['created_at']
             ]
         );
+    }
+
+    /**
+     * Webhook para PIX Automático — notificação de autorização da recorrência
+     * Endpoint: POST /pix/webhook-rec
+     */
+    public function pixWebhookRec(Request $request)
+    {
+        $body = $request->getContent();
+        \Log::channel('gerencianet')->info('PIX webhook-rec recebido', ['body' => $body]);
+
+        $data = json_decode($body, true);
+
+        // Notificação de autorização da recorrência
+        if (isset($data['rec'][0]['idRec'])) {
+            $idRec  = $data['rec'][0]['idRec'];
+            $status = $data['rec'][0]['status'] ?? null;
+
+            if ($status === 'AUTORIZADO') {
+                \App\Models\PixPendente::where('id_rec', $idRec)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'approved']);
+            }
+        }
+
+        // Notificação de cobrança automática mensal
+        if (isset($data['cobr'][0]['idRec'])) {
+            $idRec  = $data['cobr'][0]['idRec'];
+            $status = $data['cobr'][0]['status'] ?? null;
+
+            if ($status === 'CONCLUIDA') {
+                // Atualiza next_charge da assinatura vinculada
+                \App\Models\Assinatura::where('contrato', $idRec)
+                    ->update(['next_charge' => now()->addMonth()]);
+            }
+        }
+
+        return response()->json(['success' => true], 200);
+    }
+
+    public function pixWebhook(Request $request)
+    {
+        $body = $request->getContent();
+        \Log::channel('gerencianet')->info('PIX webhook recebido', ['body' => $body]);
+
+        $data = json_decode($body, true);
+
+        if (isset($data['pix'][0]['txid'])) {
+            $txid = $data['pix'][0]['txid'];
+
+            \App\Models\PixPendente::where('txid', $txid)
+                ->where('status', 'pending')
+                ->update(['status' => 'approved']);
+        }
+
+        return response()->json(['success' => true], 200);
     }
 
     public function processCharge(array $chargeEvent)

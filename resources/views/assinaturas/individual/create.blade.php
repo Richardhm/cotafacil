@@ -32,23 +32,9 @@
                         <label for="email" class="block mb-1 font-medium text-white text-sm">Email</label>
                         <input type="email" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="Seu Email" required />
                     </div>
-                    <div class="flex flex-col md:flex-row gap-4 mb-3">
-                        <div class="w-full md:w-1/2">
-                            <label for="birth_date" class="block mb-1 font-medium text-white text-sm">Data de Nascimento</label>
-                            <input type="date" name="birth_date" id="birth_date" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                        </div>
-                        <div class="w-full md:w-1/2">
-                            <label for="cpf" class="block mb-1 font-medium text-white text-sm">CPF</label>
-                            <input type="text" name="cpf" id="cpf" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="XXX.XXX.XXX-XX" required />
-                        </div>
-                    </div>
                     <div class="mb-3">
                         <label for="phone" class="block mb-1 font-medium text-white text-sm">Telefone</label>
                         <input type="text" name="phone" id="phone" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="(XX) X XXXX-XXXX" required />
-                    </div>
-                    <div class="mb-2">
-                        <label for="imagem" class="block mb-1 font-medium text-white text-sm">Imagem</label>
-                        <input type="file" name="imagem" id="imagem" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 p-1.5" />
                     </div>
                 </fieldset>
 
@@ -112,6 +98,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF" width="28px" height="28px" viewBox="0 0 16 16"><path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z"/><path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z"/></svg>
                         PIX
                     </button>
+                    <button type="button" id="pixAutomaticoButton" style="display:none;" class="flex items-center justify-center w-full bg-purple-600 text-white px-1 py-2 rounded-xl text-sm shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF" width="28px" height="28px" viewBox="0 0 16 16"><path d="M11.917 11.71a2.046 2.046 0 0 1-1.454-.602l-2.1-2.1a.4.4 0 0 0-.551 0l-2.108 2.108a2.044 2.044 0 0 1-1.454.602h-.414l2.66 2.66c.83.83 2.177.83 3.007 0l2.667-2.668h-.253zM4.25 4.282c.55 0 1.066.214 1.454.602l2.108 2.108a.39.39 0 0 0 .552 0l2.1-2.1a2.044 2.044 0 0 1 1.453-.602h.253L9.503 1.623a2.127 2.127 0 0 0-3.007 0l-2.66 2.66h.414z"/><path d="m14.377 6.496-1.612-1.612a.307.307 0 0 1-.114.023h-.733c-.379 0-.75.154-1.017.422l-2.1 2.1a1.005 1.005 0 0 1-1.425 0L5.268 5.32a1.448 1.448 0 0 0-1.018-.422h-.9a.306.306 0 0 1-.109-.021L1.623 6.496c-.83.83-.83 2.177 0 3.008l1.618 1.618a.305.305 0 0 1 .108-.022h.901c.38 0 .75-.153 1.018-.421L7.375 8.57a1.034 1.034 0 0 1 1.426 0l2.1 2.1c.267.268.638.421 1.017.421h.733c.04 0 .079.01.114.024l1.612-1.612c.83-.83.83-2.178 0-3.008z"/></svg>
+                        PIX Automático
+                    </button>
                     <button type="button" id="creditCardButton" class="flex items-center justify-center w-full bg-blue-500 text-white px-1 py-2 rounded-xl text-sm shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28px" height="28px" class="mr-2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
@@ -119,6 +109,30 @@
                         Cartão de Crédito
                     </button>
                 </fieldset>
+                {{-- CPF section para PIX (aparece ao clicar no botão PIX) --}}
+                <div id="pix_acao" class="mt-3" style="display:none;">
+                    <div class="mb-2">
+                        <label for="cpf" class="block mb-1 font-medium text-white text-sm">CPF <small>(obrigatório para PIX)</small></label>
+                        <input type="text" id="cpf" name="cpf" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="XXX.XXX.XXX-XX" />
+                        <span id="cpf_erro" class="text-red-400 text-xs" style="display:none;">CPF inválido. Verifique e tente novamente.</span>
+                    </div>
+                    <button type="button" id="gerarQrcodePix" class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold shadow-lg">
+                        Gerar QR Code PIX
+                    </button>
+                </div>
+
+                {{-- CPF section para PIX Automático --}}
+                <div id="pix_auto_acao" class="mt-3" style="display:none;">
+                    <div class="mb-2">
+                        <label for="cpf_auto" class="block mb-1 font-medium text-white text-sm">CPF <small>(obrigatório para PIX Automático)</small></label>
+                        <input type="text" id="cpf_auto" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="XXX.XXX.XXX-XX" />
+                        <span id="cpf_auto_erro" class="text-red-400 text-xs" style="display:none;">CPF inválido. Verifique e tente novamente.</span>
+                    </div>
+                    <button type="button" id="gerarQrcodePixAuto" class="flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 rounded-xl text-sm font-semibold shadow-lg">
+                        Gerar QR Code PIX Automático
+                    </button>
+                </div>
+
                 {{-- PIX --}}
                 <div id="pix_montar" class="mt-2" style="display: none;">
                     <img id="qrcode_img" class="mx-auto"  />
@@ -170,49 +184,9 @@
                     {{-- Cartão de Credito--}}
 
                     <div id="container_cartao" style="display: none;">
-                        <fieldset id="cardFields" class="border border-gray-300 p-1 rounded-lg">
-                            <legend class="text-lg font-semibold text-white">Endereço</legend>
-
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="w-full md:w-1/3">
-                                    <label for="zipcode" class="block mb-1 font-medium text-white text-sm">CEP</label>
-                                    <input type="text" name="zipcode" id="zipcode" placeholder="XXXXX-XXX"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-
-                                <div class="w-full md:w-1/2">
-                                    <label for="street" class="block mb-1 font-medium text-white text-sm">Rua</label>
-                                    <input type="text" name="street" id="street" placeholder="Rua"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/4">
-                                    <label for="number" class="block mb-1 font-medium text-white text-sm">Nº <small>(Opcional)</small></label>
-                                    <input type="text" name="number" id="number" placeholder="Nº"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg">
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="w-full md:w-1/3">
-                                    <label for="city" class="block mb-1 font-medium text-white text-sm">Cidade</label>
-                                    <input type="text" name="city" id="city" placeholder="Cidade"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/2">
-                                    <label for="neighborhood" class="block mb-1 font-medium text-white text-sm">Bairro</label>
-                                    <input type="text" name="neighborhood" id="neighborhood" placeholder="Bairro"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                                <div class="w-full md:w-1/4">
-                                    <label for="state" class="block mb-1 font-medium text-white text-sm">Estado</label>
-                                    <input type="text" name="state" id="state" placeholder="UF"
-                                           class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" required>
-                                </div>
-                            </div>
-                        </fieldset>
-
                         <fieldset id="cardDados" class="border border-gray-300 p-1 rounded-lg">
                             <legend class="text-lg font-semibold text-white">Dados Cartão</legend>
+
                             <div class="mb-2">
                                 <label for="numero_cartao" class="block mb-1 font-medium text-white text-sm">Número do Cartão</label>
                                 <input type="text" name="numero_cartao" required id="numero_cartao" placeholder="XXXX XXXX XXXX XXXX"
@@ -367,28 +341,6 @@
 
 
 
-                $("#zipcode").change(function(){
-                    let cep = $(this).val().replace("-","");
-                    const url = `https://viacep.com.br/ws/${cep}/json`;
-                    const options = {method: "GET",mode: "cors",
-                        headers: {'content-type': 'application/json;charset=utf-8'}
-                    }
-                    fetch(url,options).then(response => response.json()).then(
-                        data => {
-                            console.log(data);
-                            $("#street").val(data.logradouro);
-                            $("#neighborhood").val(data.bairro);
-
-                            $("#state").val(data.uf);
-                            $("#city").val(data.localidade);
-                        }
-                    )
-                    if($(this).val() != "") {
-                        $(".errorcep").html('');
-                    }
-                });
-
-
                 function getBandeira(numero) {
                     let bins = {
                         visa: [/^4[0-9]{5}/],
@@ -409,18 +361,12 @@
                 }
 
                 const phoneInput = document.getElementById('phone');
-                const cpfInput = document.getElementById('cpf');
-                const zipCode = document.getElementById('zipcode');
                 const cvvInput = document.getElementById('cvv');
                 const cardNumberInput = document.getElementById('numero_cartao');
                 const im = new Inputmask('(99) 9 9999-9999');
-                const cpf = new Inputmask('999.999.999-99');
-                const zip = new Inputmask('99999-999');
                 const cvv = new Inputmask('999');
                 const cardMask = new Inputmask('9999 9999 9999 9999');
                 im.mask(phoneInput);
-                cpf.mask(cpfInput);
-                zip.mask(zipCode);
                 cvv.mask(cvvInput);
                 cardMask.mask(cardNumberInput);
 
@@ -497,13 +443,6 @@
 
                     const isTrial = $('#trialCheckbox').is(':checked');
 
-                    if(!TestaCPF($("#cpf").val().replace(/[^0-9]/g,''))) {
-                        load.fadeOut(100).css("display", "none");
-                        toastr.error("O CPF informado é inválido. Verifique e tente novamente.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
                     if(!isTrial) {
                         let numero_cartao = $("#numero_cartao").val();
                         let bandeira_validar = getBandeira(numero_cartao.replace(/\s/g, "").substring(0,6));
@@ -702,115 +641,148 @@
                 });
 
 
-                $("#pixButton").on('click',function(){
-                    if ($("#container_cartao").is(":visible")) {
-                        $("#container_cartao").hide(); // ou .fadeOut()
-                    }
-
-                    $("#buttonSubmit").addClass("hidden");
-
-                    let cpf = $("#cpf").val();
-                    let nome = $("#name").val();
+                function validarCamposBasicos() {
+                    let nome  = $("#name").val();
                     let email = $("#email").val();
-                    let data_nascimento = $("#birth_date").val();
                     let phone = $("#phone").val();
                     let password = $("#password").val();
                     let password_confirmation = $("#password_confirmation").val();
 
-                    if(!cpf || !TestaCPF(cpf.replace(/[^0-9]/g,''))) {
-                        //load.fadeOut(100).css("display", "none");
-                        toastr.error("O CPF informado está vazio ou inválido. Verifique os dados e tente novamente.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
+                    if (!nome)  { toastr.error("Preencha o campo Nome.", "Erro"); return false; }
+                    if (!email) { toastr.error("Preencha o campo E-mail.", "Erro"); return false; }
+                    if (!phone) { toastr.error("Preencha o campo Telefone.", "Erro"); return false; }
+                    if (!password) { toastr.error("Preencha o campo Senha.", "Erro"); return false; }
+                    if (password !== password_confirmation) { toastr.error("As senhas não coincidem.", "Erro"); return false; }
+                    return true;
+                }
 
-                    if(!nome) {
-                        toastr.error("Por favor, preencha o campo Nome.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-                    if(!email) {
-                        toastr.error("Por favor, preencha o campo Email.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-                    if(!data_nascimento) {
-                        toastr.error("Por favor, preencha o campo data de nascimento.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-                    if(!phone) {
-                        toastr.error("Por favor, preencha o campo Telefone.", "Error",{
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-
-                    if (!password) {
-                        toastr.error("Por favor, preencha o campo Senha.", "Error", {
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-                    // Confirmação de Senha
-                    if (password !== password_confirmation) {
-                        toastr.error("As senhas não coincidem. Verifique e tente novamente.", "Error", {
-                            toastClass: "toast-custom-width"
-                        });
-                        return false;
-                    }
-
-
-
-
-
-                    $('#loading-cidades').fadeIn(150);
-                    $.ajax({
-                        url:"{{route('assinatura.pix')}}",
-                        method:"POST",
-                        data: {
-                            cpf,nome
-                        },
-                        success:function(res) {
-                            console.log(res);
-                            // if(res != "error") {
-                            //     $("#qrcode_img").attr("src", res.imagem);
-                            //     $("#copiacola_input").val(res.copiacola);
-                            //
-                            //     $("#txid").val(res.txid);
-                            //
-                            //     $("#pix_montar").fadeIn();
-                            //
-                            // } else {
-                            //
-                            // }
-                        },
-                        complete: function() {
-                            // Esconde loader sempre ao finalizar
-                            $('#loading-cidades').fadeOut(150);
-                            $('#resultado_pix').fadeIn();
-                        }
-                   });
+                // PIX — mostra campo CPF ao clicar
+                $("#pixButton").on('click', function () {
+                    if (!validarCamposBasicos()) return;
+                    if ($("#container_cartao").is(":visible")) $("#container_cartao").hide();
+                    if ($("#pix_auto_acao").is(":visible")) $("#pix_auto_acao").hide();
+                    if ($("#pix_montar").is(":visible")) $("#pix_montar").hide();
+                    $("#buttonSubmit").addClass("hidden");
+                    $("#pix_acao").fadeIn(200);
                 });
 
-                function verificarPagamento() {
-                    let transactionId = $("#txid").val(); // substitua pelo ID real da transação
+                // PIX — Gerar QR Code após validar CPF
+                $("#gerarQrcodePix").on('click', function () {
+                    let cpf  = $("#cpf").val().replace(/[^0-9]/g, '');
+                    if (!TestaCPF(cpf)) {
+                        $("#cpf_erro").show();
+                        return;
+                    }
+                    $("#cpf_erro").hide();
+
                     let nome = $("#name").val();
+                    $('#loading-cidades').fadeIn(150);
+                    $.ajax({
+                        url: "{{route('assinatura.pix.trial')}}",
+                        method: "POST",
+                        data: { cpf, nome, precoPlano: 29.90 },
+                        success: function (res) {
+                            if (res.txid) {
+                                $("#qrcode_img").attr("src", res.imagem);
+                                $("#copiacola_input").val(res.copiacola);
+                                $("#txid").val(res.txid);
+                                $("#pix_acao").hide();
+                                $("#pix_montar").fadeIn();
+                            } else {
+                                toastr.error("Erro ao gerar QR Code PIX.", "Erro");
+                            }
+                        },
+                        error: function () { toastr.error("Erro ao gerar QR Code PIX.", "Erro"); },
+                        complete: function () { $('#loading-cidades').fadeOut(150); }
+                    });
+                });
+
+                // PIX AUTOMÁTICO — mostra campo CPF ao clicar
+                $("#pixAutomaticoButton").on('click', function () {
+                    if (!validarCamposBasicos()) return;
+                    if ($("#container_cartao").is(":visible")) $("#container_cartao").hide();
+                    if ($("#pix_acao").is(":visible")) $("#pix_acao").hide();
+                    if ($("#pix_montar").is(":visible")) $("#pix_montar").hide();
+                    $("#buttonSubmit").addClass("hidden");
+                    $("#pix_auto_acao").fadeIn(200);
+                });
+
+                // PIX AUTOMÁTICO — Gerar QR Code após validar CPF
+                $("#gerarQrcodePixAuto").on('click', function () {
+                    let cpf = $("#cpf_auto").val().replace(/[^0-9]/g, '');
+                    if (!TestaCPF(cpf)) {
+                        $("#cpf_auto_erro").show();
+                        return;
+                    }
+                    $("#cpf_auto_erro").hide();
+
+                    let nome = $("#name").val();
+                    $('#loading-cidades').fadeIn(150);
+                    $.ajax({
+                        url: "{{ route('assinatura.pix.automatico') }}",
+                        method: "POST",
+                        data: { cpf, nome, precoPlano: 29.90 },
+                        success: function (res) {
+                            if (res.txid) {
+                                $("#qrcode_img").attr("src", res.imagem);
+                                $("#copiacola_input").val(res.copiacola);
+                                $("#txid").val(res.txid);
+                                $("#pix_montar").fadeIn();
+                                $("#pix_montar").prepend('<p class="text-center text-purple-700 font-semibold text-sm mb-2">⚡ Escaneie para autorizar o PIX Automático mensal</p>');
+                                intervaloAutomatico = setInterval(verificarPagamentoAutomatico, 5000);
+                            } else {
+                                toastr.error(res.error || "Erro ao gerar PIX Automático.", "Erro");
+                            }
+                        },
+                        error: function () { toastr.error("Erro ao gerar PIX Automático.", "Erro"); },
+                        complete: function () { $('#loading-cidades').fadeOut(150); }
+                    });
+                });
+
+                let intervaloAutomatico = null;
+
+                function verificarPagamentoAutomatico() {
+                    let txid     = $("#txid").val();
+                    let nome     = $("#name").val();
+                    let email    = $("#email").val();
+                    let phone    = $("#phone").val();
+                    let password = $("#password").val();
+                    let cpf      = $("#cpf_auto").val().replace(/[^0-9]/g, '');
+                    let imagem   = $("#imagem")[0]?.files[0];
+                    if (!txid) return;
+
+                    let formData = new FormData();
+                    formData.append("id", txid);
+                    formData.append("nome", nome);
+                    formData.append("email", email);
+                    formData.append("phone", phone);
+                    formData.append("password", password);
+                    formData.append("cpf", cpf);
+                    if (imagem) formData.append("imagem", imagem);
+
+                    $.ajax({
+                        url: "{{ route('verificar.pagamento.pix.automatico') }}",
+                        method: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function (res) {
+                            if (res.success) {
+                                clearInterval(intervaloAutomatico);
+                                window.location.href = res.redirect;
+                            }
+                        }
+                    });
+                }
+
+                function verificarPagamento() {
+                    let transactionId = $("#txid").val();
+                    let nome  = $("#name").val();
                     let email = $("#email").val();
-                    let data_nascimento = $("#birth_date").val();
-                    let cpf = $("#cpf").val();
+                    let cpf   = $("#cpf").val().replace(/[^0-9]/g, '');
                     let phone = $("#phone").val();
                     let password = $("#password").val();
-                    let imagem = $("#imagem")[0].files[0];
+                    let imagem = $("#imagem")[0]?.files[0];
 
 
 
@@ -819,11 +791,10 @@
                         formData.append("id", transactionId);
                         formData.append("nome", nome);
                         formData.append("email", email);
-                        formData.append("data_nascimento", data_nascimento);
                         formData.append("cpf", cpf);
                         formData.append("phone", phone);
-                        formData.append("imagem", imagem); // Anexa o arquivo
-                        formData.append("password",password);
+                        formData.append("password", password);
+                        if (imagem) formData.append("imagem", imagem);
 
 
                         $.ajax({
@@ -848,7 +819,7 @@
                     }
                 }
                 // Inicia o polling a cada 10 segundos
-                let intervalo = setInterval(verificarPagamento, 20000);
+                let intervalo = setInterval(verificarPagamento, 3000);
 
                 $("#copyButton").on('click', function(e) {
                     e.preventDefault();

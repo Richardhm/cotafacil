@@ -181,7 +181,11 @@
 
 
     </style>
-    <script type='text/javascript'>var s=document.createElement('script');s.type='text/javascript';var v=parseInt(Math.random()*1000000);s.src='https://cobrancas-h.api.efipay.com.br/v1/cdn/3c8b1529ac6f42b8d524cce476dca9ab/'+v;s.async=false;s.id='3c8b1529ac6f42b8d524cce476dca9ab';if(!document.getElementById('3c8b1529ac6f42b8d524cce476dca9ab')){document.getElementsByTagName('head')[0].appendChild(s);};$gn={validForm:true,processed:false,done:{},ready:function(fn){$gn.done=fn;}};</script>
+    @php
+        $gnHost      = config('gerencianet.is_sandbox') ? 'cobrancas-h.api.efipay.com.br' : 'cobrancas.api.efipay.com.br';
+        $gnAccountId = config('gerencianet.cdn_account_id');
+    @endphp
+    <script type='text/javascript'>var s=document.createElement('script');s.type='text/javascript';var v=parseInt(Math.random()*1000000);s.src='https://{{ $gnHost }}/v1/cdn/{{ $gnAccountId }}/'+v;s.async=false;s.id='{{ $gnAccountId }}';if(!document.getElementById('{{ $gnAccountId }}')){document.getElementsByTagName('head')[0].appendChild(s);};$gn={validForm:true,processed:false,done:{},ready:function(fn){$gn.done=fn;}};</script>
 </head>
 <body class="font-sans text-gray-900 antialiased">
 
