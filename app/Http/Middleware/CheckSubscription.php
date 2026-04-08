@@ -43,9 +43,13 @@ class CheckSubscription
                     ->with('error', 'Assinatura expirada. Entre em contato com o administrador.');
             }
 
-            // Cartão — bloqueia quando status não é 'ativo' nem 'trial'
-            // (ex: overdue, inactive, canceled vindos do webhook da Efi)
-            if ($assinatura->tipo === 'cartao' && !in_array($assinatura->status, ['ativo', 'trial'])) {
+            // Cartão — bloqueia por status inativo OU next_charge vencido há mais de 5 dias
+            $cartaoInadimplente = $assinatura->tipo === 'cartao' && (
+                !in_array($assinatura->status, ['ativo', 'trial']) ||
+                ($assinatura->next_charge && now()->gt($assinatura->next_charge->addDays(5)))
+            );
+
+            if ($cartaoInadimplente) {
                 if ($isAdmin) {
                     return redirect()->route('assinatura.edit')
                         ->with('error', 'Sua assinatura está com pagamento pendente. Por favor, atualize seu cartão.');

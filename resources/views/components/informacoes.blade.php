@@ -11,7 +11,9 @@
                 <select id="estado" class="py-2 py-2 text-black w-full dark:border-white text-xs px-1 me-2 mb-2 font-medium rounded-lg dark:bg-transparent dark:text-white">
                     <option value="" class="text-xs text-black">Escolher UF</option>
                     @foreach($estados as $uf)
-                        <option value="{{$uf->uf}}" {{$ufpreferencia == $uf->uf ? 'selected' : ''}} class="text-black">{{$uf->uf}} - {{$uf->descricao}}</option>
+                        @if($uf != null)
+                            <option value="{{$uf->uf}}" {{$ufpreferencia == $uf->uf ? 'selected' : ''}} class="text-black">{{$uf->uf}} - {{$uf->descricao}}</option>
+                        @endif
                     @endforeach
                 </select>
             </div>

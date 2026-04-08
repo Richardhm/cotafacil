@@ -98,12 +98,158 @@ class UserController extends Controller
 
     }
 
-
-
-
-
-
     public function storeUser(Request $request)
+    {
+
+
+
+        $validated = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20|unique:users,phone',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'email.unique' => 'Este e-mail já está cadastrado no sistema.',
+            'phone.unique' => 'Este telefone já está cadastrado no sistema.',
+        ]);
+
+        $emails_cobrados = 0;
+        DB::beginTransaction();
+
+
+
+
+        try {
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('users', 'public');
+            }
+
+            // Passo 1: Criar o usuário
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'password' => bcrypt('12345678'), // Senha padrão criptografada
+                'imagem' => $imagePath
+            ]);
+
+
+
+            $user->email_verified_at = now(); // Define o usuário como verificado
+            $user->primeiro_acesso = 1;
+            $user->save();
+
+
+
+            // Passo 2: Obter a Assinatura do Administrador
+            $assinatura = Assinatura::where('user_id', auth()->id())->firstOrFail();
+
+
+
+
+
+            if($assinatura->user_id != 117 && $assinatura->user_id != 190) {
+
+                if (!$assinatura) {
+                    throw new \Exception("Assinatura não encontrada.");
+                }
+
+                $cupom_status = false;
+                if($assinatura->cupom_id and empty($assinatura->tipo_plano_id)) {
+                    $cupom = Cupom::find($assinatura->cupom_id);
+                    $preco_base = $assinatura->preco_base;
+                    $limite_gratuito = $assinatura->emails_permitidos;
+                    $preco_extra_por_email = $assinatura->preco_base;
+                    $cupom_status = true;
+                } elseif (empty($assinatura->cupom_id) && in_array($assinatura->tipo_plano_id, [1, 2])) {
+
+
+
+
+                    $plan = TipoPlano::find($assinatura->tipo_plano_id);
+
+
+
+
+
+                    $preco_base = $plan->valor_base;
+                    $limite_gratuito = $assinatura->emails_permitidos;
+                    $preco_extra_por_email = $plan->valor_por_email;
+                }
+                $assinatura->emails_extra += 1;
+
+
+                //            // Verifica se já passou do limite gratuito
+                if ($assinatura->emails_extra > $limite_gratuito) {
+                    $emails_cobrados = $assinatura->emails_extra - $limite_gratuito;
+                    if($cupom_status) {
+                        $valor_total_sem_desconto = $preco_base + ($emails_cobrados * $preco_extra_por_email);
+                        $assinatura->preco_total = max($valor_total_sem_desconto - $cupom->desconto_plano, 0); // nunca menor que 0
+                    } else {
+                        $assinatura->preco_total = $preco_base + ($emails_cobrados * $preco_extra_por_email);
+                    }
+                } else {
+                    $assinatura->preco_total = $preco_base; // Se ainda está no limite gratuito, mantém o preço base
+                }
+//
+
+                $assinatura->save();
+
+//                if($assinatura->status != "trial" && $assinatura->tipo != "PIX") {
+//                    $this->atualizarAssinaturaEFi($assinatura);
+//                }
+
+
+            }
+
+
+
+
+//
+//
+
+//
+
+//
+//            // Passo 3: Cadastrar o novo e-mail na Tabela `emails_assinatura`
+
+
+
+
+            EmailAssinatura::create([
+                'assinatura_id' => (int) $assinatura->id,
+                'email' => $validated['email'],
+                'user_id' => (int) $user->id,
+                'is_administrador' => false,
+            ]);
+
+            DB::commit(); // Confirma as transações
+
+            // Recuperar todos os usuários da assinatura
+            $users = User::whereIn(
+                'id',
+                EmailAssinatura::where('assinatura_id', $assinatura->id)
+                    ->pluck('user_id')
+            )
+                //->where('status', 1)
+                ->orderBy("id","desc")
+                ->get();
+
+            // Retornar o HTML da tabela de usuários
+            $html = view('partials.user-table', compact('users'))->render();
+            return response()->json(['success' => true, 'html' => $html,'emails_extra' => $assinatura->emails_extra,'preco_total' => number_format($assinatura->preco_total,2,",","."),'emails_cobrados' => $emails_cobrados]);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Reverte em caso de erro
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+
+    }
+
+
+
+
+    public function storeUserold(Request $request)
     {
         // Validação dos dados
         $validated = $request->validate([
@@ -220,24 +366,31 @@ class UserController extends Controller
 
     public function alterar(Request $request)
     {
-
-
-
         $user_id = (int) $request->userId;
-        $status = $request->status == 'false' ? 0 : 1;
+        $status  = $request->status == 'false' ? 0 : 1;
 
+        // Administrador não pode se auto-desativar
+        if ($user_id === (int) auth()->id()) {
+            return response()->json(['success' => false, 'error' => 'Você não pode desativar sua própria conta.'], 403);
+        }
 
-
-        DB::beginTransaction(); // Inicia transação
+        DB::beginTransaction();
 
         try {
-            // Buscar o usuário
-            $user = User::find($user_id);
-
-            $id = (int) auth()->id();
+            $user = User::findOrFail($user_id);
+            $id   = (int) auth()->id();
 
             // Buscar a assinatura do administrador
-            $assinatura = Assinatura::where('user_id',$id)->first();
+            $assinatura = Assinatura::where('user_id', $id)->firstOrFail();
+
+            // Verificar se o usuário pertence à assinatura do admin
+            $pertence = EmailAssinatura::where('assinatura_id', $assinatura->id)
+                ->where('user_id', $user_id)
+                ->exists();
+
+            if (!$pertence) {
+                return response()->json(['success' => false, 'error' => 'Usuário não pertence à sua assinatura.'], 403);
+            }
 
 
             $cupom_status = false;
@@ -304,12 +457,7 @@ class UserController extends Controller
             $user->status = $status;
             $user->save();
 
-            if($assinatura->status != "trial" && $assinatura->tipo != "PIX") {
-                $this->atualizarAssinaturaEFi($assinatura);
-            }
-
-
-            DB::commit(); // Confirma as transações
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -330,7 +478,7 @@ class UserController extends Controller
     }
 
 
-    public function storeUserOld(Request $request)
+    public function storeUserOld2222(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -471,21 +619,25 @@ class UserController extends Controller
     {
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $request->id_edit,
-            'phone' => 'nullable|string|max:20',
+            'name'   => 'required|string|max:255',
+            'email'  => 'required|email|max:255|unique:users,email,' . $request->id_edit,
+            'phone'  => 'nullable|string|max:20|unique:users,phone,' . $request->id_edit,
             'imagem' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'email.unique' => 'Este e-mail já está cadastrado no sistema.',
+            'phone.unique' => 'Este telefone já está cadastrado no sistema.',
         ]);
 
         $user = User::find($request->id_edit);
         $imagemAntiga = $user->imagem;
 
         // Atualiza os campos do usuário
-        $user->name = $request->name;
+        $emailAntigo = $user->email;
+
+        $user->name  = $request->name;
         $user->email = $request->email;
         $user->phone = $request->phone;
 
-        // Processa a imagem se foi enviada
         if ($request->hasFile('imagem')) {
             if (!empty($user->imagem) && Storage::disk('public')->exists($imagemAntiga)) {
                 Storage::disk('public')->delete($imagemAntiga);
@@ -495,6 +647,12 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        // Atualiza o email na tabela emails_assinatura se mudou
+        if ($emailAntigo !== $request->email) {
+            EmailAssinatura::where('user_id', $user->id)
+                ->update(['email' => $request->email]);
+        }
 
         $assinatura_id = Assinatura::where("user_id",auth()->user()->id)->first()->id;
 

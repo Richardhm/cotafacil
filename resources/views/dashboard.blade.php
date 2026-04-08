@@ -100,6 +100,20 @@
 {{--                </div>--}}
 
                 <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+                    <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="apartamentoAmbulatorial" checked class="form-checkbox">
+                            <span class="font-semibold">Apartamento</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="enfermariaAmbulatorial" checked class="form-checkbox">
+                            <span class="font-semibold">Enfermaria</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
                     <legend class="text-lg font-semibold px-2 mx-auto">Tipo Documento</legend>
                     <div class="flex justify-between items-center">
                         <label class="flex items-center space-x-2">
@@ -153,6 +167,20 @@
                     <span class="font-semibold">Apenas Valores</span>
                 </label>
             </div>
+
+            <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+                <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
+                <div class="space-y-2">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="apartamento" checked class="form-checkbox">
+                        <span class="font-semibold">Apartamento</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="enfermaria" checked class="form-checkbox">
+                        <span class="font-semibold">Enfermaria</span>
+                    </label>
+                </div>
+            </fieldset>
 
             <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
                 <legend class="text-lg font-semibold px-2 mx-auto">Tipo Documento</legend>

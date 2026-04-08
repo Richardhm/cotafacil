@@ -32,7 +32,13 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <x-primary-button class="w-full text-center flex justify-center">{{ __('Salvar') }}</x-primary-button>
+            <x-primary-button id="password-submit-btn" class="w-full text-center flex justify-center items-center gap-2">
+                <svg id="password-submit-spinner" class="hidden animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                <span id="password-submit-text">{{ __('Salvar') }}</span>
+            </x-primary-button>
 
             @if (session('status') === 'password-updated')
                 <p
@@ -46,3 +52,15 @@
         </div>
     </form>
 </section>
+
+<script>
+document.getElementById('passwordForm').addEventListener('submit', function () {
+    const btn     = document.getElementById('password-submit-btn');
+    const spinner = document.getElementById('password-submit-spinner');
+    const text    = document.getElementById('password-submit-text');
+
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    text.textContent = 'Salvando...';
+});
+</script>

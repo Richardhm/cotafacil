@@ -129,24 +129,32 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request)
     {
-        {
-            try {
-                $user = $request->user();
-                $imagemAntiga = $user->imagem;
+        try {
+            $user         = $request->user();
+            $imagemAntiga = $user->imagem;
+            $emailAntigo  = $user->email;
 
-                $user->fill($request->validated());
+            $user->fill($request->validated());
 
-                if ($request->hasFile('imagem')) {
-                    if (!empty($user->imagem) && Storage::disk('public')->exists($imagemAntiga)) {
-                        Storage::disk('public')->delete($imagemAntiga);
-                    }
-                    $user->imagem = $request->file('imagem')->store('users', 'public');
+            if ($request->hasFile('imagem')) {
+                if (!empty($imagemAntiga) && Storage::disk('public')->exists($imagemAntiga)) {
+                    Storage::disk('public')->delete($imagemAntiga);
                 }
-                $user->save();
-                return redirect()->back()->with('success', 'Atualizado com sucesso!');
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'Erro ao atualizar: ' . $e->getMessage());
+                $user->imagem = $request->file('imagem')->store('users', 'public');
             }
+
+            // Se o email mudou, sincroniza emails_assinatura e reseta verificação
+            if ($emailAntigo !== $user->email) {
+                EmailAssinatura::where('user_id', $user->id)
+                    ->update(['email' => $user->email]);
+                $user->email_verified_at = null;
+            }
+
+            $user->save();
+
+            return redirect()->back()->with('success', 'Perfil atualizado com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao atualizar: ' . $e->getMessage());
         }
     }
     /**

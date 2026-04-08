@@ -7,6 +7,8 @@ use App\Models\AdministradoraPlano;
 use App\Models\Assinatura;
 use App\Models\Carencia;
 use App\Models\Desconto;
+use App\Models\Codigo;
+use App\Models\CodigoAmbulatorial;
 use App\Models\EmailAssinatura;
 use App\Models\Layout;
 use App\Models\PdfExcecao;
@@ -191,16 +193,6 @@ class DashboardController extends Controller
 
 
 
-
-
-
-
-
-
-
-
-
-
     public function index()
     {
 
@@ -223,7 +215,15 @@ class DashboardController extends Controller
         // Buscar cidades pela assinatura
         //$cidades = $user->assinaturas->tabelasOrigens ?? collect();
         $cidades = $vinculos->pluck('cidade')->unique('id')->values();
+
+
         $estados = $vinculos->pluck('cidade')->unique('uf')->sortBy('uf')->values();
+
+
+
+
+
+
         return view('dashboard',[
             'cidades' => $cidades,
             'administradoras' => $administradoras,
@@ -246,6 +246,7 @@ class DashboardController extends Controller
         $administradoraIds = DB::table('tabelas')
             ->select('administradora_id')
             ->where('tabela_origens_id', $cidade)
+            ->where('administradora_id',"!=",3)
             ->groupBy('administradora_id')
             ->pluck('administradora_id');
         $operadoras = Administradora::whereIn('id', $administradoraIds)
@@ -273,17 +274,6 @@ class DashboardController extends Controller
         return response()->json($cidades);
     }
 
-
-//    public function buscar_planos(Request $request)
-//    {
-//        $administradora_id = $request->input('administradora_id');
-//        $tabela_origens_id = $request->input('tabela_origens_id');
-//        $planos = DB::table('administradora_planos')
-//            ->where('administradora_id', $administradora_id)
-//            ->where('tabela_origens_id', $tabela_origens_id)
-//            ->pluck('plano_id');
-//        return response()->json(['planos' => $planos]);
-//    }
 
     public function buscar_planos(Request $request)
     {
@@ -348,48 +338,28 @@ class DashboardController extends Controller
 
 
 
-
-
-
-
-    public function buscar_planosoldddddd222(Request $request)
+    public function buscar_planos_2(Request $request)
     {
+
+
+        $assinaturaId = \App\Models\EmailAssinatura::where('email', auth()->user()->email)->first()->assinatura_id;
+
+
+
         $administradora_id = $request->input('administradora_id');
         $tabela_origens_id = $request->input('tabela_origens_id');
 
-        //$assinaturaId = \App\Models\EmailAssinatura::where('email', auth()->user()->email)->first()->assinatura_id;
 
-        // Buscar os planos e grupos vinculados
-        $grupos = DB::table('planos')
-            ->join('plano_group', 'planos.plano_group_id', '=', 'plano_group.id')
-            ->join('administradora_planos', 'planos.id', '=', 'administradora_planos.plano_id')
-            ->where('administradora_planos.administradora_id', $administradora_id)
-            ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
-            //->where('administradora_planos.assinatura_id', $assinaturaId)
-            ->select('planos.id as plano_id', 'planos.nome as plano_nome', 'plano_group.id as grupo_id', 'plano_group.nome as grupo_nome')
-            ->orderBy('plano_group.nome') // Ordena os grupos
-            ->orderBy('planos.nome') // Ordena os planos dentro de cada grupo
-            ->get();
+        $planos = DB::table('administradora_planos')
+            ->where('administradora_id', $administradora_id)
+            ->where('tabela_origens_id', $tabela_origens_id)
+            ->where('assinatura_id',$assinaturaId)
+            ->pluck('plano_id');
 
-        // Agrupar os dados para retornar como JSON organizado por grupos
-        $planosPorGrupo = $grupos->groupBy('grupo_nome')->map(function ($grupo) {
-            return $grupo->map(function ($plano) {
-                return [
-                    'id' => $plano->plano_id,
-                    'nome' => $plano->plano_nome,
-                ];
-            });
-        });
 
-        return response()->json(['planos_por_grupo' => $planosPorGrupo]);
+
+        return response()->json(['planos' => $planos]);
     }
-
-
-
-
-
-
-
 
     public function orcamento(Request $request)
     {
@@ -412,6 +382,7 @@ class DashboardController extends Controller
         $imagem_plano = Administradora::find($operadora)->logo;
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
 
+
         if($ambulatorial == 0) {
             $dados = Tabela::select('tabelas.*')
                 ->selectRaw("CASE $sql END AS quantidade")
@@ -427,6 +398,12 @@ class DashboardController extends Controller
             if($desconto == 1) {
                 $status_desconto = 1;
             }
+
+
+
+
+
+
 
             $status = $dados->contains('odonto', 0);
             $status_odonto = $dados->contains('odonto',1);
@@ -474,6 +451,10 @@ class DashboardController extends Controller
 
     public function criarPDF()
     {
+
+
+
+
         $com_coparticipacao = request()->comcoparticipacao  == "true" ? 1 : 0;
         $sem_coparticipacao = request()->semcoparticipacao  == "true" ? 1 : 0;
         //$status_desconto    = request()->status_desconto    == "true" ? 1 : 0;
@@ -537,6 +518,13 @@ class DashboardController extends Controller
                 ->get();
 
 
+            $codigo = Codigo::where("tabela_origens_id",$cidade)
+                ->where("plano_id",$plano)
+                ->where("administradora_id",$operadora)
+                ->where("odonto",$odonto)->first();
+
+
+
             $valor_desconto = 0;
             if($status_desconto) {
                 $desconto = Desconto::where('plano_id', $plano)->where('tabela_origens_id', $cidade)->where('administradora_id',$operadora)->first();
@@ -570,10 +558,16 @@ class DashboardController extends Controller
             if ($excecaoFolder) {
                 $layout_folder = $excecaoFolder->folder;
             } else {
+
                 $layout_folder = auth()->user()->isFolder() ?: '';
+
             }
+
+
+
             $quantidade_cop = 0;
-            $viewName = "cotacao.modelo2";
+
+            $viewName = "cotacao.modelo{$layout_user}";
             if($apenasvalores == 0) {
                 $pdf_excecao = PdfExcecao::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->count();
                 if($pdf_excecao == 1) {
@@ -617,13 +611,20 @@ class DashboardController extends Controller
 
 
                 $carencia = Carencia::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->get();
+
+
                 $quantidade_carencia = Carencia::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->count();
+
+
+
                 $view = \Illuminate\Support\Facades\View::make($viewName,[
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,
+                    'assinatura' => $assinatura,
                     'apenas_valores' => $apenasvalores,
                     'folder' => $layout_folder,
                     'linha_01' => $linha_01,
+                    'codigo' => $codigo,
                     'quantidade_carencia' => $quantidade_carencia,
                     'quantidade_copar' => $quantidade_cop,
                     //'carencia' => 0,
@@ -742,6 +743,8 @@ class DashboardController extends Controller
             $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
             $viewName = "cotacao.modelo-ambulatorial{$layout_user}";
 
+            $layout_folder = auth()->user()->isFolder() ?: '';
+
             $frase = "Ambulatorial ".$odonto_frase;
 
             $imagem_user = "";
@@ -760,6 +763,12 @@ class DashboardController extends Controller
                 ->where("acomodacao_id","=",3)
                 ->whereIn('tabelas.faixa_etaria_id', explode(',',$keys))
                 ->get();
+
+            $codigo = CodigoAmbulatorial::where("tabela_origens_id",$cidade)
+                ->where("plano_id",$plano)
+                ->where("administradora_id",$operadora)
+                ->where("odonto",$odonto)->first();
+
 
             $hasTabelaOrigens = Pdf::where('plano_id', $plano)
                 ->where('tabela_origens_id',$cidade)
@@ -826,6 +835,8 @@ class DashboardController extends Controller
                 'sem_coparticipacao' => 1,
                 'image' => $imagem_user,
                 'dados' => $dados,
+                'codigo' => $codigo,
+                'folder' => $layout_folder,
                 'pdf' => $pdf_copar,
                 'plano_nome' => "Individual",
                 'linha_01' => $linha_01,

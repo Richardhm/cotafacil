@@ -85,7 +85,7 @@
                         @endphp
                         <tr>
                             <td class="px-2 py-1 font-bold text-white">
-                                {{ $firstVinculo->assinatura->user->name }} ({{ $firstVinculo->assinatura->user->email }})
+                                
                             </td>
                             <td class="px-2 py-1">
                                 <button onclick="toggleVinculos('{{ $assinaturaId }}')"

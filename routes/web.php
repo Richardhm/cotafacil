@@ -82,9 +82,6 @@ Route::post("/pdf",[DashboardController::class,'criarPDF'])->middleware(['auth',
 Route::post("/tabela/pdf",[DashboardController::class,'tabelaCompleta'])->middleware(['auth', 'verified'])->name('tabela.gerar');
 Route::post("/tabela/ambulatorial/pdf",[DashboardController::class,'tabelaCompletaAmbulatorial'])->middleware(['auth', 'verified'])->name('tabela.gerar-ambulatorial');
 
-
-
-
 Route::get('/assinaturas/plano', [AssinaturaController::class, 'createIndividual'])->name('assinaturas.individual.create');
 Route::post('/assinaturas/individual', [AssinaturaController::class, 'storeIndividual'])->name('assinaturas.individual.store');
 Route::post('/assinatura/pix',[AssinaturaController::class, 'pix'])->name('assinatura.pix');
@@ -92,7 +89,6 @@ Route::post('/assinatura/trial/pix',[AssinaturaController::class, 'pixTrial'])->
 
 Route::post('/verificar-pagamento', [AssinaturaController::class, 'verificarPagamento'])->name('verificar.pagamento');
 Route::post('/pix/verificar-pagamento', [AssinaturaController::class, 'verificarPagamentoPIX'])->name('verificar.pagamento.pix');
-
 
 Route::get('/assinatura/historico', [AssinaturaController::class, 'historicoPagamentos'])->middleware(['auth', 'verified','check'])->name('assinatura.historico');
 Route::get('/assinatura/pix/historico', [AssinaturaController::class, 'historicoPagamentosPix'])->middleware(['auth', 'verified','check'])->name('assinatura.historico.pix');

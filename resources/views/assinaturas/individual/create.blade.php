@@ -32,6 +32,11 @@
                         <label for="email" class="block mb-1 font-medium text-white text-sm">Email</label>
                         <input type="email" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="Seu Email" required />
                     </div>
+                    <div class="mb-2">
+                        <label for="email_confirmation" class="block mb-1 font-medium text-white text-sm">Confirmar Email</label>
+                        <input type="email" id="email_confirmation" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="Confirme seu Email" required autocomplete="off" />
+                        <p id="email-confirm-error" class="text-red-300 text-xs mt-1 hidden">Os e-mails não coincidem.</p>
+                    </div>
                     <div class="mb-3">
                         <label for="phone" class="block mb-1 font-medium text-white text-sm">Telefone</label>
                         <input type="text" name="phone" id="phone" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-1.5 rounded-lg" placeholder="(XX) X XXXX-XXXX" required />
@@ -309,6 +314,17 @@
                 }
             });
 
+            // Feedback em tempo real na confirmação de e-mail
+            document.getElementById('email_confirmation').addEventListener('input', function () {
+                const email = document.getElementById('email').value;
+                const error = document.getElementById('email-confirm-error');
+                if (this.value && this.value !== email) {
+                    error.classList.remove('hidden');
+                } else {
+                    error.classList.add('hidden');
+                }
+            });
+
 
 
 
@@ -437,6 +453,8 @@
 
                 $("form[name='cadastrar_individual']").on('submit',function(e){
                     e.preventDefault();
+
+                    if (!validarCamposBasicos()) return;
 
                     let load = $(".ajax_load");
                     load.fadeIn(100).css("display", "flex");
@@ -644,12 +662,20 @@
                 function validarCamposBasicos() {
                     let nome  = $("#name").val();
                     let email = $("#email").val();
+                    let email_confirmation = $("#email_confirmation").val();
                     let phone = $("#phone").val();
                     let password = $("#password").val();
                     let password_confirmation = $("#password_confirmation").val();
 
                     if (!nome)  { toastr.error("Preencha o campo Nome.", "Erro"); return false; }
                     if (!email) { toastr.error("Preencha o campo E-mail.", "Erro"); return false; }
+                    if (!email_confirmation) { toastr.error("Preencha o campo Confirmar Email.", "Erro"); return false; }
+                    if (email !== email_confirmation) {
+                        $("#email-confirm-error").removeClass("hidden");
+                        toastr.error("Os e-mails não coincidem.", "Erro");
+                        return false;
+                    }
+                    $("#email-confirm-error").addClass("hidden");
                     if (!phone) { toastr.error("Preencha o campo Telefone.", "Erro"); return false; }
                     if (!password) { toastr.error("Preencha o campo Senha.", "Erro"); return false; }
                     if (password !== password_confirmation) { toastr.error("As senhas não coincidem.", "Erro"); return false; }

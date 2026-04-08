@@ -107,12 +107,21 @@ class CallbackController extends Controller
 
     private function processSubscription(array $subscriptionEvent)
     {
-        // Atualizar dados principais da assinatura
+        $statusMap = [
+            'active'    => 'ativo',
+            'inactive'  => 'inativo',
+            'suspended' => 'inativo',
+            'canceled'  => 'cancelado',
+        ];
+
+        $statusEfi = $subscriptionEvent['status']['current'];
+        $status    = $statusMap[$statusEfi] ?? $statusEfi;
+
         Assinatura::updateOrCreate(
             ['subscription_id' => $subscriptionEvent['identifiers']['subscription_id']],
             [
-                'status' => $subscriptionEvent['status']['current'],
-                'last_updated' => $subscriptionEvent['created_at']
+                'status'       => $status,
+                'last_updated' => $subscriptionEvent['created_at'],
             ]
         );
     }
@@ -203,13 +212,18 @@ class CallbackController extends Controller
             ]
         );
 
-        // Atualizar status geral se for pagamento
-        if ($chargeEvent['status']['current'] === 'paid') {
+        $chargeStatus = $chargeEvent['status']['current'];
+
+        if ($chargeStatus === 'paid') {
             Assinatura::where('subscription_id', $chargeEvent['identifiers']['subscription_id'])
                 ->update([
+                    'status'       => 'ativo',
                     'last_payment' => Carbon::parse($chargeEvent['received_by_bank_at']),
-                    'next_charge' => Carbon::parse($chargeEvent['created_at'])->addMonth()
+                    'next_charge'  => Carbon::parse($chargeEvent['received_by_bank_at'])->addMonth(),
                 ]);
+        } elseif (in_array($chargeStatus, ['unpaid', 'overdue', 'canceled'])) {
+            Assinatura::where('subscription_id', $chargeEvent['identifiers']['subscription_id'])
+                ->update(['status' => 'inativo']);
         }
     }
 

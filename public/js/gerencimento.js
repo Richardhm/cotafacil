@@ -129,9 +129,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(error => {
                     load.style.display = "none";
-                    toastr.error("Erro ao tentar cadastrar usuario.", "Erro");
-                    //console.log('Error:', error);
-                    //alert('Erro ao enviar os dados.');
+                    if (error.status === 422) {
+                        error.json().then(data => {
+                            Object.values(data.errors).forEach(msgs => {
+                                msgs.forEach(msg => toastr.error(msg, 'Erro'));
+                            });
+                        });
+                    } else {
+                        toastr.error("Erro ao tentar cadastrar usuário.", "Erro");
+                    }
                 });
         });
     }
@@ -263,21 +269,24 @@ $(document).ready(function(){
         load.fadeIn(100).css("display", "flex");
         let userId = $(this).data('id');
         let status = $(this).is(':checked');
+        let $toggle = $(this);
 
         $.ajax({
-            url:routes.usersAlterar,
-            method:"POST",
-            data: {
-                userId,
-                status
-            },
-            success:function(res) {
-                console.log(res);
+            url: routes.usersAlterar,
+            method: "POST",
+            data: { userId, status },
+            success: function (res) {
                 load.fadeOut(100).css("display", "none");
-
-                document.querySelector('.preco_total').textContent  = res.preco_total;
-
-
+                document.querySelector('.preco_total').textContent = res.preco_total;
+            },
+            error: function (xhr) {
+                load.fadeOut(100).css("display", "none");
+                // Reverter o toggle para o estado anterior
+                $toggle.prop('checked', !status);
+                let msg = xhr.responseJSON && xhr.responseJSON.error
+                    ? xhr.responseJSON.error
+                    : 'Erro ao alterar status do usuário.';
+                toastr.error(msg, 'Erro');
             }
         });
     });
@@ -304,8 +313,14 @@ $(document).ready(function(){
                 }
             },
             error: function (xhr) {
-                console.log("Erro ao atualizar os dados:", xhr.responseJSON);
-                //alert("Erro ao atualizar os dados.");
+                load.fadeOut(100).css("display", "none");
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    Object.values(xhr.responseJSON.errors).forEach(function (msgs) {
+                        msgs.forEach(function (msg) { toastr.error(msg, 'Erro'); });
+                    });
+                } else {
+                    toastr.error("Erro ao atualizar os dados.", "Erro");
+                }
             },
         });
     });
