@@ -328,7 +328,23 @@
 
             font-size: 1.6em;
 
+        }
 
+
+
+        .header-orange-parcial {
+
+            background: rgb(254,199,72);
+
+            color: rgb(8,73,189);
+
+            padding: 20px;
+
+            border-radius: 55px 55px 0 0;
+
+            font-weight: bold;
+
+            font-size: 1.6em;
 
         }
 
@@ -418,6 +434,30 @@
 
 
 
+        .valor-copart-parcial {
+
+            background: rgb(255,248,124);
+
+            padding: 12px !important;
+
+            margin: 5px 3px;
+
+            border-radius: 8px;
+
+            color: rgb(8,73,189);
+
+            font-weight: bold;
+
+            display: block;
+
+            font-size:1.6em;
+
+            text-align:center;
+
+        }
+
+
+
         .valor-copart-laranja {
 
             background: #F88058;
@@ -437,6 +477,68 @@
             font-size:1.6em;
 
             text-align:center;
+
+        }
+
+
+
+        .valor-copart-laranja-parcial {
+
+            background: rgb(254,199,72);
+
+            padding: 12px !important;
+
+            margin: 5px 3px;
+
+            border-radius: 0 0 55px 55px;
+
+            color: rgb(8,73,189);
+
+            font-weight: bold;
+
+            display: block;
+
+            font-size:1.6em;
+
+            text-align:center;
+
+        }
+
+
+
+        .valor-copart-desconto-parcial {
+
+            background: rgb(255,248,124);
+
+            padding: 8px !important;
+
+            margin: 5px 3px;
+
+            border-radius: 8px;
+
+            color: rgb(8,73,189);
+
+            font-weight: bold;
+
+            display: block;
+
+            font-size:1.6em;
+
+            text-align:center;
+
+        }
+
+
+
+        .bloco-container-desconto {
+
+            width: 100%;
+
+            margin: 0 auto;
+
+            border-spacing: 5px;
+
+            border-collapse: separate;
 
         }
 
@@ -472,15 +574,11 @@
 
             margin-top: 1px;
 
-            overflow: hidden; /* Contém os floats */
-
-            background-color: white;
+            background-color: #F88058;
 
             border-radius: 55px;
 
             padding: 15px;
-
-            min-height: 480px;
 
         }
 
@@ -488,7 +586,7 @@
 
         .procedimento-left {
 
-            float: left;
+            display: inline-block;
 
             width: 60%;
 
@@ -500,7 +598,7 @@
 
         .procedimento-right {
 
-            float: right;
+            display: inline-block;
 
             width: 35%;
 
@@ -770,12 +868,12 @@
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}} ">
                     <table width="100%">
                         <tr>
-                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÇÃO *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÇÃO *</td>
                         </tr>
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
                             <tr>
                                 <td colspan="2">
-                                    <div class="valor-copart">
+                                    <div class="valor-copart-parcial">
                                         @php
                                             $totalEnfermaria_sem_copar += $valores['3_sem_copar'];
                                         @endphp
@@ -787,17 +885,61 @@
                         <tfoot>
                             <tr>
                                 <td colspan="2">
-                                    <div class="valor-copart-laranja">
+                                    <div class="valor-copart-laranja-parcial">
                                         {{number_format($totalEnfermaria_sem_copar,2,",",".")}}
                                     </div>
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
-                <tr>
             @endif
         </tr>
     </table>
+
+    @if($desconto == 1)
+        <table class="bloco-container-desconto" style="margin-top:10px;" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+                <td class="bloco" style="width: 22%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:8%;'}}">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td>
+                                <div class="valor-copart" style="border-radius:50px;font-size: 1.4em;">
+                                    Des. {{ (int) $valor_desconto}}% 3/meses
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                @if($com_coparticipacao == 1)
+                    <td class="bloco" style="width: {{ $widths[$totalBlocos] }}; margin: {{ $margins[$totalBlocos] }};">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td>
+                                    <div class="valor-copart" style="border-radius:50px;font-size: 1.4em;">
+                                        {{ number_format($totalApartamento_com_copar * (1 - ($valor_desconto / 100)), 2, ",", ".") }}
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                @endif
+                @if($sem_coparticipacao == 1)
+                    <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}}">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td>
+                                    <div class="valor-copart-desconto-parcial" style="border-radius:50px;font-size: 1.4em;">
+                                        {{ number_format($totalEnfermaria_sem_copar * (1 - ($valor_desconto / 100)), 2, ",", ".") }}
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                @endif
+            </tr>
+        </table>
+    @endif
+
     @php
 
         if($linhas <= 5) {
@@ -818,7 +960,7 @@
 
 
 
-        <div style="{{$com_coparticipacao == 1 ? 'width: 50%;float:left' : 'width:50%;float:left;margin-left:490px;' }}">
+        <div style="{{($com_coparticipacao == 1 || $sem_coparticipacao == 1) && $carencia == 1 ? 'width: 50%;float:left' : 'width:50%;float:left;margin-left:490px;' }}">
 
             <!-- Primeiro Bloco -->
 
@@ -826,13 +968,11 @@
 
                 <div class="lista-coparticipacao" style="margin: 0 0 0 50px; padding: 0; line-height: 1;">
 
-                    <p style="font-size:1.2em;margin:0;padding:0;font-weight:bold;">* {{$pdf->linha01}}</p>
+                    @if(isset($pdf->linha03) && !($apenas_valores ?? false))
 
-                    <p style="font-size:1em;margin:0 0 0 40px;padding:0;font-weight:bold;"> - {{$linha_01}}</p>
+                        <p style="font-size:1.5em;margin:0;padding:0;font-weight:bold;color:white;">** {{$pdf->linha03}}</p>
 
-                    <p style="font-size:1em;margin:0 0 0 40px;padding:0;font-weight:bold;"> - {{$linha_02}}</p>
-
-                    <p style="font-size:1.2em;margin:0;padding:0;font-weight:bold;">** {{$pdf->linha03}}</p>
+                    @endif
 
                 </div>
 
@@ -842,9 +982,8 @@
 
             <!-- Segundo Bloco -->
 
+            @if($com_coparticipacao == 1)
             <div class="bloco-inferior" style="margin-top:50px;margin-left:50px;">
-
-                @if($com_coparticipacao == 1)
 
                     <div class="procedimentos-container">
 
@@ -852,9 +991,9 @@
 
                         <div class="procedimento-left">
 
-                            <span style="display:block;font-size:1.2em;color: rgb(8,73,189);font-weight:bold;margin-bottom:15px;margin-left:30px;">Procedimentos</span>
+                            <span style="display:block;font-size:1.2em;color: white;font-weight:bold;margin-bottom:15px;margin-left:30px;">Procedimentos</span>
 
-                            <div style="background-color:rgb(254,199,72);border-radius:45px;">
+                            <div style="background-color:white;border-radius:45px;">
 
                                 <div class="linha-procedimento">
 
@@ -892,17 +1031,23 @@
 
                                 </div>
 
-                                <div class="linha-procedimento">
+                                @if($pdf->internacoes_total && $pdf->internacoes_total != 'Isento')
+                                    <div class="linha-procedimento">
 
-                                    <span>Internações</span>
+                                        <span>Internações</span>
 
-                                </div>
+                                    </div>
+                                @endif
 
-                                <div class="linha-procedimento">
+                                @if($pdf->cirurgia_total && $pdf->cirurgia_total != 'Isento')
 
-                                    <span>Cirurgias</span>
+                                    <div class="linha-procedimento">
 
-                                </div>
+                                        <span>Cirurgias</span>
+
+                                    </div>
+
+                                @endif
 
                             </div>
 
@@ -912,11 +1057,11 @@
 
                         <div class="procedimento-right">
 
-                            <span style="display:block;font-size:1.2em;color: rgb(8,73,189);font-weight:bold;margin-bottom:15px;margin-left:25px;">Copart Total</span>
+                            <span style="display:block;font-size:1.2em;color: white;font-weight:bold;margin-bottom:15px;margin-left:25px;">Copart Total</span>
 
 
 
-                            <div style="background-color:rgb(254,199,72);border-radius:45px;">
+                            <div style="background-color:white;border-radius:45px;">
 
                                 <div class="linha-procedimento">
 
@@ -954,17 +1099,21 @@
 
                                 </div>
 
-                                <div class="linha-procedimento">
+                                @if($pdf->internacoes_total && $pdf->internacoes_total != 'Isento')
+                                    <div class="linha-procedimento">
 
-                                    <span>{{$pdf->internacoes_total}}</span>
+                                        <span>{{$pdf->internacoes_total}}</span>
 
-                                </div>
+                                    </div>
+                                @endif
 
-                                <div class="linha-procedimento">
+                                @if($pdf->cirurgia_total && $pdf->cirurgia_total != 'Isento')
+                                    <div class="linha-procedimento">
 
-                                    <span>{{$pdf->cirurgia_total}}</span>
+                                        <span>{{$pdf->cirurgia_total}}</span>
 
-                                </div>
+                                    </div>
+                                @endif
 
                             </div>
 
@@ -974,21 +1123,42 @@
 
 
 
-                        @endif
-
                     </div>
 
             </div>
+            @endif
+
+            @if(isset($pdf->linha01) && !($apenas_valores ?? false) && $sem_coparticipacao == 1)
+                    <div style="margin-top:{{$com_coparticipacao == 1 ? '15px' : '50px'}};margin-left:50px;">
+                        <div style="width:70%;border-radius:35px;overflow:hidden;">
+                            <div style="background:rgb(254,199,72);color:rgb(8,73,189);padding:10px 16px;font-weight:bold;font-size:1.2em;line-height:1.2;">{{$pdf->linha01}}</div>
+                            @if(!empty($linha_01))
+                                @php $parts = explode(' - ', $linha_01, 2); $lbl = $parts[0]; $val = count($parts) > 1 ? $parts[1] : ''; @endphp
+                                <table style="width:100%;border-collapse:collapse;margin:0;background:white;"><tr>
+                                    <td style="padding:8px 14px;color:rgb(8,73,189);font-weight:bold;font-size:1.1em;line-height:1.2;">{{$lbl}}</td>
+                                    @if($val)<td style="padding:8px 14px;color:rgb(8,73,189);font-weight:bold;font-size:1.1em;line-height:1.2;white-space:nowrap;text-align:right;">{{$val}}</td>@endif
+                                </tr></table>
+                            @endif
+                            @if(!empty($linha_02))
+                                @php $parts2 = explode(' - ', $linha_02, 2); $lbl2 = $parts2[0]; $val2 = count($parts2) > 1 ? $parts2[1] : ''; @endphp
+                                <table style="width:100%;border-collapse:collapse;margin:0;background:white;"><tr>
+                                    <td style="padding:8px 14px;color:rgb(8,73,189);font-weight:bold;font-size:1.1em;line-height:1.2;">{{$lbl2}}</td>
+                                    @if($val2)<td style="padding:8px 14px;color:rgb(8,73,189);font-weight:bold;font-size:1.1em;line-height:1.2;white-space:nowrap;text-align:right;">{{$val2}}</td>@endif
+                                </tr></table>
+                            @endif
+                        </div>
+                    </div>
+            @endif
 
         </div>
 
-        @if($com_coparticipacao == 1)
+        @if(($com_coparticipacao == 1 || $sem_coparticipacao == 1) && $carencia == 1)
 
-            <div style="width: 50%;float:right;">
+            <div style="width: 40%;float:right;">
 
-                <div style="margin-left:100px;">
+                <div style="margin-left:30px;">
 
-                    <h3 style="color: yellow; font-size: 1.5em; margin: 0 0 10px 0;">CARÊNCIAS DE SAÚDE</h3>
+                    <h3 style="color: white; font-size: 1.5em; margin: 0 0 10px 0;">CARÊNCIAS DE SAÚDE</h3>
 
 
 
@@ -1002,7 +1172,7 @@
 
                                 <td style="vertical-align: top; padding-right: 10px;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">24</span><br>
 
@@ -1014,7 +1184,7 @@
 
                                 <td style="vertical-align: middle;">
 
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">
+                                    <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
                                         Urgência, Emergência e<br>
 
@@ -1042,7 +1212,7 @@
 
                                 <td style="vertical-align: top; padding-right: 10px;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">30</span><br>
 
@@ -1054,7 +1224,7 @@
 
                                 <td style="vertical-align: middle;">
 
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">
+                                    <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
                                         Consultas Médicas,<br>
 
@@ -1082,7 +1252,7 @@
 
                                 <td style="vertical-align: top; padding-right: 10px;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">90</span><br>
 
@@ -1094,7 +1264,7 @@
 
                                 <td>
 
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">
+                                    <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
                                         Exames Cardiol., Exames Imagem<br>
 
@@ -1124,7 +1294,7 @@
 
                                 <td style="vertical-align: top; padding-right: 10px;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">180</span><br>
 
@@ -1136,9 +1306,9 @@
 
                                 <td>
 
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">
+                                    <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
-                                        Cirurgias, Internações, Exames<br>
+                                        Exames<br>
 
                                         Alto Custo, Trat. Psicológico,<br>
 
@@ -1154,42 +1324,6 @@
 
                     </div>
 
-
-
-                    <!-- 5º Bloco -->
-
-                    <div style="padding-bottom: 10px;">
-
-                        <table>
-
-                            <tr>
-
-                                <td style="vertical-align: top; padding-right: 10px;">
-
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
-
-                                        <span style="font-size: 1.4em; font-weight: bold;">300</span><br>
-
-                                        <span style="font-size: 1.2em;">Dias</span>
-
-                                    </div>
-
-                                </td>
-
-                                <td style="vertical-align: middle;">
-
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">Parto</span>
-
-                                </td>
-
-                            </tr>
-
-                        </table>
-
-                    </div>
-
-
-
                     <!-- 6º Bloco -->
 
                     <div style="margin-bottom: 5px;">
@@ -1200,7 +1334,7 @@
 
                                 <td style="vertical-align: top; padding-right: 10px;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">720</span><br>
 
@@ -1212,7 +1346,7 @@
 
                                 <td style="vertical-align: middle;">
 
-                                    <span style="font-size: 1.3em; color: yellow;text-align:left;display: block;font-weight: bold;">
+                                    <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
                                         Doenças e Lesões<br>
 
@@ -1234,7 +1368,7 @@
 
         @endif
 
-        @if($com_coparticipacao == 0)
+        @if($com_coparticipacao == 0 && $sem_coparticipacao == 0 && $carencia == 1)
 
             <div style="width:100%;display:block;padding:0;clear:both;margin:0;">
 
@@ -1252,7 +1386,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">24</span><br>
 
@@ -1286,7 +1420,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">30</span><br>
 
@@ -1322,7 +1456,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">720</span><br>
 
@@ -1376,7 +1510,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">180</span><br>
 
@@ -1412,7 +1546,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">300</span><br>
 
@@ -1442,7 +1576,7 @@
 
                                 <td style="vertical-align: top; padding:0; width:1%;">
 
-                                    <div style="border: 8px solid yellow;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
+                                    <div style="border: 8px solid transparent;background-color:white;border-radius:10%;color:blue; width: 80px; text-align: center; line-height: 1; padding: 12px;height:80px;">
 
                                         <span style="font-size: 1.4em; font-weight: bold;">90</span><br>
 

@@ -84,31 +84,16 @@
                     </svg>
                 </div>
 
-{{--                <div class="space-y-2">--}}
-{{--                    <label class="flex items-center space-x-2">--}}
-{{--                        <input type="checkbox" id="comCoparticipacao" checked="checked" class="form-checkbox">--}}
-{{--                        <span class="font-semibold">Com Coparticipação</span>--}}
-{{--                    </label>--}}
-{{--                    <label class="flex items-center space-x-2">--}}
-{{--                        <input type="checkbox" id="semCoparticipacao" checked="checked" class="form-checkbox">--}}
-{{--                        <span class="font-semibold">Sem Coparticipação</span>--}}
-{{--                    </label>--}}
-{{--                    <label class="flex items-center space-x-2">--}}
-{{--                        <input type="checkbox" id="apenasValores" class="form-checkbox">--}}
-{{--                        <span class="font-semibold">Apenas Valores</span>--}}
-{{--                    </label>--}}
-{{--                </div>--}}
-
                 <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
-                    <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
+                    <legend class="text-lg font-semibold px-2 mx-auto">Coparticipação</legend>
                     <div class="space-y-2">
                         <label class="flex items-center space-x-2">
-                            <input type="checkbox" id="apartamentoAmbulatorial" checked class="form-checkbox">
-                            <span class="font-semibold">Apartamento</span>
+                            <input type="checkbox" id="comCoparticipacaoAmb" checked class="form-checkbox">
+                            <span class="font-semibold">Com Coparticipação</span>
                         </label>
                         <label class="flex items-center space-x-2">
-                            <input type="checkbox" id="enfermariaAmbulatorial" checked class="form-checkbox">
-                            <span class="font-semibold">Enfermaria</span>
+                            <input type="checkbox" id="semCoparticipacaoAmb" checked class="form-checkbox">
+                            <span class="font-semibold">Sem Coparticipação</span>
                         </label>
                     </div>
                 </fieldset>
@@ -486,6 +471,19 @@
 
                            // Inicializa interatividade dos Accordions
                            initAccordion();
+
+                           // Adiciona opção Ambulatorial se disponível para essa operadora+cidade
+                           if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                               planosContainer.append(`
+                                   <label class="flex items-center p-2 rounded-lg w-full" style="border:2px solid white;">
+                                       <input type="radio" name="planos-radio"
+                                              value="${response.plano_ambulatorial_id}"
+                                              class="w-4 h-4 text-purple-600 border-gray-300"
+                                              data-ambulatorial="1">
+                                       <span class="ml-2 text-white text-sm">Ambulatorial</span>
+                                   </label>`);
+                           }
+
                            planosContainer.removeClass("hidden");
                        },
                        error: function () {
@@ -594,6 +592,19 @@
 
                            // Inicializa interatividade dos Accordions
                            initAccordion();
+
+                           // Adiciona opção Ambulatorial se disponível para essa operadora+cidade
+                           if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                               planosContainer.append(`
+                                   <label class="flex items-center p-2 rounded-lg w-full" style="border:2px solid white;">
+                                       <input type="radio" name="planos-radio"
+                                              value="${response.plano_ambulatorial_id}"
+                                              class="w-4 h-4 text-purple-600 border-gray-300"
+                                              data-ambulatorial="1">
+                                       <span class="ml-2 text-white text-sm">Ambulatorial</span>
+                                   </label>`);
+                           }
+
                            planosContainer.removeClass("hidden");
                        },
                        error: function () {
@@ -819,6 +830,19 @@
 
                            // Inicializa interatividade dos Accordions
                            initAccordion();
+
+                           // Adiciona opção Ambulatorial se disponível para essa operadora+cidade
+                           if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                               planosContainer.append(`
+                                   <label class="flex items-center p-2 rounded-lg w-full" style="border:2px solid white;">
+                                       <input type="radio" name="planos-radio"
+                                              value="${response.plano_ambulatorial_id}"
+                                              class="w-4 h-4 text-purple-600 border-gray-300"
+                                              data-ambulatorial="1">
+                                       <span class="ml-2 text-white text-sm">Ambulatorial</span>
+                                   </label>`);
+                           }
+
                            planosContainer.removeClass("hidden");
                        },
                        error: function () {
@@ -1215,8 +1239,8 @@
                }
 
                $("body").on('click',"input[name='planos-radio']",function(){
-                   let valor = $(this).val();
-                   atualizarResultado();
+                   let ambulatorial = $(this).data('ambulatorial') ? 1 : 0;
+                   atualizarResultado(ambulatorial);
                });
 
                 $("#fecharModal").on("click", function () {
@@ -1255,6 +1279,8 @@
                    let status_carencia = $("input[name='status_carencia_ambulatorial']").is(':checked');
                    let status_desconto = $("input[name='status_desconto_ambulatorial']").is(':checked');
                    let tipo_documento = $("input[name='tipo_cotacao_ambulatorial']:checked").val();
+                   let comCoparticipacaoAmb = $("#comCoparticipacaoAmb").is(":checked");
+                   let semCoparticipacaoAmb = $("#semCoparticipacaoAmb").is(":checked");
                    cidade = $("#cidade").val();
                    plano = $("input[name='planos-radio']:checked").val();
                    operadora = $("input[name='operadoras']:checked").val();
@@ -1284,7 +1310,9 @@
                            "status_carencia" : status_carencia,
                            "status_desconto" : status_desconto,
                            "ambulatorial": 1,
-                           "tipo_documento": tipo_documento
+                           "tipo_documento": tipo_documento,
+                           "comcoparticipacao": comCoparticipacaoAmb,
+                           "semcoparticipacao": semCoparticipacaoAmb
                            //"cliente" : cliente,
                            //"_token": "{{ csrf_token() }}"
                        },
@@ -1347,6 +1375,8 @@
                     let comCoparticipacaoMarcado = $("#comCoparticipacao").is(":checked");
                     let semCoparticipacaoMarcado = $("#semCoparticipacao").is(":checked");
                     let apenasValores = $("#apenasValores").is(":checked");
+                    let mostrarApartamento = $("#apartamento").is(":checked");
+                    let mostrarEnfermaria = $("#enfermaria").is(":checked");
                     let load = $(".ajax_load");
                     e.preventDefault();
                     let linkUrl = $(this).attr("href");
@@ -1400,7 +1430,9 @@
                             "status_desconto" : status_desconto,
                             "ambulatorial": 0,
                             "apenasvalores" : apenasValores,
-                            "tipo_documento" : tipo_documento
+                            "tipo_documento" : tipo_documento,
+                            "mostrar_apartamento": mostrarApartamento,
+                            "mostrar_enfermaria": mostrarEnfermaria
                         },
                         xhrFields: {
                             responseType: 'blob'
@@ -1467,13 +1499,6 @@
 
 
 
-
-               $("body").on('click','.btn_ambulatorial',function(){
-                  $("#resultado").slideUp("slow");
-                  $("#resultado").empty();
-                   atualizarResultado(1)
-
-               });
 
                $("body").on('click','.btn_normal',function(){
                    $("#resultado").slideUp("slow");

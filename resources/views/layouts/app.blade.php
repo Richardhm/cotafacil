@@ -137,7 +137,7 @@
         }
 
         body {
-            background: url('{{ asset('fred01.jpeg') }}') no-repeat center center;
+            background: url('{{ asset('fred01.jpeg') }}') no-repeat center center fixed;
             background-size: cover;
         }
 
@@ -207,7 +207,7 @@
             appContainer.style.background = '#000';
         } else {
             // Modo light: fundo com imagem
-            appContainer.style.background = "url('{{ asset('fred01.jpeg') }}') no-repeat center center";
+            appContainer.style.background = "url('{{ asset('fred01.jpeg') }}') no-repeat center center fixed";
             appContainer.style.backgroundSize = 'cover';
         }
     }

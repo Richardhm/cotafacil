@@ -326,9 +326,36 @@ class DashboardController extends Controller
             ];
         });
 
+        // Verificar se existe pelo menos um valor ambulatorial (acomodacao_id=3, valor>0) para operadora+cidade
+        $temAmbulatorial = DB::table('tabelas')
+            ->where('administradora_id', $administradora_id)
+            ->where('tabela_origens_id', $tabela_origens_id)
+            ->where('acomodacao_id', 3)
+            ->where('valor', '>', 0)
+            ->exists();
+
+        // Se existir, buscar o plano_id ambulatorial disponível na assinatura do usuário
+        $planoAmbulatorialId = null;
+        if ($temAmbulatorial) {
+            $planoAmbulatorialId = DB::table('tabelas')
+                ->join('administradora_planos', function ($join) use ($administradora_id, $tabela_origens_id, $assinaturaId) {
+                    $join->on('tabelas.plano_id', '=', 'administradora_planos.plano_id')
+                        ->where('administradora_planos.administradora_id', $administradora_id)
+                        ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
+                        ->where('administradora_planos.assinatura_id', $assinaturaId);
+                })
+                ->where('tabelas.administradora_id', $administradora_id)
+                ->where('tabelas.tabela_origens_id', $tabela_origens_id)
+                ->where('tabelas.acomodacao_id', 3)
+                ->where('tabelas.valor', '>', 0)
+                ->value('tabelas.plano_id');
+        }
+
         return response()->json([
-            'planos_por_grupo' => $planosPorGrupo,
-            'planos_sem_grupo' => $planosSemGrupo,
+            'planos_por_grupo'      => $planosPorGrupo,
+            'planos_sem_grupo'      => $planosSemGrupo,
+            'tem_ambulatorial'      => $temAmbulatorial,
+            'plano_ambulatorial_id' => $planoAmbulatorialId,
         ]);
     }
 
@@ -455,11 +482,13 @@ class DashboardController extends Controller
 
 
 
-        $com_coparticipacao = request()->comcoparticipacao  == "true" ? 1 : 0;
-        $sem_coparticipacao = request()->semcoparticipacao  == "true" ? 1 : 0;
+        $com_coparticipacao  = request()->comcoparticipacao  == "true" ? 1 : 0;
+        $sem_coparticipacao  = request()->semcoparticipacao  == "true" ? 1 : 0;
         //$status_desconto    = request()->status_desconto    == "true" ? 1 : 0;
-        $apenasvalores      = request()->apenasvalores      == "true" ? 1 : 0;
-        $tipo_documento     = request()->tipo_documento;
+        $apenasvalores       = request()->apenasvalores      == "true" ? 1 : 0;
+        $tipo_documento      = request()->tipo_documento;
+        $mostrar_apartamento = request()->input('mostrar_apartamento', 'true') == "true" ? 1 : 0;
+        $mostrar_enfermaria  = request()->input('mostrar_enfermaria',  'true') == "true" ? 1 : 0;
 
         $ambulatorial = request()->ambulatorial;
         $cidade = request()->tabela_origem;
@@ -648,7 +677,9 @@ class DashboardController extends Controller
                     'celular' => $celular,
                     'status_excecao' => $status_excecao,
                     'linhas' => $linhas,
-                    'corretora' => $corretora
+                    'corretora' => $corretora,
+                    'mostrar_apartamento' => $mostrar_apartamento,
+                    'mostrar_enfermaria' => $mostrar_enfermaria,
                 ]);
             } else {
                 //cabecalhos
@@ -830,9 +861,12 @@ class DashboardController extends Controller
             }
 
 
+            $com_coparticipacao_amb = request()->comcoparticipacao == "true" ? 1 : 0;
+            $sem_coparticipacao_amb = request()->semcoparticipacao == "true" ? 1 : 0;
+
             $view = \Illuminate\Support\Facades\View::make($viewName,[
-                'com_coparticipacao' => 1,
-                'sem_coparticipacao' => 1,
+                'com_coparticipacao' => $com_coparticipacao_amb,
+                'sem_coparticipacao' => $sem_coparticipacao_amb,
                 'image' => $imagem_user,
                 'dados' => $dados,
                 'codigo' => $codigo,
