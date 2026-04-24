@@ -2,12 +2,11 @@
 
 use App\Http\Middleware\ApenasAdministrador;
 use App\Http\Middleware\ApenasDesenvolvedor;
+use App\Http\Middleware\CheckBlockedIp;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\CheckSubscriptionExpired;
 use App\Http\Middleware\PreventSimultaneousLogins;
-
-
-
+use App\Http\Middleware\TrackSessionActivity;
 use App\Http\Middleware\MobileSessionFix;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -30,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
             '/pix/webhook-rec',
         ]);
         $middleware->append(MobileSessionFix::class);
+        $middleware->append(TrackSessionActivity::class);
+        $middleware->web(append: [CheckBlockedIp::class]);
         $middleware->alias([
             'prevent-simultaneous-logins' => PreventSimultaneousLogins::class,
             'apenasDesenvolvedores' => ApenasDesenvolvedor::class,

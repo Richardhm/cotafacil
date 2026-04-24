@@ -168,6 +168,12 @@ Route::middleware(['auth'])->group(function () {
     /************Gerenciar************************/
     Route::get("/gerenciamento", [GerenciadorController::class, 'index'])->name('gerenciamento.index')->middleware(['apenasAdministradores','check']);
     Route::post("/gerenciamento/regiao", [GerenciadorController::class, 'regiao'])->name('gerenciamento.regiao')->middleware(['check']);
+    Route::get("/gerenciamento/logins-compartilhados", [GerenciadorController::class, 'loginsCompartilhados'])->name('gerenciamento.logins-compartilhados')->middleware(['apenasAdministradores']);
+    Route::post("/gerenciamento/desativar-login-compartilhado/{user}", [GerenciadorController::class, 'desativarLoginCompartilhado'])->name('gerenciamento.desativar-login-compartilhado')->middleware(['apenasAdministradores']);
+    Route::post("/gerenciamento/limpar-sessoes/{user}", [GerenciadorController::class, 'limparSessoes'])->name('gerenciamento.limpar-sessoes')->middleware(['apenasAdministradores']);
+    Route::post("/gerenciamento/ativar-usuario/{user}", [GerenciadorController::class, 'ativarUsuario'])->name('gerenciamento.ativar-usuario')->middleware(['apenasAdministradores']);
+    Route::post("/gerenciamento/bloquear-ip", [GerenciadorController::class, 'bloquearIp'])->name('gerenciamento.bloquear-ip')->middleware(['apenasAdministradores']);
+    Route::post("/gerenciamento/desbloquear-ip", [GerenciadorController::class, 'desbloquearIp'])->name('gerenciamento.desbloquear-ip')->middleware(['apenasAdministradores']);
 
 
 

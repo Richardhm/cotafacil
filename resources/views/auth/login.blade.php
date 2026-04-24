@@ -27,8 +27,14 @@
     @endif
     <section class="rounded-lg w-full min-h-screen flex items-center justify-center flex-col my-auto p-4">
         <img src="{{asset('cotafacil_logo.png')}}" class="mx-auto my-2 h-20 p-1" alt="">
-        <form method="POST" action="{{ route('login') }}" class="p-4 rounded-lg w-full max-w-sm bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
+        <form method="POST" action="{{ route('login') }}" id="loginForm" class="p-4 rounded-lg w-full max-w-sm bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
             @csrf
+            <input type="hidden" name="timezone" id="timezone">
+            <input type="hidden" name="screen_resolution" id="screen_resolution">
+            <input type="hidden" name="canvas_hash" id="canvas_hash">
+            <input type="hidden" name="gpu_renderer" id="gpu_renderer">
+            <input type="hidden" name="cpu_cores" id="cpu_cores">
+            <input type="hidden" name="device_memory" id="device_memory">
             <div class="mb-4">
                 <label for="email" class="block mb-1 font-medium text-white text-sm sm:text-base">Email</label>
                 <input type="email" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-950 text-sm block w-full p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none" required />
@@ -65,6 +71,52 @@
         </form>
 
         <script>
+            // Captura dados do dispositivo antes do submit (invisível ao usuário)
+            (function () {
+                document.getElementById('timezone').value =
+                    Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+                document.getElementById('screen_resolution').value =
+                    screen.width + 'x' + screen.height;
+                document.getElementById('cpu_cores').value =
+                    navigator.hardwareConcurrency || '';
+                document.getElementById('device_memory').value =
+                    navigator.deviceMemory || '';
+
+                // Canvas fingerprint — hash dos pixels renderizados pela GPU
+                try {
+                    var cv = document.createElement('canvas');
+                    var ctx = cv.getContext('2d');
+                    cv.width = 240; cv.height = 60;
+                    ctx.fillStyle = '#f05';
+                    ctx.fillRect(10, 10, 100, 30);
+                    ctx.fillStyle = 'rgba(0,200,100,0.8)';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.fillText('cf2026☃é', 20, 35);
+                    ctx.strokeStyle = '#09f';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(180, 30, 18, 0, Math.PI * 2); ctx.stroke();
+                    var raw = cv.toDataURL().slice(-80);
+                    var h = 2166136261;
+                    for (var i = 0; i < raw.length; i++) {
+                        h ^= raw.charCodeAt(i);
+                        h = (h * 16777619) >>> 0;
+                    }
+                    document.getElementById('canvas_hash').value = h.toString(16);
+                } catch(e) {}
+
+                // GPU via WebGL
+                try {
+                    var gl = document.createElement('canvas').getContext('webgl') ||
+                             document.createElement('canvas').getContext('experimental-webgl');
+                    if (gl) {
+                        var ext = gl.getExtension('WEBGL_debug_renderer_info');
+                        if (ext) {
+                            document.getElementById('gpu_renderer').value =
+                                gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '';
+                        }
+                    }
+                } catch(e) {}
+            })();
 
             const passwordInput = document.getElementById('password');
             const toggleButton = document.getElementById('togglePassword');

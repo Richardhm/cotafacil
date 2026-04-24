@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\BlockedIp;
 use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -44,17 +46,25 @@ class LoginRequest extends FormRequest
 
         $user = User::where('email', $this->email)->first();
 
-        // 🚨 Verifica se o usuário existe e está inativo
+        if ($user && $user->status == 2) {
+            throw ValidationException::withMessages([
+                'email' => 'Acesso bloqueado: login compartilhado em mais de 1 dispositivo. Entre em contato com o suporte.',
+            ]);
+        }
+
         if ($user && $user->status != 1) {
             throw ValidationException::withMessages([
                 'email' => 'Usuário inativo. Entre em contato com o suporte.',
             ]);
         }
 
-//        if ($this->isXmlHttpRequestMobile()) {
-//            \Config::set('session.driver', 'array');
-//        }
-
+        $ip = $this->ip();
+        $ipBloqueado = Cache::remember("blocked_ip_{$ip}", 120, fn () => BlockedIp::where('ip_address', $ip)->exists());
+        if ($ipBloqueado) {
+            throw ValidationException::withMessages([
+                'email' => 'Seu acesso foi bloqueado. Entre em contato com o suporte.',
+            ]);
+        }
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
