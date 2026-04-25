@@ -138,9 +138,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
                             </svg>
                         </a>
-                        <a class="text-white ml-2" title="Configuração do Administrador" alt="Configuração do Administrador" href="{{route('financeiro.index')}}">
+                        <a class="text-white ml-2" title="Financeiro" alt="Financeiro" href="{{route('financeiro.index')}}">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </a>
+                        <a class="text-white ml-2" title="Logins Compartilhados" alt="Logins Compartilhados" href="{{route('gerenciamento.logins-compartilhados')}}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                             </svg>
                         </a>
                     @endif
@@ -197,6 +202,12 @@
                 <a href="{{route('tabela_completa.index')}}" class="flex items-center gap-2 p-3 rounded-lg hover:bg-gray-700 transition">
                     📋 Tabela Completa
                 </a>
+
+                @if(Auth::check() && Auth::user()->isDesenvolvedor())
+                    <a href="{{route('gerenciamento.logins-compartilhados')}}" class="text-white flex items-center gap-2 p-3 rounded-lg hover:bg-gray-700 transition">
+                        🛡️ Logins Compartilhados
+                    </a>
+                @endif
             </nav>
 
             <!-- Logout -->

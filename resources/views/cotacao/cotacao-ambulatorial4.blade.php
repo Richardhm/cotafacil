@@ -795,6 +795,7 @@
                         <td class="header-orange" style="text-align:center;font-size: 1.2em;">NOSSO PLANO</td>
                     </tr>
                     @foreach($dadosComOdonto as $faixaEtaria => $valores)
+                        @for($i=0;$i<$valores['quantidade'];$i++)
                         <tr>
                             <td>
                                 <div class="valor-copart">
@@ -802,6 +803,7 @@
                                 </div>
                             </td>
                         </tr>
+                        @endfor
                     @endforeach
                     <tr>
                         <td>
@@ -829,6 +831,8 @@
 
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
 
+                            @for($i=0;$i<$valores['quantidade'];$i++)
+
                             <tr>
                                 <td colspan="2">
                                     <div class="valor-copart">
@@ -839,6 +843,8 @@
                                     </div>
                                 </td>
                             </tr>
+
+                            @endfor
 
                         @endforeach
 
@@ -871,6 +877,7 @@
                             <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÇÃO *</td>
                         </tr>
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
+                            @for($i=0;$i<$valores['quantidade'];$i++)
                             <tr>
                                 <td colspan="2">
                                     <div class="valor-copart-parcial">
@@ -881,6 +888,7 @@
                                     </div>
                                 </td>
                             </tr>
+                            @endfor
                         @endforeach
                         <tfoot>
                             <tr>

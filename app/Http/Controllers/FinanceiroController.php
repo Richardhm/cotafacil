@@ -16,7 +16,19 @@ class FinanceiroController extends Controller
     public function index()
     {
         // --- Totais gerais ---
-        $totalAtivas   = Assinatura::where('status', 'ativo')->count();
+        $totalAtivas = Assinatura::where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->where('status', 'trial')
+                          ->where('trial_ends_at', '>=', now()->subWeek());
+                })
+                ->orWhere(function ($inner) {
+                    $inner->where('status', '!=', 'trial')
+                          ->where(function ($d) {
+                              $d->whereNull('next_charge')
+                                ->orWhere('next_charge', '>=', now()->subWeek());
+                          });
+                });
+            })->count();
         $totalTrial    = Assinatura::where('status', 'trial')->count();
         $totalCartao   = Assinatura::where('tipo', 'cartao')->where('status', 'ativo')->count();
         $totalPix      = Assinatura::where('tipo', 'PIX')->where('status', 'ativo')->count();
@@ -40,8 +52,39 @@ class FinanceiroController extends Controller
             ->whereBetween('next_charge', [now(), now()->addDays(7)])
             ->count();
 
+        // --- Assinaturas ativas para o modal (sem filtro de renovação) ---
+        $contasAtivas = Assinatura::with(['emails' => fn($q) => $q->where('is_administrador', true)->with('user')])
+            ->withCount('emails')
+            ->where('status', 'ativo')
+            ->orderBy('emails_count', 'desc')
+            ->get()
+            ->map(fn($a) => [
+                'admin_nome'  => $a->emails->first()?->user?->name  ?? '—',
+                'admin_email' => $a->emails->first()?->user?->email ?? '—',
+                'total_users' => $a->emails_count,
+                'tipo'        => $a->tipo,
+                'preco_total' => $a->preco_total,
+                'next_charge' => $a->next_charge,
+            ]);
+
         // --- Lista de contas com admin e quantidade de usuários ---
+        // Exclui: trials vencidos há +7 dias e pagantes (cartão/PIX) com next_charge atrasado +7 dias
         $contas = Assinatura::with(['emails.user'])
+            ->withCount('emails')
+            ->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->where('status', 'trial')
+                          ->where('trial_ends_at', '>=', now()->subWeek());
+                })
+                ->orWhere(function ($inner) {
+                    $inner->where('status', '!=', 'trial')
+                          ->where(function ($d) {
+                              $d->whereNull('next_charge')
+                                ->orWhere('next_charge', '>=', now()->subWeek());
+                          });
+                });
+            })
+            ->orderBy('emails_count', 'desc')
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($assinatura) {
@@ -142,6 +185,7 @@ class FinanceiroController extends Controller
             'diasAteFimMes',
             'vencendoEm7Dias',
             'contas',
+            'contasAtivas',
             'meses',
             'historicoPix',
             'historicoCartao'

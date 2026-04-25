@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\BlockedIp;
+use App\Models\BlockedUserIp;
 use App\Models\LoginSession;
 use App\Services\DeviceFingerprintService;
 use App\Services\GeoIpService;
@@ -27,7 +29,21 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $userId       = Auth::id();
+        $userId = Auth::id();
+        $ip     = $request->ip();
+
+        // Verifica bloqueio de IP global
+        if (BlockedIp::where('ip_address', $ip)->exists()) {
+            Auth::guard('web')->logout();
+            return back()->withErrors(['email' => 'Acesso bloqueado. Entre em contato com o suporte.'])->onlyInput('email');
+        }
+
+        // Verifica bloqueio específico deste usuário neste IP
+        if (BlockedUserIp::where('user_id', $userId)->where('ip_address', $ip)->exists()) {
+            Auth::guard('web')->logout();
+            return back()->withErrors(['email' => 'Este dispositivo está bloqueado para a sua conta. Entre em contato com o suporte.'])->onlyInput('email');
+        }
+
         $fingerprint  = app(DeviceFingerprintService::class)->fromRequest($request);
         $oldSessionId = session()->getId();
 

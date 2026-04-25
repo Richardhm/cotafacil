@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Assinatura;
 use App\Models\BlockedIp;
+use App\Models\BlockedUserIp;
+use App\Models\PendingTeamUser;
 use App\Models\Cupom;
 use App\Models\EmailAssinatura;
 use App\Models\Layout;
@@ -70,7 +72,12 @@ class GerenciadorController extends Controller
 
         $cidades = TabelaOrigens::orderBy('uf')->get()->groupBy('uf');
 
-        return view('gerenciamento.index',compact('users','assinatura','valor','extra','layouts','folder','user','cidades'));
+        $pendentes = PendingTeamUser::where('admin_user_id', Auth::id())
+            ->where('status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('gerenciamento.index', compact('users','assinatura','valor','extra','layouts','folder','user','cidades','pendentes'));
     }
 
     public function regiao(Request $request)
@@ -116,7 +123,19 @@ class GerenciadorController extends Controller
 
         $ipsBlockeados = BlockedIp::pluck('ip_address')->flip();
 
-        return view("gerenciamento.logins-compartilhados", compact("suspeitos", "detalhesPorUsuario", "horas", "ipsBlockeados"));
+        // Conta quantos usuários distintos estão ativos por IP (para o aviso de bloqueio)
+        $sessoesPorIp = \DB::table('sessions')
+            ->select('ip_address', \DB::raw('count(distinct user_id) as total'))
+            ->whereNotNull('ip_address')
+            ->groupBy('ip_address')
+            ->pluck('total', 'ip_address');
+
+        // Combinações user_id+ip já bloqueadas individualmente
+        $userIpsBlockeados = BlockedUserIp::select('user_id', 'ip_address')
+            ->get()
+            ->mapWithKeys(fn($r) => ["{$r->user_id}_{$r->ip_address}" => true]);
+
+        return view("gerenciamento.logins-compartilhados", compact("suspeitos", "detalhesPorUsuario", "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados"));
     }
 
     public function desativarLoginCompartilhado(User $user, \Illuminate\Http\Request $request)
@@ -193,14 +212,61 @@ class GerenciadorController extends Controller
     {
         $horas = $request->input('horas', 48);
 
-        // Derruba sessões ativas no banco de sessões do Laravel
         \DB::table('sessions')->where('user_id', $user->id)->delete();
-
-        // Remove todo o histórico de login_sessions do usuário
         LoginSession::where('user_id', $user->id)->delete();
 
         return redirect()
             ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
             ->with('limpo', "Histórico de sessões de \"{$user->name}\" apagado.");
+    }
+
+    public function bloquearUsuarioIp(Request $request)
+    {
+        $userId = $request->input('user_id');
+        $ip     = $request->input('ip_address');
+        $horas  = $request->input('horas', 48);
+
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            return back()->withErrors(['error' => 'IP inválido.']);
+        }
+
+        BlockedUserIp::firstOrCreate(['user_id' => $userId, 'ip_address' => $ip]);
+        Cache::forget("blocked_user_ip_{$userId}_{$ip}");
+
+        // Derruba apenas as sessões desse usuário vindas desse IP
+        $sessionIds = \DB::table('sessions')
+            ->where('user_id', $userId)
+            ->where('ip_address', $ip)
+            ->pluck('id');
+
+        if ($sessionIds->isNotEmpty()) {
+            LoginSession::whereIn('session_id', $sessionIds)
+                ->whereNull('logged_out_at')
+                ->update(['logged_out_at' => now()]);
+            \DB::table('sessions')
+                ->where('user_id', $userId)
+                ->where('ip_address', $ip)
+                ->delete();
+        }
+
+        $user = User::find($userId);
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('usuario_ip_bloqueado', "Usuário \"{$user->name}\" bloqueado para o IP {$ip}. Os demais usuários deste IP não foram afetados.");
+    }
+
+    public function desbloquearUsuarioIp(Request $request)
+    {
+        $userId = $request->input('user_id');
+        $ip     = $request->input('ip_address');
+        $horas  = $request->input('horas', 48);
+
+        BlockedUserIp::where('user_id', $userId)->where('ip_address', $ip)->delete();
+        Cache::forget("blocked_user_ip_{$userId}_{$ip}");
+
+        $user = User::find($userId);
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('usuario_ip_desbloqueado', "Bloqueio individual removido para \"{$user->name}\" neste IP.");
     }
 }

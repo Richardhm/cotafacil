@@ -16,6 +16,7 @@ use App\Jobs\SendSuggestionEmail;
 use App\Http\Controllers\BemvindoController;
 use App\Http\Controllers\PixWebhookController;
 use App\Http\Controllers\FinanceiroController;
+use App\Http\Controllers\TeamUserController;
 
 
 Route::get('/teste-tz', function () {
@@ -168,12 +169,14 @@ Route::middleware(['auth'])->group(function () {
     /************Gerenciar************************/
     Route::get("/gerenciamento", [GerenciadorController::class, 'index'])->name('gerenciamento.index')->middleware(['apenasAdministradores','check']);
     Route::post("/gerenciamento/regiao", [GerenciadorController::class, 'regiao'])->name('gerenciamento.regiao')->middleware(['check']);
-    Route::get("/gerenciamento/logins-compartilhados", [GerenciadorController::class, 'loginsCompartilhados'])->name('gerenciamento.logins-compartilhados')->middleware(['apenasAdministradores']);
-    Route::post("/gerenciamento/desativar-login-compartilhado/{user}", [GerenciadorController::class, 'desativarLoginCompartilhado'])->name('gerenciamento.desativar-login-compartilhado')->middleware(['apenasAdministradores']);
-    Route::post("/gerenciamento/limpar-sessoes/{user}", [GerenciadorController::class, 'limparSessoes'])->name('gerenciamento.limpar-sessoes')->middleware(['apenasAdministradores']);
-    Route::post("/gerenciamento/ativar-usuario/{user}", [GerenciadorController::class, 'ativarUsuario'])->name('gerenciamento.ativar-usuario')->middleware(['apenasAdministradores']);
-    Route::post("/gerenciamento/bloquear-ip", [GerenciadorController::class, 'bloquearIp'])->name('gerenciamento.bloquear-ip')->middleware(['apenasAdministradores']);
-    Route::post("/gerenciamento/desbloquear-ip", [GerenciadorController::class, 'desbloquearIp'])->name('gerenciamento.desbloquear-ip')->middleware(['apenasAdministradores']);
+    Route::get("/gerenciamento/logins-compartilhados", [GerenciadorController::class, 'loginsCompartilhados'])->name('gerenciamento.logins-compartilhados')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/desativar-login-compartilhado/{user}", [GerenciadorController::class, 'desativarLoginCompartilhado'])->name('gerenciamento.desativar-login-compartilhado')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/limpar-sessoes/{user}", [GerenciadorController::class, 'limparSessoes'])->name('gerenciamento.limpar-sessoes')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/ativar-usuario/{user}", [GerenciadorController::class, 'ativarUsuario'])->name('gerenciamento.ativar-usuario')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/bloquear-ip", [GerenciadorController::class, 'bloquearIp'])->name('gerenciamento.bloquear-ip')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/desbloquear-ip", [GerenciadorController::class, 'desbloquearIp'])->name('gerenciamento.desbloquear-ip')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/bloquear-usuario-ip", [GerenciadorController::class, 'bloquearUsuarioIp'])->name('gerenciamento.bloquear-usuario-ip')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/desbloquear-usuario-ip", [GerenciadorController::class, 'desbloquearUsuarioIp'])->name('gerenciamento.desbloquear-usuario-ip')->middleware(['apenasDesenvolvedores']);
 
 
 
@@ -182,6 +185,16 @@ Route::middleware(['auth'])->group(function () {
 
 
 
+
+    /************ Equipe (pré-pago) **************/
+    Route::post('/gerenciamento/equipe/salvar',       [TeamUserController::class, 'salvar'])->name('equipe.salvar')->middleware(['apenasAdministradores']);
+    Route::delete('/gerenciamento/equipe/remover/{id}',[TeamUserController::class, 'remover'])->name('equipe.remover')->middleware(['apenasAdministradores']);
+    Route::post('/gerenciamento/equipe/pix',           [TeamUserController::class, 'gerarPix'])->name('equipe.pix')->middleware(['apenasAdministradores']);
+    Route::post('/gerenciamento/equipe/pix-todos',     [TeamUserController::class, 'gerarPixTodos'])->name('equipe.pix-todos')->middleware(['apenasAdministradores']);
+    Route::post('/gerenciamento/equipe/cartao-todos',  [TeamUserController::class, 'gerarCartaoTodos'])->name('equipe.cartao-todos')->middleware(['apenasAdministradores']);
+    Route::get('/gerenciamento/equipe/verificar',      [TeamUserController::class, 'verificar'])->name('equipe.verificar')->middleware(['apenasAdministradores']);
+    Route::post('/gerenciamento/equipe/cartao',        [TeamUserController::class, 'gerarCartao'])->name('equipe.cartao')->middleware(['apenasAdministradores']);
+    /************ Fim Equipe *********************/
 
     /************Fim Gerenciar********************/
 

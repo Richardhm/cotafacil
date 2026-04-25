@@ -2,7 +2,8 @@
     @section('css')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        .card-stat { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 1.2rem 1.5rem; }
+        .card-stat { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 1.2rem 1.5rem; }
+        .card-stat .label { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
         .card-stat .value { font-size: 2rem; font-weight: 700; }
         .badge-tipo { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
         .badge-cartao  { background:#3b82f6; color:#fff; }
@@ -12,7 +13,8 @@
         .badge-status-ativo    { background:#10b981; color:#fff; }
         .badge-status-trial    { background:#f59e0b; color:#fff; }
         .badge-status-inativo  { background:#ef4444; color:#fff; }
-        table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+        table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.85); font-weight: 700; }
+        table tbody td { color: #fff; }
 
         /* Seta expansível */
         .btn-expand { cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
@@ -23,28 +25,29 @@
         .linha-usuarios { display:none; }
         .linha-usuarios.aberta { display:table-row; }
         .usuarios-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:8px; padding:10px 0; }
-        .usuario-card { background:rgba(255,255,255,0.05); border-radius:8px; padding:8px 12px; }
-        .usuario-card .u-nome { font-weight:600; color:#e2e8f0; font-size:0.82rem; }
-        .usuario-card .u-tel  { color:#94a3b8; font-size:0.78rem; margin-top:2px; }
-        .usuario-card .u-email { color:#64748b; font-size:0.74rem; }
+        .usuario-card { background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 12px; }
+        .usuario-card .u-nome { font-weight:600; color:#fff; font-size:0.82rem; }
+        .usuario-card .u-tel  { color:rgba(255,255,255,0.7); font-size:0.78rem; margin-top:2px; }
+        .usuario-card .u-email { color:rgba(255,255,255,0.55); font-size:0.74rem; }
         .crown { color:#fbbf24; font-size:0.7rem; margin-left:4px; }
 
         /* Modal */
-        #modalHistorico { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; }
-        #modalHistorico.aberto { display:flex; }
+        .modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; }
+        .modal-overlay.aberto { display:flex; }
         .modal-box { background:#1e293b; border-radius:16px; width:100%; max-width:720px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; }
+        .modal-box-lg { max-width:900px; }
         .modal-header { padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:space-between; }
         .modal-body { padding:1.25rem 1.5rem; overflow-y:auto; flex:1; }
     </style>
     @endsection
 
-    <div class="py-8 px-4 max-w-7xl mx-auto bg-gray-800 rounded-lg mt-5">
+    <div class="py-8 px-4 max-w-7xl mx-auto bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] rounded-lg mt-5">
 
         {{-- Cabeçalho --}}
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-white">Dashboard Financeiro</h1>
-                <p class="text-sm text-gray-400 mt-1">Visão geral das assinaturas · {{ now()->format('d/m/Y H:i') }}</p>
+                <p class="text-sm text-white/70 mt-1">Visão geral das assinaturas · {{ now()->format('d/m/Y H:i') }}</p>
             </div>
             <button onclick="window.print()"
                 class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
@@ -58,37 +61,24 @@
 
         {{-- Cards de métricas --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Assinaturas Ativas</p>
+            <div class="card-stat cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition"
+                 onclick="document.getElementById('modalAtivas').classList.add('aberto')"
+                 title="Clique para ver os assinantes ativos">
+                <p class="label">Assinaturas Ativas</p>
                 <p class="value text-emerald-400">{{ $totalAtivas }}</p>
+                <p class="text-white/50 text-xs mt-1">clique para detalhes →</p>
             </div>
             <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Receita Mensal Estimada</p>
-                <p class="value text-blue-400">R$ {{ number_format($receitaMensal, 2, ',', '.') }}</p>
+                <p class="label">Receita Mensal Estimada</p>
+                <p class="value text-blue-300">R$ {{ number_format($receitaMensal, 2, ',', '.') }}</p>
             </div>
             <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Novas este mês</p>
-                <p class="value text-indigo-400">{{ $novasEsteMes }}</p>
+                <p class="label">Novas este mês</p>
+                <p class="value text-indigo-300">{{ $novasEsteMes }}</p>
             </div>
             <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Dias até fim do mês</p>
-                <p class="value text-yellow-400">{{ floor($diasAteFimMes) }}</p>
-            </div>
-            <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Trial Ativos</p>
-                <p class="value text-amber-400">{{ $totalTrial }}</p>
-            </div>
-            <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">Cartão</p>
-                <p class="value text-blue-300">{{ $totalCartao }}</p>
-            </div>
-            <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">PIX Manual</p>
-                <p class="value text-green-400">{{ $totalPix }}</p>
-            </div>
-            <div class="card-stat">
-                <p class="text-gray-400 text-sm mb-1">PIX Automático</p>
-                <p class="value text-purple-400">{{ $totalPixAuto }}</p>
+                <p class="label">Dias até fim do mês</p>
+                <p class="value text-yellow-300">{{ floor($diasAteFimMes) }}</p>
             </div>
         </div>
 
@@ -103,24 +93,24 @@
         @endif
 
         {{-- Gráfico de evolução --}}
-        <div class="bg-white/5 rounded-2xl p-5 mb-8">
-            <h2 class="text-white font-semibold mb-4">Evolução — Últimos 12 meses</h2>
+        <div class="bg-black/20 border border-white/10 rounded-2xl p-5 mb-8">
+            <h2 class="text-white font-bold mb-4">Evolução — Últimos 12 meses</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <p class="text-gray-400 text-xs mb-2 uppercase tracking-wide">Novas Assinaturas</p>
+                    <p class="text-white/70 text-xs mb-2 uppercase tracking-wide font-semibold">Novas Assinaturas</p>
                     <canvas id="chartNovas" height="120"></canvas>
                 </div>
                 <div>
-                    <p class="text-gray-400 text-xs mb-2 uppercase tracking-wide">Receita (R$)</p>
+                    <p class="text-white/70 text-xs mb-2 uppercase tracking-wide font-semibold">Receita (R$)</p>
                     <canvas id="chartReceita" height="120"></canvas>
                 </div>
             </div>
         </div>
 
         {{-- Tabela de contas --}}
-        <div class="bg-white/5 rounded-2xl p-5">
+        <div class="bg-black/20 border border-white/10 rounded-2xl p-5">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-white font-semibold">Todas as Contas</h2>
+                <h2 class="text-white font-bold">Todas as Contas</h2>
                 <input id="busca" type="text" placeholder="Buscar por nome ou e-mail..."
                     class="bg-white/10 text-white text-sm rounded-lg px-3 py-1.5 border border-white/20 outline-none w-64
                            placeholder-gray-500 focus:border-blue-400">
@@ -158,8 +148,8 @@
                                 </span>
                             </td>
 
-                            <td class="py-2 pr-4 text-gray-400">{{ $conta['admin_email'] }}</td>
-                            <td class="py-2 pr-4 text-center">{{ $conta['total_users'] }}</td>
+                            <td class="py-2 pr-4 text-white/75">{{ $conta['admin_email'] }}</td>
+                            <td class="py-2 pr-4 text-center font-semibold">{{ $conta['total_users'] }}</td>
 
                             <td class="py-2 pr-4 text-center">
                                 @php
@@ -194,18 +184,18 @@
 
                             <td class="py-2 pr-4 text-right">R$ {{ number_format($conta['preco_total'] ?? 0, 2, ',', '.') }}</td>
 
-                            <td class="py-2 pr-4 text-center text-gray-400">
+                            <td class="py-2 pr-4 text-center text-white/80">
                                 @if($conta['next_charge'])
                                     {{ \Carbon\Carbon::parse($conta['next_charge'])->format('d/m/Y') }}
                                 @elseif($conta['trial_ends_at'])
                                     {{ \Carbon\Carbon::parse($conta['trial_ends_at'])->format('d/m/Y') }}
-                                    <span class="text-yellow-400">(trial)</span>
+                                    <span class="text-yellow-300">(trial)</span>
                                 @else
                                     —
                                 @endif
                             </td>
 
-                            <td class="py-2 pr-4 text-center text-gray-400">
+                            <td class="py-2 pr-4 text-center text-white/80">
                                 {{ $conta['created_at'] ? \Carbon\Carbon::parse($conta['created_at'])->format('d/m/Y') : '—' }}
                             </td>
 
@@ -253,7 +243,7 @@
 
                         @empty
                         <tr>
-                            <td colspan="10" class="py-6 text-center text-gray-500">Nenhuma assinatura encontrada.</td>
+                            <td colspan="10" class="py-6 text-center text-white/60">Nenhuma assinatura encontrada.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -262,8 +252,70 @@
         </div>
     </div>
 
+    {{-- MODAL ASSINATURAS ATIVAS --}}
+    <div id="modalAtivas" class="modal-overlay">
+        <div class="modal-box modal-box-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 class="text-white font-semibold text-base">Assinantes Ativos</h3>
+                    <p class="text-gray-400 text-xs mt-0.5">{{ $contasAtivas->count() }} conta(s) ativas</p>
+                </div>
+                <button onclick="document.getElementById('modalAtivas').classList.remove('aberto')" class="text-gray-400 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="w-full text-sm text-left text-gray-300">
+                    <thead>
+                        <tr class="border-b border-white/10 text-xs uppercase tracking-wide opacity-60">
+                            <th class="pb-2 pr-4">Admin</th>
+                            <th class="pb-2 pr-4">E-mail</th>
+                            <th class="pb-2 pr-4 text-center">Usuários</th>
+                            <th class="pb-2 pr-4 text-center">Tipo</th>
+                            <th class="pb-2 pr-4 text-right">Valor</th>
+                            <th class="pb-2 text-center">Próx. Cobrança</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($contasAtivas as $ativa)
+                        @php
+                            $tipo = strtolower($ativa['tipo'] ?? 'cartao');
+                            $badgeTipo = match($tipo) {
+                                'pix'            => 'badge-pix',
+                                'pix_automatico' => 'badge-pixauto',
+                                default          => 'badge-cartao',
+                            };
+                            $labelTipo = match($tipo) {
+                                'pix'            => 'PIX',
+                                'pix_automatico' => 'PIX Auto',
+                                default          => 'Cartão',
+                            };
+                        @endphp
+                        <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                            <td class="py-2 pr-4 font-medium text-white">{{ $ativa['admin_nome'] }}</td>
+                            <td class="py-2 pr-4 text-white/75">{{ $ativa['admin_email'] }}</td>
+                            <td class="py-2 pr-4 text-center">{{ $ativa['total_users'] }}</td>
+                            <td class="py-2 pr-4 text-center">
+                                <span class="badge-tipo {{ $badgeTipo }}">{{ $labelTipo }}</span>
+                            </td>
+                            <td class="py-2 pr-4 text-right text-green-400 font-semibold">
+                                R$ {{ number_format($ativa['preco_total'] ?? 0, 2, ',', '.') }}
+                            </td>
+                            <td class="py-2 text-center text-white/80">
+                                {{ $ativa['next_charge'] ? \Carbon\Carbon::parse($ativa['next_charge'])->format('d/m/Y') : '—' }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     {{-- MODAL DE HISTÓRICO --}}
-    <div id="modalHistorico">
+    <div id="modalHistorico" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
                 <div>
@@ -381,6 +433,10 @@
         document.getElementById('fecharModal').addEventListener('click', () => modal.classList.remove('aberto'));
         modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('aberto'); });
 
+        // Fecha modal de ativos ao clicar no fundo
+        const modalAtivas = document.getElementById('modalAtivas');
+        modalAtivas.addEventListener('click', e => { if (e.target === modalAtivas) modalAtivas.classList.remove('aberto'); });
+
         // ---- Toggle Ativar/Desativar usuários ----
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -464,8 +520,8 @@
         const totais   = @json($meses->pluck('total'));
         const receitas = @json($meses->pluck('receita'));
 
-        const gridColor = 'rgba(255,255,255,0.07)';
-        const tickColor = 'rgba(255,255,255,0.4)';
+        const gridColor = 'rgba(255,255,255,0.15)';
+        const tickColor = 'rgba(255,255,255,0.8)';
         const baseOpts  = {
             responsive: true,
             plugins: { legend: { display: false } },

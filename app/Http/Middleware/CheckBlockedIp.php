@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\BlockedIp;
+use App\Models\BlockedUserIp;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,6 +50,23 @@ class CheckBlockedIp
 
             return redirect()->route('login')
                 ->withErrors(['error' => 'Seu acesso foi bloqueado. Entre em contato com o suporte.']);
+        }
+
+        // Verifica bloqueio específico de usuário neste IP
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $bloqueadoUserIp = Cache::remember("blocked_user_ip_{$userId}_{$ip}", 120, function () use ($userId, $ip) {
+                return BlockedUserIp::where('user_id', $userId)->where('ip_address', $ip)->exists();
+            });
+
+            if ($bloqueadoUserIp) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withErrors(['error' => 'Seu acesso foi bloqueado neste dispositivo. Entre em contato com o suporte.']);
+            }
         }
 
         return $next($request);

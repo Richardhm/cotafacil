@@ -782,6 +782,8 @@
 
                     @foreach($dadosComOdonto as $faixaEtaria => $valores)
 
+                        @for($i=0;$i<$valores['quantidade'];$i++)
+
                         <tr>
 
                             <td>
@@ -795,6 +797,8 @@
                             </td>
 
                         </tr>
+
+                        @endfor
 
                     @endforeach
 
@@ -836,6 +840,8 @@
 
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
 
+                            @for($i=0;$i<$valores['quantidade'];$i++)
+
                             <tr>
 
                                 <td colspan="2">
@@ -857,6 +863,8 @@
 
 
                             </tr>
+
+                            @endfor
 
                         @endforeach
 
@@ -898,6 +906,8 @@
 
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
 
+                            @for($i=0;$i<$valores['quantidade'];$i++)
+
                             <tr>
 
                                 <td colspan="2">
@@ -919,6 +929,8 @@
 
 
                             </tr>
+
+                            @endfor
 
                         @endforeach
 

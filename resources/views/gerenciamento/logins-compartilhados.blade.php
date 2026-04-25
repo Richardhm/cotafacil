@@ -108,6 +108,22 @@
             <p class="text-emerald-300 text-sm">{{ session('ativado') }}</p>
         </div>
     @endif
+    @if(session('usuario_ip_bloqueado'))
+        <div style="background: rgba(254,254,254,0.18)" class="backdrop-blur-[15px] rounded-2xl border border-orange-500/40 px-5 py-3 flex items-center gap-3">
+            <svg class="w-5 h-5 text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+            </svg>
+            <p class="text-orange-300 text-sm">{{ session('usuario_ip_bloqueado') }}</p>
+        </div>
+    @endif
+    @if(session('usuario_ip_desbloqueado'))
+        <div style="background: rgba(254,254,254,0.18)" class="backdrop-blur-[15px] rounded-2xl border border-green-500/40 px-5 py-3 flex items-center gap-3">
+            <svg class="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-green-300 text-sm">{{ session('usuario_ip_desbloqueado') }}</p>
+        </div>
+    @endif
 
     @if($suspeitos->isEmpty())
         <div style="background: rgba(254,254,254,0.18)" class="backdrop-blur-[15px] rounded-2xl border border-green-500/30 p-8 text-center">
@@ -334,26 +350,59 @@
                                             </td>
                                             <td class="px-3 py-2.5 whitespace-nowrap">
                                                 @if($sess->ip_address)
-                                                    @if(isset($ipsBlockeados[$sess->ip_address]))
-                                                        <form method="POST" action="{{ route('gerenciamento.desbloquear-ip') }}">
-                                                            @csrf
-                                                            <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
-                                                            <input type="hidden" name="horas" value="{{ $horas }}">
-                                                            <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-green-500/50 bg-green-900/40 text-green-300 hover:bg-green-700/60 transition-colors whitespace-nowrap">
-                                                                Desbloquear
-                                                            </button>
-                                                        </form>
-                                                    @else
-                                                        <form method="POST" action="{{ route('gerenciamento.bloquear-ip') }}"
-                                                              onsubmit="return confirm('Bloquear o IP {{ $sess->ip_address }}?\n\nO usuário será desconectado imediatamente e não conseguirá mais acessar o sistema por esse IP.')">
-                                                            @csrf
-                                                            <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
-                                                            <input type="hidden" name="horas" value="{{ $horas }}">
-                                                            <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-red-500/50 bg-red-900/40 text-red-300 hover:bg-red-700/60 transition-colors whitespace-nowrap">
-                                                                Bloquear
-                                                            </button>
-                                                        </form>
-                                                    @endif
+                                                    @php
+                                                        $totalNesseIp    = $sessoesPorIp[$sess->ip_address] ?? 1;
+                                                        $chaveUserIp     = "{$s->user_id}_{$sess->ip_address}";
+                                                        $userIpBloqueado = isset($userIpsBlockeados[$chaveUserIp]);
+                                                    @endphp
+                                                    <div class="flex flex-col gap-1">
+
+                                                        {{-- Bloquear/Desbloquear IP inteiro --}}
+                                                        @if(isset($ipsBlockeados[$sess->ip_address]))
+                                                            <form method="POST" action="{{ route('gerenciamento.desbloquear-ip') }}">
+                                                                @csrf
+                                                                <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
+                                                                <input type="hidden" name="horas" value="{{ $horas }}">
+                                                                <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-green-500/50 bg-green-900/40 text-green-300 hover:bg-green-700/60 transition-colors whitespace-nowrap">
+                                                                    Desbloquear IP
+                                                                </button>
+                                                            </form>
+                                                        @else
+                                                            <form method="POST" action="{{ route('gerenciamento.bloquear-ip') }}"
+                                                                  onsubmit="return confirmarBloqueioIp('{{ $sess->ip_address }}', {{ $totalNesseIp }})">
+                                                                @csrf
+                                                                <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
+                                                                <input type="hidden" name="horas" value="{{ $horas }}">
+                                                                <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-red-500/50 bg-red-900/40 text-red-300 hover:bg-red-700/60 transition-colors whitespace-nowrap">
+                                                                    Bloquear IP{{ $totalNesseIp > 1 ? " ($totalNesseIp usuários)" : '' }}
+                                                                </button>
+                                                            </form>
+                                                        @endif
+
+                                                        {{-- Bloquear/Desbloquear só este usuário neste IP --}}
+                                                        @if($userIpBloqueado)
+                                                            <form method="POST" action="{{ route('gerenciamento.desbloquear-usuario-ip') }}">
+                                                                @csrf
+                                                                <input type="hidden" name="user_id" value="{{ $s->user_id }}">
+                                                                <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
+                                                                <input type="hidden" name="horas" value="{{ $horas }}">
+                                                                <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-sky-500/50 bg-sky-900/40 text-sky-300 hover:bg-sky-700/60 transition-colors whitespace-nowrap">
+                                                                    Liberar só ele
+                                                                </button>
+                                                            </form>
+                                                        @else
+                                                            <form method="POST" action="{{ route('gerenciamento.bloquear-usuario-ip') }}"
+                                                                  onsubmit="return confirm('Bloquear APENAS {{ addslashes($s->name) }} neste IP?\n\nOs outros usuários do mesmo IP continuarão acessando normalmente.')">
+                                                                @csrf
+                                                                <input type="hidden" name="user_id" value="{{ $s->user_id }}">
+                                                                <input type="hidden" name="ip_address" value="{{ $sess->ip_address }}">
+                                                                <input type="hidden" name="horas" value="{{ $horas }}">
+                                                                <button type="submit" class="text-[10px] px-2 py-0.5 rounded-full border border-orange-500/50 bg-orange-900/40 text-orange-300 hover:bg-orange-700/60 transition-colors whitespace-nowrap">
+                                                                    Bloquear só ele
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
                                                 @endif
                                             </td>
                                         </tr>
@@ -386,6 +435,19 @@ function toggleDetalhes(userId) {
     const chevron = document.getElementById('chevron-' + userId);
     row.classList.toggle('hidden');
     chevron.style.transform = row.classList.contains('hidden') ? '' : 'rotate(180deg)';
+}
+
+function confirmarBloqueioIp(ip, totalUsuarios) {
+    if (totalUsuarios > 1) {
+        return confirm(
+            '⚠️ ATENÇÃO — BLOQUEIO DE IP COMPARTILHADO\n\n' +
+            'O IP ' + ip + ' possui ' + totalUsuarios + ' usuários ativos.\n\n' +
+            'Bloquear este IP irá DESCONECTAR TODOS eles, incluindo usuários legítimos do mesmo escritório/rede.\n\n' +
+            'Se quiser bloquear apenas uma pessoa, use o botão "Bloquear só ele".\n\n' +
+            'Tem certeza que deseja bloquear o IP inteiro?'
+        );
+    }
+    return confirm('Bloquear o IP ' + ip + '?\n\nO usuário será desconectado imediatamente e não conseguirá mais acessar por esse IP.');
 }
 </script>
 </x-app-layout>

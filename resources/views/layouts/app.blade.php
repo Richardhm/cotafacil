@@ -82,13 +82,7 @@
         }
 
         #user-modal {
-            opacity: 0; /* Inicialmente invisível */
-            transform: translateX(100%);
-            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
-        }
-        #user-modal.translate-x-0 {
-            opacity: 1; /* Tornar visível */
-            transform: translateX(0);
+            transition: opacity 0.2s ease;
         }
 
         #toast-container {
