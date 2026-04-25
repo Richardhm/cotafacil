@@ -34,8 +34,8 @@ class FinanceiroController extends Controller
         $totalPix      = Assinatura::where('tipo', 'PIX')->where('status', 'ativo')->count();
         $totalPixAuto  = Assinatura::where('tipo', 'PIX_AUTOMATICO')->where('status', 'ativo')->count();
 
-        // --- Receita mensal estimada (assinaturas ativas) ---
-        $receitaMensal = Assinatura::where('status', 'ativo')->sum('preco_total');
+        // calculada depois, a partir de $contas (mesma base da tabela)
+        $receitaMensal = 0;
 
         // --- Novas assinaturas este mês ---
         $novasEsteMes = Assinatura::where('status', 'ativo')
@@ -109,6 +109,7 @@ class FinanceiroController extends Controller
                     'subscription_id' => $assinatura->subscription_id,
                     'admin_nome'      => $adminEmail?->user?->name  ?? '—',
                     'admin_email'     => $adminEmail?->user?->email ?? '—',
+                    'admin_phone'     => $adminEmail?->user?->phone ?? null,
                     'total_users'     => $assinatura->emails->count(),
                     'tipo'            => $assinatura->tipo,
                     'status'          => $assinatura->status,
@@ -121,6 +122,9 @@ class FinanceiroController extends Controller
                     'users_ativo'     => $adminAtivo,
                 ];
             });
+
+        // Receita = soma dos valores que aparecem na tabela (mesmo filtro)
+        $receitaMensal = $contas->sum('preco_total');
 
         // --- Evolução mensal (últimos 12 meses) baseado em created_at de assinaturas ativas ---
         $evolucao = Assinatura::where('status', 'ativo')

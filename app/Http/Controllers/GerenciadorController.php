@@ -135,7 +135,26 @@ class GerenciadorController extends Controller
             ->get()
             ->mapWithKeys(fn($r) => ["{$r->user_id}_{$r->ip_address}" => true]);
 
-        return view("gerenciamento.logins-compartilhados", compact("suspeitos", "detalhesPorUsuario", "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados"));
+        // Papel de cada suspeito na assinatura (titular ou não)
+        $userIds = $suspeitos->pluck('user_id');
+
+        $emailAssins = \DB::table('emails_assinatura')
+            ->whereIn('user_id', $userIds)
+            ->select('user_id', 'assinatura_id', 'is_administrador')
+            ->get()
+            ->keyBy('user_id');
+
+        $assinaturasNaoAdmin = $emailAssins->where('is_administrador', 0)->pluck('assinatura_id')->unique();
+
+        $titularesPorAssinatura = \DB::table('emails_assinatura as ea')
+            ->join('users', 'users.id', '=', 'ea.user_id')
+            ->whereIn('ea.assinatura_id', $assinaturasNaoAdmin)
+            ->where('ea.is_administrador', true)
+            ->select('ea.assinatura_id', 'users.name', 'users.email')
+            ->get()
+            ->keyBy('assinatura_id');
+
+        return view("gerenciamento.logins-compartilhados", compact("suspeitos", "detalhesPorUsuario", "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados", "emailAssins", "titularesPorAssinatura"));
     }
 
     public function desativarLoginCompartilhado(User $user, \Illuminate\Http\Request $request)

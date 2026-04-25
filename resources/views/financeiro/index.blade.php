@@ -13,6 +13,7 @@
         .badge-status-ativo    { background:#10b981; color:#fff; }
         .badge-status-trial    { background:#f59e0b; color:#fff; }
         .badge-status-inativo  { background:#ef4444; color:#fff; }
+        .badge-status-pendente { background:#d97706; color:#fff; }
         table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.85); font-weight: 700; }
         table tbody td { color: #fff; }
 
@@ -38,6 +39,23 @@
         .modal-box-lg { max-width:900px; }
         .modal-header { padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:space-between; }
         .modal-body { padding:1.25rem 1.5rem; overflow-y:auto; flex:1; }
+
+        /* ---- Impressão ---- */
+        .print-section { display: none; }
+        @media print {
+            @page { margin: 1.5cm 2cm; }
+            body * { visibility: hidden; }
+            .print-section { display: block !important; }
+            .print-section, .print-section * { visibility: visible; }
+            .print-section { position: absolute; left: 0; top: 0; width: 100%; }
+            .ps-titulo    { font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; color: #111; margin: 0 0 2px; }
+            .ps-sub       { font-family: Arial, sans-serif; font-size: 10px; color: #777; margin: 0 0 12px; }
+            .ps-hr        { border: none; border-top: 1px solid #bbb; margin: 0 0 10px; }
+            .ps-assinante { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #111; margin: 8px 0 1px; }
+            .ps-meta      { font-family: Arial, sans-serif; font-size: 10px; color: #555; margin: 0 0 2px; }
+            .ps-usuario   { font-family: Arial, sans-serif; font-size: 11px; color: #333; margin: 1px 0 1px 2em; }
+            .ps-usuario::before { content: "↳ "; color: #999; }
+        }
     </style>
     @endsection
 
@@ -49,7 +67,7 @@
                 <h1 class="text-2xl font-bold text-white">Dashboard Financeiro</h1>
                 <p class="text-sm text-white/70 mt-1">Visão geral das assinaturas · {{ now()->format('d/m/Y H:i') }}</p>
             </div>
-            <button onclick="window.print()"
+            <button onclick="imprimirTabela()"
                 class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -61,12 +79,9 @@
 
         {{-- Cards de métricas --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="card-stat cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition"
-                 onclick="document.getElementById('modalAtivas').classList.add('aberto')"
-                 title="Clique para ver os assinantes ativos">
+            <div class="card-stat">
                 <p class="label">Assinaturas Ativas</p>
                 <p class="value text-emerald-400">{{ $totalAtivas }}</p>
-                <p class="text-white/50 text-xs mt-1">clique para detalhes →</p>
             </div>
             <div class="card-stat">
                 <p class="label">Receita Mensal Estimada</p>
@@ -93,7 +108,7 @@
         @endif
 
         {{-- Gráfico de evolução --}}
-        <div class="bg-black/20 border border-white/10 rounded-2xl p-5 mb-8">
+        <div class="bg-black/20 border border-white/10 rounded-2xl p-5 mb-8 no-print">
             <h2 class="text-white font-bold mb-4">Evolução — Últimos 12 meses</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -112,7 +127,7 @@
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-white font-bold">Todas as Contas</h2>
                 <input id="busca" type="text" placeholder="Buscar por nome ou e-mail..."
-                    class="bg-white/10 text-white text-sm rounded-lg px-3 py-1.5 border border-white/20 outline-none w-64
+                    class="no-print bg-white/10 text-white text-sm rounded-lg px-3 py-1.5 border border-white/20 outline-none w-64
                            placeholder-gray-500 focus:border-blue-400">
             </div>
 
@@ -128,8 +143,8 @@
                             <th class="pb-2 pr-4 text-right">Valor</th>
                             <th class="pb-2 pr-4 text-center">Próx. Cobrança</th>
                             <th class="pb-2 pr-4 text-center">Cadastro</th>
-                            <th class="pb-2 pr-4 text-center">Histórico</th>
-                            <th class="pb-2 text-center">Acesso</th>
+                            <th class="pb-2 pr-4 text-center" style="display:none">Histórico</th>
+                            <th class="pb-2 text-center col-acesso">Acesso</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,9 +157,23 @@
 
                             {{-- Nome com seta --}}
                             <td class="py-2 pr-4">
-                                <span class="btn-expand font-medium text-white" data-target="usuarios-{{ $i }}">
-                                    <span class="seta text-gray-400">&#9654;</span>
-                                    {{ $conta['admin_nome'] }}
+                                <span class="flex items-center gap-1.5">
+                                    <span class="btn-expand font-medium text-white" data-target="usuarios-{{ $i }}">
+                                        <span class="seta text-gray-400">&#9654;</span>
+                                        {{ $conta['admin_nome'] }}
+                                    </span>
+                                    @php
+                                        $phone = preg_replace('/\D/', '', $conta['admin_phone'] ?? '');
+                                        if ($phone && strlen($phone) <= 11) { $phone = '55' . $phone; }
+                                    @endphp
+                                    @if($phone)
+                                    <a href="https://wa.me/{{ $phone }}" target="_blank" title="WhatsApp: {{ $conta['admin_phone'] }}"
+                                       class="shrink-0 text-green-400 hover:text-green-300 transition-colors">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                        </svg>
+                                    </a>
+                                    @endif
                                 </span>
                             </td>
 
@@ -173,13 +202,22 @@
                             <td class="py-2 pr-4 text-center">
                                 @php
                                     $status = strtolower($conta['status'] ?? 'inativo');
-                                    $badgeStatus = match($status) {
-                                        'ativo'  => 'badge-status-ativo',
-                                        'trial'  => 'badge-status-trial',
-                                        default  => 'badge-status-inativo',
-                                    };
+                                    $emAtraso = $conta['next_charge']
+                                        && $status !== 'trial'
+                                        && \Carbon\Carbon::parse($conta['next_charge'])->isPast();
+                                    if ($emAtraso) {
+                                        $badgeStatus = 'badge-status-pendente';
+                                        $labelStatus = 'Pendente';
+                                    } else {
+                                        $badgeStatus = match($status) {
+                                            'ativo'  => 'badge-status-ativo',
+                                            'trial'  => 'badge-status-trial',
+                                            default  => 'badge-status-inativo',
+                                        };
+                                        $labelStatus = ucfirst($conta['status']);
+                                    }
                                 @endphp
-                                <span class="badge-tipo {{ $badgeStatus }}">{{ ucfirst($conta['status']) }}</span>
+                                <span class="badge-tipo {{ $badgeStatus }}">{{ $labelStatus }}</span>
                             </td>
 
                             <td class="py-2 pr-4 text-right">R$ {{ number_format($conta['preco_total'] ?? 0, 2, ',', '.') }}</td>
@@ -199,8 +237,8 @@
                                 {{ $conta['created_at'] ? \Carbon\Carbon::parse($conta['created_at'])->format('d/m/Y') : '—' }}
                             </td>
 
-                            {{-- Botão Histórico --}}
-                            <td class="py-2 pr-4 text-center">
+                            {{-- Botão Histórico (oculto) --}}
+                            <td class="py-2 pr-4 text-center" style="display:none">
                                 <button
                                     class="btn-historico text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg transition"
                                     data-id="{{ $conta['id'] }}"
@@ -211,7 +249,7 @@
                             </td>
 
                             {{-- Botão Ativar/Desativar --}}
-                            <td class="py-2 text-center">
+                            <td class="py-2 text-center col-acesso">
                                 <button
                                     class="btn-toggle-status text-xs px-3 py-1 rounded-lg transition font-semibold {{ $conta['users_ativo'] ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }} text-white"
                                     data-assinatura-id="{{ $conta['id'] }}"
@@ -226,7 +264,21 @@
                             <td colspan="10" class="pb-3 pt-0 px-4 bg-white/[0.02]">
                                 <div class="usuarios-grid">
                                     @foreach($conta['usuarios'] as $u)
-                                    <div class="usuario-card">
+                                    @php
+                                        $uPhone = preg_replace('/\D/', '', $u['telefone'] ?? '');
+                                        if ($uPhone && strlen($uPhone) <= 11) { $uPhone = '55' . $uPhone; }
+                                    @endphp
+                                    <div class="usuario-card" style="position:relative">
+                                        @if($uPhone)
+                                        <a href="https://wa.me/{{ $uPhone }}" target="_blank"
+                                           title="WhatsApp: {{ $u['telefone'] }}"
+                                           style="position:absolute; top:8px; right:8px; color:#22c55e;"
+                                           class="hover:opacity-80 transition-opacity">
+                                            <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                            </svg>
+                                        </a>
+                                        @endif
                                         <p class="u-nome">
                                             {{ $u['nome'] }}
                                             @if($u['admin'])
@@ -246,68 +298,6 @@
                             <td colspan="10" class="py-6 text-center text-white/60">Nenhuma assinatura encontrada.</td>
                         </tr>
                         @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- MODAL ASSINATURAS ATIVAS --}}
-    <div id="modalAtivas" class="modal-overlay">
-        <div class="modal-box modal-box-lg">
-            <div class="modal-header">
-                <div>
-                    <h3 class="text-white font-semibold text-base">Assinantes Ativos</h3>
-                    <p class="text-gray-400 text-xs mt-0.5">{{ $contasAtivas->count() }} conta(s) ativas</p>
-                </div>
-                <button onclick="document.getElementById('modalAtivas').classList.remove('aberto')" class="text-gray-400 hover:text-white transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <table class="w-full text-sm text-left text-gray-300">
-                    <thead>
-                        <tr class="border-b border-white/10 text-xs uppercase tracking-wide opacity-60">
-                            <th class="pb-2 pr-4">Admin</th>
-                            <th class="pb-2 pr-4">E-mail</th>
-                            <th class="pb-2 pr-4 text-center">Usuários</th>
-                            <th class="pb-2 pr-4 text-center">Tipo</th>
-                            <th class="pb-2 pr-4 text-right">Valor</th>
-                            <th class="pb-2 text-center">Próx. Cobrança</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($contasAtivas as $ativa)
-                        @php
-                            $tipo = strtolower($ativa['tipo'] ?? 'cartao');
-                            $badgeTipo = match($tipo) {
-                                'pix'            => 'badge-pix',
-                                'pix_automatico' => 'badge-pixauto',
-                                default          => 'badge-cartao',
-                            };
-                            $labelTipo = match($tipo) {
-                                'pix'            => 'PIX',
-                                'pix_automatico' => 'PIX Auto',
-                                default          => 'Cartão',
-                            };
-                        @endphp
-                        <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                            <td class="py-2 pr-4 font-medium text-white">{{ $ativa['admin_nome'] }}</td>
-                            <td class="py-2 pr-4 text-white/75">{{ $ativa['admin_email'] }}</td>
-                            <td class="py-2 pr-4 text-center">{{ $ativa['total_users'] }}</td>
-                            <td class="py-2 pr-4 text-center">
-                                <span class="badge-tipo {{ $badgeTipo }}">{{ $labelTipo }}</span>
-                            </td>
-                            <td class="py-2 pr-4 text-right text-green-400 font-semibold">
-                                R$ {{ number_format($ativa['preco_total'] ?? 0, 2, ',', '.') }}
-                            </td>
-                            <td class="py-2 text-center text-white/80">
-                                {{ $ativa['next_charge'] ? \Carbon\Carbon::parse($ativa['next_charge'])->format('d/m/Y') : '—' }}
-                            </td>
-                        </tr>
-                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -336,6 +326,9 @@
 
     @section('scripts')
     <script>
+        // ---- Impressão ----
+        function imprimirTabela() { window.print(); }
+
         // ---- Dados de histórico (agrupados por id / subscription_id) ----
         const historicoPix    = @json($historicoPix);
         const historicoCartao = @json($historicoCartao);
@@ -432,10 +425,6 @@
 
         document.getElementById('fecharModal').addEventListener('click', () => modal.classList.remove('aberto'));
         modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('aberto'); });
-
-        // Fecha modal de ativos ao clicar no fundo
-        const modalAtivas = document.getElementById('modalAtivas');
-        modalAtivas.addEventListener('click', e => { if (e.target === modalAtivas) modalAtivas.classList.remove('aberto'); });
 
         // ---- Toggle Ativar/Desativar usuários ----
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -569,4 +558,33 @@
         });
     </script>
     @endsection
+
+    {{-- SEÇÃO EXCLUSIVA PARA IMPRESSÃO --}}
+    <div class="print-section">
+        <p class="ps-titulo">Dashboard Financeiro</p>
+        <p class="ps-sub">Gerado em {{ now()->format('d/m/Y \à\s H:i') }} &nbsp;·&nbsp; {{ $contas->count() }} conta(s)</p>
+        <hr class="ps-hr">
+
+        @foreach($contas as $conta)
+        @php
+            $labelTipoPs = match(strtolower($conta['tipo'] ?? '')) {
+                'pix'            => 'PIX',
+                'pix_automatico' => 'PIX Auto',
+                default          => 'Cartão',
+            };
+            $proximaPs = $conta['next_charge']
+                ? \Carbon\Carbon::parse($conta['next_charge'])->format('d/m/Y')
+                : ($conta['trial_ends_at'] ? \Carbon\Carbon::parse($conta['trial_ends_at'])->format('d/m/Y').' (trial)' : '—');
+            $membros = collect($conta['usuarios'])->filter(fn($u) => !$u['admin']);
+        @endphp
+
+        <p class="ps-assinante">{{ $conta['admin_nome'] }}</p>
+        <p class="ps-meta">{{ $conta['admin_email'] }} &nbsp;·&nbsp; {{ $labelTipoPs }} &nbsp;·&nbsp; R$ {{ number_format($conta['preco_total'] ?? 0, 2, ',', '.') }} &nbsp;·&nbsp; Próx. cobrança: {{ $proximaPs }}</p>
+
+        @foreach($membros as $u)
+            <p class="ps-usuario">{{ $u['nome'] }}{{ ($u['telefone'] ?? '—') !== '—' ? ' · '.$u['telefone'] : '' }} · {{ $u['email'] }}</p>
+        @endforeach
+
+        @endforeach
+    </div>
 </x-app-layout>
