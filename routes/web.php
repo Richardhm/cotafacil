@@ -66,6 +66,7 @@ Route::post('/pix-automatico/verificar-pagamento', [AssinaturaController::class,
 Route::middleware(['auth', 'apenasDesenvolvedores'])->group(function () {
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
     Route::post('/financeiro/toggle-status', [FinanceiroController::class, 'toggleStatus'])->name('financeiro.toggle.status');
+    Route::post('/financeiro/toggle-free',   [FinanceiroController::class, 'toggleFree'])->name('financeiro.toggle.free');
 });
 
 // Gerenciamento do webhook PIX (apenas desenvolvedores)

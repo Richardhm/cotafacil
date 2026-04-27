@@ -120,6 +120,7 @@ class FinanceiroController extends Controller
                     'usuarios'        => $usuarios,
                     'user_ids'        => $userIds,
                     'users_ativo'     => $adminAtivo,
+                    'free'            => (bool) $assinatura->free,
                 ];
             });
 
@@ -194,6 +195,17 @@ class FinanceiroController extends Controller
             'historicoPix',
             'historicoCartao'
         ));
+    }
+
+    public function toggleFree(Request $request)
+    {
+        $request->validate(['assinatura_id' => 'required|integer|exists:assinaturas,id']);
+
+        $assinatura = Assinatura::findOrFail($request->assinatura_id);
+        $assinatura->free = $assinatura->free ? 0 : 1;
+        $assinatura->save();
+
+        return response()->json(['success' => true, 'free' => (bool) $assinatura->free]);
     }
 
     public function toggleStatus(Request $request)

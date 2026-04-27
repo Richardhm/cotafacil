@@ -144,6 +144,7 @@
                             <th class="pb-2 pr-4 text-center">Próx. Cobrança</th>
                             <th class="pb-2 pr-4 text-center">Cadastro</th>
                             <th class="pb-2 pr-4 text-center" style="display:none">Histórico</th>
+                            <th class="pb-2 pr-4 text-center">Free</th>
                             <th class="pb-2 text-center col-acesso">Acesso</th>
                         </tr>
                     </thead>
@@ -245,6 +246,17 @@
                                     data-subscription-id="{{ $conta['subscription_id'] }}"
                                     data-nome="{{ $conta['admin_nome'] }}">
                                     Histórico
+                                </button>
+                            </td>
+
+                            {{-- Toggle Free --}}
+                            <td class="py-2 pr-4 text-center">
+                                <button
+                                    class="btn-toggle-free text-xs px-3 py-1 rounded-lg transition font-semibold {{ $conta['free'] ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-white/10 hover:bg-white/20 text-white/60' }} text-white"
+                                    data-assinatura-id="{{ $conta['id'] }}"
+                                    data-free="{{ $conta['free'] ? '1' : '0' }}"
+                                    title="{{ $conta['free'] ? 'Conta Free — clique para remover' : 'Clique para marcar como Free' }}">
+                                    {{ $conta['free'] ? '★ Free' : 'Free' }}
                                 </button>
                             </td>
 
@@ -470,6 +482,46 @@
                         }
                     } else {
                         alert(res.message || 'Erro ao alterar status.');
+                    }
+                })
+                .catch(() => alert('Erro de comunicação.'))
+                .finally(() => { btn.disabled = false; });
+            });
+        });
+
+        // ---- Toggle Free ----
+        document.querySelectorAll('.btn-toggle-free').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const assinaturaId = btn.dataset.assinaturaId;
+                const isFree       = btn.dataset.free === '1';
+                const msg = isFree
+                    ? 'Remover condição Free desta conta? Voltará a cobrar normalmente.'
+                    : 'Marcar esta conta como Free? Usuários poderão ser adicionados sem cobrança extra.';
+                if (!confirm(msg)) return;
+
+                btn.disabled = true;
+                fetch('{{ route("financeiro.toggle.free") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    body: JSON.stringify({ assinatura_id: assinaturaId }),
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        const novo = res.free;
+                        btn.dataset.free = novo ? '1' : '0';
+                        btn.textContent  = novo ? '★ Free' : 'Free';
+                        btn.title        = novo ? 'Conta Free — clique para remover' : 'Clique para marcar como Free';
+                        btn.className = btn.className
+                            .replace(/bg-emerald-\d+\s*hover:bg-emerald-\d+/, '')
+                            .replace(/bg-white\/\d+\s*hover:bg-white\/\d+\s*text-white\/\d+/, '');
+                        if (novo) {
+                            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                            btn.classList.remove('bg-white/10', 'hover:bg-white/20', 'text-white/60');
+                        } else {
+                            btn.classList.add('bg-white/10', 'hover:bg-white/20', 'text-white/60');
+                            btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                        }
                     }
                 })
                 .catch(() => alert('Erro de comunicação.'))

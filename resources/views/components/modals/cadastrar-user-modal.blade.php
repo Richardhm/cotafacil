@@ -108,7 +108,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const d = await r.json();
             if (d.success) {
                 closeModal();
-                if (typeof window.adicionarLinhaInativa === 'function') window.adicionarLinhaInativa(d);
+                if (d.activated) {
+                    // Conta free: usuário já foi ativado direto, recarrega para mostrar na lista de ativos
+                    window.location.reload();
+                } else if (typeof window.adicionarLinhaInativa === 'function') {
+                    window.adicionarLinhaInativa(d);
+                }
             } else {
                 erro.textContent = d.error ?? 'Erro ao salvar.';
                 erro.classList.remove('hidden');

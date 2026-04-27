@@ -53,7 +53,40 @@ class TeamUserController extends Controller
         }
 
         $assinatura = Assinatura::where('user_id', Auth::id())->firstOrFail();
-        $isTrial    = $assinatura->status === 'trial';
+
+        // Conta free: ativa direto sem pagamento
+        if ($assinatura->free) {
+            $novoUser = User::create([
+                'name'              => $request->name,
+                'email'             => $request->email,
+                'phone'             => $request->phone,
+                'password'          => bcrypt('12345678'),
+                'email_verified_at' => now(),
+                'primeiro_acesso'   => 1,
+                'status'            => 1,
+            ]);
+
+            EmailAssinatura::create([
+                'assinatura_id'    => $assinatura->id,
+                'email'            => $request->email,
+                'user_id'          => $novoUser->id,
+                'is_administrador' => false,
+            ]);
+
+            return response()->json([
+                'success'    => true,
+                'activated'  => true,
+                'id'         => null,
+                'name'       => $novoUser->name,
+                'email'      => $novoUser->email,
+                'phone'      => $novoUser->phone,
+                'valor_fmt'  => 'R$ 0,00',
+                'is_trial'   => false,
+                'quantidade' => 1,
+            ]);
+        }
+
+        $isTrial = $assinatura->status === 'trial';
 
         // Ativação do admin só é cobrada UMA vez (primeiro da fila)
         $jaTemAtivacao = PendingTeamUser::where('admin_user_id', Auth::id())
@@ -80,6 +113,7 @@ class TeamUserController extends Controller
 
         return response()->json([
             'success'   => true,
+            'activated' => false,
             'id'        => $pending->id,
             'name'      => $pending->name,
             'email'     => $pending->email,

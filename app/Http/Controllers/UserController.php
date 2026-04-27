@@ -149,7 +149,7 @@ class UserController extends Controller
 
 
 
-            if($assinatura->user_id != 117 && $assinatura->user_id != 190) {
+            if(!$assinatura->free) {
 
                 if (!$assinatura) {
                     throw new \Exception("Assinatura não encontrada.");

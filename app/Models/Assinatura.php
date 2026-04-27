@@ -29,6 +29,7 @@ class Assinatura extends Model
         'trial_ends_at',
         'alerta_pix_enviado_at',
         'contrato',
+        'free',
     ];
 
     public function emails()
