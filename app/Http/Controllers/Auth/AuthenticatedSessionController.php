@@ -7,22 +7,23 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Models\BlockedIp;
 use App\Models\BlockedUserIp;
 use App\Models\LoginSession;
+use App\Models\UserDevice;
 use App\Services\DeviceFingerprintService;
 use App\Services\GeoIpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
     public function create()
     {
-        // Solicita ao Chrome/Android que envie o modelo do dispositivo no submit do formulário
         return response()
             ->view('auth.login')
-            ->header('Accept-CH', 'Sec-CH-UA-Model');
+            ->header('Accept-CH', 'Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Mobile');
     }
 
     public function store(LoginRequest $request): RedirectResponse
@@ -32,51 +33,157 @@ class AuthenticatedSessionController extends Controller
         $userId = Auth::id();
         $ip     = $request->ip();
 
-        // Verifica bloqueio de IP global
+        // Bloquear IP global
         if (BlockedIp::where('ip_address', $ip)->exists()) {
             Auth::guard('web')->logout();
             return back()->withErrors(['email' => 'Acesso bloqueado. Entre em contato com o suporte.'])->onlyInput('email');
         }
 
-        // Verifica bloqueio específico deste usuário neste IP
+        // Bloquear usuário neste IP
         if (BlockedUserIp::where('user_id', $userId)->where('ip_address', $ip)->exists()) {
             Auth::guard('web')->logout();
             return back()->withErrors(['email' => 'Este dispositivo está bloqueado para a sua conta. Entre em contato com o suporte.'])->onlyInput('email');
         }
 
-        $fingerprint  = app(DeviceFingerprintService::class)->fromRequest($request);
-        $oldSessionId = session()->getId();
+        // Valida ou gera UUID do dispositivo
+        $deviceUuid = $request->input('device_uuid', '');
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $deviceUuid)) {
+            $deviceUuid = (string) Str::uuid();
+        }
 
-        // Marcar sessões anteriores como deslocadas antes de excluí-las
-        $sessoesAnteriores = DB::table('sessions')
-            ->where('user_id', $userId)
-            ->where('id', '!=', $oldSessionId)
-            ->pluck('id');
+        $fingerprint = app(DeviceFingerprintService::class)->fromRequest($request);
 
-        if ($sessoesAnteriores->isNotEmpty()) {
+        // Dispositivo explicitamente bloqueado pelo administrador
+        if (UserDevice::where('user_id', $userId)->where('device_uuid', $deviceUuid)->where('is_blocked', true)->exists()) {
+            Auth::guard('web')->logout();
+            return back()->withErrors([
+                'email' => 'Este dispositivo está bloqueado. Entre em contato com o suporte.',
+            ])->onlyInput('email');
+        }
+
+        // Verifica/registra dispositivo com proteção contra race condition
+        $device       = null;
+        $limitReached = false;
+
+        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, &$device, &$limitReached) {
+            // Busca qualquer registro existente para este UUID (ativo ou inativo)
+            $existing = UserDevice::where('user_id', $userId)
+                ->where('device_uuid', $deviceUuid)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                if ($existing->is_active) {
+                    // Device já ativo — usa normalmente
+                    $device = $existing;
+                    return;
+                }
+
+                // Device inativo (ex: após liberarTitular) — verifica vagas antes de reativar
+                $total = UserDevice::where('user_id', $userId)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->count();
+
+                if ($total >= 3) {
+                    $limitReached = true;
+                    return;
+                }
+
+                $existing->update(['is_active' => true]);
+                $device = $existing->fresh();
+                return;
+            }
+
+            // Device completamente novo — verifica vagas
+            $total = UserDevice::where('user_id', $userId)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->count();
+
+            if ($total >= 3) {
+                $limitReached = true;
+                return;
+            }
+
+            $device = UserDevice::create([
+                'user_id'            => $userId,
+                'device_uuid'        => $deviceUuid,
+                'device_fingerprint' => $fingerprint['device_fingerprint'],
+                'device_name'        => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
+                'device_model'       => $fingerprint['device_model'],
+                'is_active'          => true,
+                'is_blocked'         => false,
+                'registered_at'      => now(),
+            ]);
+        });
+
+        if ($limitReached) {
+            // Registra tentativa bloqueada para auditoria
+            $geo = app(GeoIpService::class)->resolve($ip);
+            $request->session()->regenerate();
+            LoginSession::create([
+                'user_id'            => $userId,
+                'session_id'         => session()->getId(),
+                'device_uuid'        => $deviceUuid,
+                'ip_address'         => $ip,
+                'city'               => $geo['city'],
+                'country'            => $geo['country'],
+                'timezone'           => $fingerprint['timezone'],
+                'screen_resolution'  => $fingerprint['screen_resolution'],
+                'canvas_hash'        => $fingerprint['canvas_hash'],
+                'gpu_renderer'       => $fingerprint['gpu_renderer'],
+                'cpu_cores'          => $fingerprint['cpu_cores'],
+                'device_memory'      => $fingerprint['device_memory'],
+                'user_agent'         => $request->userAgent(),
+                'device_fingerprint' => $fingerprint['device_fingerprint'],
+                'browser'            => $fingerprint['browser'],
+                'os'                 => $fingerprint['os'],
+                'is_mobile'          => $fingerprint['is_mobile'],
+                'device_model'       => $fingerprint['device_model'],
+                'logged_in_at'       => now(),
+                'logged_out_at'      => now(),
+                'was_blocked'        => true,
+            ]);
+
+            Auth::guard('web')->logout();
+            return back()->withErrors([
+                'email' => 'Limite de dispositivos atingido. Sua conta já possui 3 dispositivos registrados. Contate o suporte.',
+            ])->onlyInput('email');
+        }
+
+        // Atualiza device_name/fingerprint para refletir versão atual do browser
+        $device->update([
+            'last_used_at'       => now(),
+            'device_name'        => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
+            'device_fingerprint' => $fingerprint['device_fingerprint'],
+            'device_model'       => $fingerprint['device_model'],
+        ]);
+
+        // Desloca sessões anteriores do mesmo dispositivo (outros dispositivos ficam ativos)
+        $sessoesDoMesmoDispositivo = LoginSession::where('user_id', $userId)
+            ->where('device_uuid', $deviceUuid)
+            ->whereNull('logged_out_at')
+            ->pluck('session_id');
+
+        if ($sessoesDoMesmoDispositivo->isNotEmpty()) {
             LoginSession::where('user_id', $userId)
-                ->whereIn('session_id', $sessoesAnteriores)
+                ->where('device_uuid', $deviceUuid)
                 ->whereNull('logged_out_at')
-                ->update([
-                    'logged_out_at' => now(),
-                    'was_displaced'  => true,
-                ]);
+                ->update(['logged_out_at' => now(), 'was_displaced' => true]);
 
-            DB::table('sessions')
-                ->whereIn('id', $sessoesAnteriores)
-                ->delete();
+            DB::table('sessions')->whereIn('id', $sessoesDoMesmoDispositivo)->delete();
         }
 
         $geo = app(GeoIpService::class)->resolve($request->ip());
 
-        // Regenera ANTES de criar o LoginSession para que o session_id gravado
-        // seja o definitivo — o ID muda após regenerate() e queries futuras
-        // (TrackSessionActivity, logout) dependem desse ID bater.
+        // Regenera ANTES de criar o LoginSession para que o session_id gravado seja o definitivo
         $request->session()->regenerate();
 
         LoginSession::create([
             'user_id'            => $userId,
             'session_id'         => session()->getId(),
+            'device_uuid'        => $deviceUuid,
             'ip_address'         => $request->ip(),
             'city'               => $geo['city'],
             'country'            => $geo['country'],

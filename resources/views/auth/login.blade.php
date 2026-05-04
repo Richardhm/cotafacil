@@ -13,6 +13,14 @@
             </button>
         </div>
     @endif
+    @if ($errors->has('compartilhado'))
+        <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg flex items-start gap-3" role="alert">
+            <svg class="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <span class="text-sm font-medium">{{ $errors->first('compartilhado') }}</span>
+        </div>
+    @endif
     @if ($errors->has('message'))
         <div class="bg-green-200 border border-white text-black px-4 py-3 rounded relative" role="alert">
             <strong class="font-bold">Sucesso!</strong>
@@ -29,6 +37,7 @@
         <img src="{{asset('cotafacil_logo.png')}}" class="mx-auto my-2 h-20 p-1" alt="">
         <form method="POST" action="{{ route('login') }}" id="loginForm" class="p-4 rounded-lg w-full max-w-sm bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
             @csrf
+            <input type="hidden" name="device_uuid" id="device_uuid">
             <input type="hidden" name="timezone" id="timezone">
             <input type="hidden" name="screen_resolution" id="screen_resolution">
             <input type="hidden" name="canvas_hash" id="canvas_hash">
@@ -73,6 +82,19 @@
         <script>
             // Captura dados do dispositivo antes do submit (invisível ao usuário)
             (function () {
+                // UUID persistente por dispositivo/navegador
+                var deviceUuid = localStorage.getItem('cf_device_uuid');
+                if (!deviceUuid) {
+                    deviceUuid = crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                            var r = Math.random() * 16 | 0;
+                            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                        });
+                    localStorage.setItem('cf_device_uuid', deviceUuid);
+                }
+                document.getElementById('device_uuid').value = deviceUuid;
+
                 document.getElementById('timezone').value =
                     Intl.DateTimeFormat().resolvedOptions().timeZone || '';
                 document.getElementById('screen_resolution').value =

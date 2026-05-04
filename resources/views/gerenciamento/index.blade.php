@@ -96,11 +96,6 @@
             <!-- Cartão -->
             <div id="step-cartao" class="hidden">
                 <div class="mb-3">
-                    <label class="block text-sm text-white mb-1">CPF do titular</label>
-                    <input type="text" id="c-cpf" placeholder="000.000.000-00"
-                           class="w-full rounded-md border border-white/30 bg-white/10 text-white placeholder-white/30 px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
-                </div>
-                <div class="mb-3">
                     <label class="block text-sm text-white mb-1">Número do cartão</label>
                     <input type="text" id="c-num" placeholder="0000 0000 0000 0000" maxlength="19"
                            class="w-full rounded-md border border-white/30 bg-white/10 text-white placeholder-white/30 px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
@@ -425,7 +420,7 @@
                 el('pix-cpf-erro').classList.add('hidden');
                 el('pix-loading').classList.remove('hidden');
                 el('pix-qr-content').classList.add('hidden');
-                ['c-cpf','c-num','c-val','c-cvv'].forEach(id => { if(el(id)) el(id).value=''; });
+                ['c-num','c-val','c-cvv'].forEach(id => { if(el(id)) el(id).value=''; });
                 el('cartao-erro').classList.add('hidden');
                 showStep('step-metodo');
                 el('ativar-modal').classList.remove('hidden');
@@ -528,20 +523,12 @@
                 if (v.length > 2) v = v.slice(0,2)+'/'+v.slice(2);
                 e.target.value = v;
             });
-            el('c-cpf').addEventListener('input', e => {
-                let v = e.target.value.replace(/\D/g,'').slice(0,11);
-                v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-                e.target.value = v;
-            });
-
             el('cartao-pagar').addEventListener('click', async () => {
-                const cpf  = el('c-cpf').value.replace(/\D/g,'');
                 const num  = el('c-num').value.replace(/\s/g,'');
                 const val  = el('c-val').value;
                 const cvv  = el('c-cvv').value.trim();
                 const erro = el('cartao-erro');
 
-                if (cpf.length < 11)            { erro.textContent='CPF inválido.';            erro.classList.remove('hidden'); return; }
                 if (num.length < 15)            { erro.textContent='Número inválido.';         erro.classList.remove('hidden'); return; }
                 if (!/^\d{2}\/\d{2}$/.test(val)){ erro.textContent='Validade inválida.';       erro.classList.remove('hidden'); return; }
                 if (cvv.length < 3)             { erro.textContent='CVV inválido.';            erro.classList.remove('hidden'); return; }

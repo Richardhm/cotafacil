@@ -48,7 +48,7 @@ class LoginRequest extends FormRequest
 
         if ($user && $user->status == 2) {
             throw ValidationException::withMessages([
-                'email' => 'Acesso bloqueado: login compartilhado em mais de 1 dispositivo. Entre em contato com o suporte.',
+                'compartilhado' => 'Acesso bloqueado: login compartilhado em mais de 1 dispositivo. Entre em contato com o suporte.',
             ]);
         }
 

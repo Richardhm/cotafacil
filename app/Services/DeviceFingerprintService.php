@@ -8,28 +8,27 @@ class DeviceFingerprintService
 {
     public function fromRequest(Request $request): array
     {
-        $ua             = $request->userAgent() ?? '';
-        $lang           = $request->header('Accept-Language') ?? '';
-        $platform       = $request->header('Sec-CH-UA-Platform') ?? '';
+        $ua              = $request->userAgent() ?? '';
+        $lang            = $request->header('Accept-Language') ?? '';
+        $platform        = $request->header('Sec-CH-UA-Platform') ?? '';
+        $mobile          = $request->header('Sec-CH-UA-Mobile') ?? '';
         $clientHintModel = $request->header('Sec-CH-UA-Model') ?? '';
-        $ip             = $request->ip() ?? '';
-        $timezone       = $request->input('timezone', '');
-        $resolution     = $request->input('screen_resolution', '');
-        $canvas         = $request->input('canvas_hash', '');
-        $gpu            = $request->input('gpu_renderer', '');
-        $cpuCores       = $request->input('cpu_cores', '');
-        $devMemory      = $request->input('device_memory', '');
+        $ip              = $request->ip() ?? '';
+        $timezone        = $request->input('timezone', '');
+        $resolution      = $request->input('screen_resolution', '');
+        $canvas          = $request->input('canvas_hash', '');
+        $gpu             = $request->input('gpu_renderer', '');
+        $cpuCores        = $request->input('cpu_cores', '');
+        $devMemory       = $request->input('device_memory', '');
 
-        $ipPrefix = implode('.', array_slice(explode('.', $ip), 0, 2));
-
-        // Canvas + GPU fazem o fingerprint único mesmo em máquinas na mesma rede
+        $ipPrefix    = implode('.', array_slice(explode('.', $ip), 0, 2));
         $fingerprint = md5($ua . $lang . $platform . $ipPrefix . $timezone . $resolution . $canvas . $gpu . $cpuCores);
 
         return [
             'device_fingerprint' => $fingerprint,
             'browser'            => $this->parseBrowser($ua),
-            'os'                 => $this->parseOS($ua),
-            'is_mobile'          => $this->detectMobile($ua),
+            'os'                 => $this->parseOS($ua, $platform),
+            'is_mobile'          => $this->detectMobile($ua, $mobile),
             'device_model'       => $this->parseDeviceModel($ua, $clientHintModel),
             'timezone'           => $this->sanitizeTimezone($timezone),
             'screen_resolution'  => $this->sanitizeResolution($resolution),
@@ -61,7 +60,6 @@ class DeviceFingerprintService
     private function sanitizeGpu(string $gpu): ?string
     {
         if ($gpu === '') return null;
-        // Remove caracteres de controle, limita tamanho
         $clean = preg_replace('/[\x00-\x1F\x7F]/', '', $gpu);
         return substr($clean, 0, 255) ?: null;
     }
@@ -90,23 +88,51 @@ class DeviceFingerprintService
         return 'Desconhecido';
     }
 
-    private function parseOS(string $ua): string
+    private function parseOS(string $ua, string $platform = ''): string
     {
+        // Sec-CH-UA-Platform é a fonte mais confiável — não muda com modo desktop
+        $p = strtolower(trim($platform, '"\''));
+        if ($p !== '') {
+            return match ($p) {
+                'android'  => 'Android',
+                'ios'      => str_contains($ua, 'iPad') ? 'iOS (iPad)' : 'iOS (iPhone)',
+                'windows'  => $this->parseWindowsVersion($ua),
+                'macos'    => 'macOS',
+                'linux'    => 'Linux',
+                'chromeos' => 'ChromeOS',
+                default    => ucfirst($p),
+            };
+        }
+
+        // Fallback: User-Agent (menos confiável em modo desktop)
         return match (true) {
             str_contains($ua, 'Windows NT 10') => 'Windows 10/11',
             str_contains($ua, 'Windows NT 6')  => 'Windows 7/8',
-            str_contains($ua, 'Windows')        => 'Windows',
-            str_contains($ua, 'iPhone')         => 'iOS (iPhone)',
-            str_contains($ua, 'iPad')           => 'iOS (iPad)',
-            str_contains($ua, 'Android')        => 'Android',
-            str_contains($ua, 'Mac OS X')       => 'macOS',
-            str_contains($ua, 'Linux')          => 'Linux',
-            default                             => 'Desconhecido',
+            str_contains($ua, 'Windows')       => 'Windows',
+            str_contains($ua, 'iPhone')        => 'iOS (iPhone)',
+            str_contains($ua, 'iPad')          => 'iOS (iPad)',
+            str_contains($ua, 'Android')       => 'Android',
+            str_contains($ua, 'Mac OS X')      => 'macOS',
+            str_contains($ua, 'Linux')         => 'Linux',
+            default                            => 'Desconhecido',
         };
     }
 
-    private function detectMobile(string $ua): bool
+    private function parseWindowsVersion(string $ua): string
     {
+        if (str_contains($ua, 'Windows NT 10')) return 'Windows 10/11';
+        if (str_contains($ua, 'Windows NT 6'))  return 'Windows 7/8';
+        return 'Windows';
+    }
+
+    private function detectMobile(string $ua, string $mobile = ''): bool
+    {
+        // Sec-CH-UA-Mobile é a fonte mais confiável — funciona mesmo em modo desktop
+        if ($mobile !== '') {
+            return $mobile === '?1';
+        }
+
+        // Fallback: User-Agent
         return (bool) preg_match('/Mobile|Android|iPhone|iPad|Windows Phone/i', $ua);
     }
 
@@ -186,7 +212,7 @@ class DeviceFingerprintService
             // Xiaomi outros
             '2304FPN6DG' => 'Xiaomi 13T',
             '22081212UG' => 'Xiaomi 12T',
-            // Motorola (normalmente já vem com nome comercial no UA)
+            // Motorola
             'moto g84'   => 'Motorola Moto G84',
             'moto g54'   => 'Motorola Moto G54',
             'moto g34'   => 'Motorola Moto G34',
@@ -200,7 +226,6 @@ class DeviceFingerprintService
             'LM-K420'    => 'LG K42',
         ];
 
-        // Busca exata (case-insensitive)
         $key = strtoupper($code);
         foreach ($lookup as $raw => $name) {
             if (strtoupper($raw) === $key) {
@@ -208,7 +233,6 @@ class DeviceFingerprintService
             }
         }
 
-        // Prefixo de marca pelo padrão do código
         if (preg_match('/^SM-/i', $code))  return 'Samsung ' . $code;
         if (preg_match('/^moto /i', $code)) return 'Motorola ' . $code;
 

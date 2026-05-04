@@ -103,40 +103,105 @@ class GerenciadorController extends Controller
     {
         $horas = (int) ($request->input("horas", 48));
         $horas = in_array($horas, [24, 48, 72, 168]) ? $horas : 48;
+        $desde = now()->subHours($horas);
 
-        $suspeitos = \DB::table("login_sessions as ls")
-            ->join("users", "users.id", "=", "ls.user_id")
-            ->where("ls.logged_in_at", ">=", now()->subHours($horas))
-            ->groupBy("ls.user_id", "users.name", "users.email", "users.status")
-            ->havingRaw("COUNT(DISTINCT ls.device_fingerprint) > 1")
-            ->selectRaw("ls.user_id, users.name, users.email, users.status, COUNT(DISTINCT ls.device_fingerprint) as dispositivos_distintos, COUNT(*) as total_logins, MAX(ls.logged_in_at) as ultimo_login")
+        // Usuários com 2+ dispositivos (ativos ou bloqueados) usados no período
+        $suspeitos = \DB::table("user_devices as ud")
+            ->join("users", "users.id", "=", "ud.user_id")
+            ->where(function ($q) use ($desde) {
+                $q->where("ud.last_used_at", ">=", $desde)
+                  ->orWhere("ud.registered_at", ">=", $desde);
+            })
+            ->groupBy("ud.user_id", "users.name", "users.email", "users.status")
+            ->havingRaw("COUNT(ud.id) >= 2")
+            ->selectRaw("ud.user_id, users.name, users.email, users.status, COUNT(ud.id) as dispositivos_distintos, MAX(COALESCE(ud.last_used_at, ud.registered_at)) as ultimo_login")
             ->orderByDesc("dispositivos_distintos")
             ->get();
 
+        $userIds = $suspeitos->pluck('user_id');
+
+        // Total de logins bem-sucedidos no período (não conta tentativas bloqueadas)
+        $loginsCount = \DB::table('login_sessions')
+            ->whereIn('user_id', $userIds)
+            ->where('logged_in_at', '>=', $desde)
+            ->where('was_blocked', false)
+            ->groupBy('user_id')
+            ->selectRaw('user_id, COUNT(*) as total')
+            ->pluck('total', 'user_id');
+
+        $suspeitos = $suspeitos->map(function ($s) use ($loginsCount) {
+            $s->total_logins = $loginsCount[$s->user_id] ?? 0;
+            return $s;
+        });
+
         $detalhesPorUsuario = [];
+        $tentativasBloqueadasPorUsuario = [];
+
         foreach ($suspeitos as $s) {
-            $detalhesPorUsuario[$s->user_id] = \App\Models\LoginSession::where("user_id", $s->user_id)
-                ->where("logged_in_at", ">=", now()->subHours($horas))
-                ->orderByDesc("logged_in_at")
+            // Último login bem-sucedido por device_uuid
+            $ultimasSessoes = \DB::table('login_sessions')
+                ->where('user_id', $s->user_id)
+                ->where('was_blocked', false)
+                ->whereIn('id', function ($sub) use ($s) {
+                    $sub->selectRaw('MAX(id)')
+                        ->from('login_sessions')
+                        ->where('user_id', $s->user_id)
+                        ->where('was_blocked', false)
+                        ->groupBy('device_uuid');
+                })
+                ->get()
+                ->keyBy('device_uuid');
+
+            $devices = \App\Models\UserDevice::where('user_id', $s->user_id)
+                ->where(function ($q) use ($desde) {
+                    $q->where('last_used_at', '>=', $desde)
+                      ->orWhere('registered_at', '>=', $desde);
+                })
+                ->orderByDesc('is_active')
+                ->orderByDesc('last_used_at')
+                ->get();
+
+            $detalhesPorUsuario[$s->user_id] = $devices->map(function ($d) use ($ultimasSessoes) {
+                $sess  = $ultimasSessoes[$d->device_uuid] ?? null;
+                $parts = explode(' em ', $d->device_name ?? '', 2);
+                return (object) [
+                    'device_id'         => $d->id,
+                    'device_uuid'       => $d->device_uuid,
+                    'is_active'         => (bool) $d->is_active,
+                    'is_blocked'        => $d->is_blocked,
+                    'browser'           => $sess->browser ?? ($parts[0] ?: null),
+                    'os'                => $sess->os ?? ($parts[1] ?? null),
+                    'device_model'      => $sess->device_model ?? $d->device_model,
+                    'is_mobile'         => (bool) ($sess->is_mobile ?? false),
+                    'ip_address'        => $sess->ip_address ?? null,
+                    'city'              => $sess->city ?? null,
+                    'country'           => $sess->country ?? null,
+                    'screen_resolution' => $sess->screen_resolution ?? null,
+                    'gpu_renderer'      => $sess->gpu_renderer ?? null,
+                    'last_seen_at'      => $d->last_used_at,
+                    'was_displaced'     => (bool) ($sess->was_displaced ?? false),
+                ];
+            });
+
+            // Tentativas bloqueadas (limite de dispositivos atingido)
+            $tentativasBloqueadasPorUsuario[$s->user_id] = \App\Models\LoginSession::where('user_id', $s->user_id)
+                ->where('was_blocked', true)
+                ->orderByDesc('logged_in_at')
+                ->limit(10)
                 ->get();
         }
 
         $ipsBlockeados = BlockedIp::pluck('ip_address')->flip();
 
-        // Conta quantos usuários distintos estão ativos por IP (para o aviso de bloqueio)
         $sessoesPorIp = \DB::table('sessions')
             ->select('ip_address', \DB::raw('count(distinct user_id) as total'))
             ->whereNotNull('ip_address')
             ->groupBy('ip_address')
             ->pluck('total', 'ip_address');
 
-        // Combinações user_id+ip já bloqueadas individualmente
         $userIpsBlockeados = BlockedUserIp::select('user_id', 'ip_address')
             ->get()
             ->mapWithKeys(fn($r) => ["{$r->user_id}_{$r->ip_address}" => true]);
-
-        // Papel de cada suspeito na assinatura (titular ou não)
-        $userIds = $suspeitos->pluck('user_id');
 
         $emailAssins = \DB::table('emails_assinatura')
             ->whereIn('user_id', $userIds)
@@ -154,7 +219,121 @@ class GerenciadorController extends Controller
             ->get()
             ->keyBy('assinatura_id');
 
-        return view("gerenciamento.logins-compartilhados", compact("suspeitos", "detalhesPorUsuario", "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados", "emailAssins", "titularesPorAssinatura"));
+        return view("gerenciamento.logins-compartilhados", compact(
+            "suspeitos", "detalhesPorUsuario", "tentativasBloqueadasPorUsuario",
+            "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados",
+            "emailAssins", "titularesPorAssinatura"
+        ));
+    }
+
+    public function removerDispositivo(\App\Models\UserDevice $device, \Illuminate\Http\Request $request)
+    {
+        $horas = $request->input('horas', 48);
+        $user  = User::find($device->user_id);
+
+        $sessoes = LoginSession::where('user_id', $device->user_id)
+            ->where('device_uuid', $device->device_uuid)
+            ->whereNull('logged_out_at')
+            ->pluck('session_id');
+
+        if ($sessoes->isNotEmpty()) {
+            LoginSession::where('user_id', $device->user_id)
+                ->where('device_uuid', $device->device_uuid)
+                ->whereNull('logged_out_at')
+                ->update(['logged_out_at' => now()]);
+            \DB::table('sessions')->whereIn('id', $sessoes)->delete();
+        }
+
+        $device->update(['is_active' => false]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('dispositivo_removido', "Dispositivo de \"{$user->name}\" removido. Uma vaga foi liberada.");
+    }
+
+    public function bloquearDispositivo(\App\Models\UserDevice $device, \Illuminate\Http\Request $request)
+    {
+        $horas = $request->input('horas', 48);
+        $user  = User::find($device->user_id);
+
+        $sessoes = LoginSession::where('user_id', $device->user_id)
+            ->where('device_uuid', $device->device_uuid)
+            ->whereNull('logged_out_at')
+            ->pluck('session_id');
+
+        if ($sessoes->isNotEmpty()) {
+            LoginSession::where('user_id', $device->user_id)
+                ->where('device_uuid', $device->device_uuid)
+                ->whereNull('logged_out_at')
+                ->update(['logged_out_at' => now()]);
+            \DB::table('sessions')->whereIn('id', $sessoes)->delete();
+        }
+
+        $device->update(['is_active' => false, 'is_blocked' => true]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('dispositivo_bloqueado', "Dispositivo de \"{$user->name}\" bloqueado. Não poderá se registrar novamente.");
+    }
+
+    public function desbloquearDispositivo(\App\Models\UserDevice $device, \Illuminate\Http\Request $request)
+    {
+        $horas = $request->input('horas', 48);
+        $user  = User::find($device->user_id);
+
+        $device->update(['is_active' => true, 'is_blocked' => false]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('dispositivo_desbloqueado', "Dispositivo de \"{$user->name}\" desbloqueado.");
+    }
+
+    public function liberarTitular(User $user, \Illuminate\Http\Request $request)
+    {
+        $horas = $request->input('horas', 48);
+
+        $deviceUuids = \App\Models\UserDevice::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->pluck('device_uuid');
+
+        if ($deviceUuids->isNotEmpty()) {
+            $sessoes = LoginSession::where('user_id', $user->id)
+                ->whereIn('device_uuid', $deviceUuids)
+                ->whereNull('logged_out_at')
+                ->pluck('session_id');
+
+            if ($sessoes->isNotEmpty()) {
+                LoginSession::where('user_id', $user->id)
+                    ->whereIn('device_uuid', $deviceUuids)
+                    ->whereNull('logged_out_at')
+                    ->update(['logged_out_at' => now()]);
+                \DB::table('sessions')->whereIn('id', $sessoes)->delete();
+            }
+
+            \App\Models\UserDevice::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()
+            ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
+            ->with('titular_liberado', "Dispositivos de \"{$user->name}\" liberados. O titular pode se logar novamente.");
     }
 
     public function desativarLoginCompartilhado(User $user, \Illuminate\Http\Request $request)
@@ -230,13 +409,24 @@ class GerenciadorController extends Controller
     public function limparSessoes(User $user, \Illuminate\Http\Request $request)
     {
         $horas = $request->input('horas', 48);
+        $currentSession = session()->getId();
 
-        \DB::table('sessions')->where('user_id', $user->id)->delete();
+        // Preserva a sessão atual para não deslogar o administrador
+        \DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $currentSession)
+            ->delete();
+
         LoginSession::where('user_id', $user->id)->delete();
+        \App\Models\UserDevice::where('user_id', $user->id)->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()
             ->route('gerenciamento.logins-compartilhados', ['horas' => $horas])
-            ->with('limpo', "Histórico de sessões de \"{$user->name}\" apagado.");
+            ->with('limpo', "Histórico de sessões e dispositivos de \"{$user->name}\" apagado.");
     }
 
     public function bloquearUsuarioIp(Request $request)

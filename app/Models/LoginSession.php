@@ -11,6 +11,7 @@ class LoginSession extends Model
     protected $fillable = [
         'user_id',
         'session_id',
+        'device_uuid',
         'ip_address',
         'city',
         'country',
@@ -30,14 +31,16 @@ class LoginSession extends Model
         'last_seen_at',
         'logged_out_at',
         'was_displaced',
+        'was_blocked',
     ];
 
     protected $casts = [
-        'is_mobile'      => 'boolean',
-        'was_displaced'  => 'boolean',
-        'logged_in_at'   => 'datetime',
-        'last_seen_at'   => 'datetime',
-        'logged_out_at'  => 'datetime',
+        'is_mobile'     => 'boolean',
+        'was_displaced' => 'boolean',
+        'was_blocked'   => 'boolean',
+        'logged_in_at'  => 'datetime',
+        'last_seen_at'  => 'datetime',
+        'logged_out_at' => 'datetime',
     ];
 
     public function user()

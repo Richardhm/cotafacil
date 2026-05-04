@@ -178,6 +178,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post("/gerenciamento/desbloquear-ip", [GerenciadorController::class, 'desbloquearIp'])->name('gerenciamento.desbloquear-ip')->middleware(['apenasDesenvolvedores']);
     Route::post("/gerenciamento/bloquear-usuario-ip", [GerenciadorController::class, 'bloquearUsuarioIp'])->name('gerenciamento.bloquear-usuario-ip')->middleware(['apenasDesenvolvedores']);
     Route::post("/gerenciamento/desbloquear-usuario-ip", [GerenciadorController::class, 'desbloquearUsuarioIp'])->name('gerenciamento.desbloquear-usuario-ip')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/remover-dispositivo/{device}", [GerenciadorController::class, 'removerDispositivo'])->name('gerenciamento.remover-dispositivo')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/bloquear-dispositivo/{device}", [GerenciadorController::class, 'bloquearDispositivo'])->name('gerenciamento.bloquear-dispositivo')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/desbloquear-dispositivo/{device}", [GerenciadorController::class, 'desbloquearDispositivo'])->name('gerenciamento.desbloquear-dispositivo')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/liberar-titular/{user}", [GerenciadorController::class, 'liberarTitular'])->name('gerenciamento.liberar-titular')->middleware(['apenasDesenvolvedores']);
 
 
 

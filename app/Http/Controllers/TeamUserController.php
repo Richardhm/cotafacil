@@ -455,11 +455,10 @@ class TeamUserController extends Controller
         ]);
 
         $assinatura->emails_extra += 1;
-        $emailsCobrados           = max($assinatura->emails_extra - $assinatura->emails_permitidos, 0);
         $precoExtra               = $assinatura->tipo_plano_id
             ? (TipoPlano::find($assinatura->tipo_plano_id)?->valor_por_email ?? self::PRECO_POR_USUARIO)
             : self::PRECO_POR_USUARIO;
-        $assinatura->preco_total  = ($assinatura->preco_base ?? self::PRECO_POR_USUARIO) + ($emailsCobrados * $precoExtra);
+        $assinatura->preco_total  += $precoExtra;
 
         if ($pending->inclui_ativacao_admin) {
             $assinatura->status        = 'ativo';
