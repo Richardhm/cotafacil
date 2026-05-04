@@ -353,11 +353,23 @@ class TeamUserController extends Controller
             return response()->json(['pago' => false, 'expirado' => true]);
         }
 
-        $pixPendente = PixPendente::where('txid', $txid)->first();
-
-        if (!$pixPendente || $pixPendente->status !== 'approved') {
+        // Consulta status direto na Efi Bank (não depende de webhook)
+        try {
+            $detail    = $this->efi->pixDetailCharge(['txid' => $txid]);
+            $efiStatus = $detail['status'] ?? null;
+        } catch (\Exception $e) {
+            \Log::error('Erro ao consultar PIX na Efi: ' . $e->getMessage());
             return response()->json(['pago' => false]);
         }
+
+        if ($efiStatus !== 'CONCLUIDA') {
+            return response()->json(['pago' => false]);
+        }
+
+        // Marca PixPendente como aprovado para consistência (e para o webhook não reprocessar)
+        PixPendente::where('txid', $txid)
+            ->where('status', 'pending')
+            ->update(['status' => 'approved']);
 
         DB::transaction(function () use ($pendings) {
             foreach ($pendings as $p) {

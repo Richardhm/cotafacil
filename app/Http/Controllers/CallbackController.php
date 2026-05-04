@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PendingTeamUser;
 use App\Models\SubscriptionCharge;
+use App\Models\TipoPlano;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Assinatura;
+use App\Models\EmailAssinatura;
+use App\Models\User;
 use Efi\Exception\EfiException;
 use Efi\EfiPay;
 
@@ -177,9 +182,66 @@ class CallbackController extends Controller
             \App\Models\PixPendente::where('txid', $txid)
                 ->where('status', 'pending')
                 ->update(['status' => 'approved']);
+
+            $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
+
+            if ($pixPendente && $pixPendente->tipo === 'team_user') {
+                $pendings = PendingTeamUser::where('txid', $txid)
+                    ->where('status', 'pending')
+                    ->get();
+
+                if ($pendings->isNotEmpty()) {
+                    DB::transaction(function () use ($pendings) {
+                        foreach ($pendings as $p) {
+                            $this->ativarTeamUser($p);
+                        }
+                    });
+                }
+            }
         }
 
         return response()->json(['success' => true], 200);
+    }
+
+    private function ativarTeamUser(PendingTeamUser $pending): void
+    {
+        if ($pending->fresh()->status === 'paid') {
+            return;
+        }
+
+        $assinatura = Assinatura::findOrFail($pending->assinatura_id);
+
+        $novoUser = User::create([
+            'name'              => $pending->name,
+            'email'             => $pending->email,
+            'phone'             => $pending->phone,
+            'password'          => bcrypt('12345678'),
+            'email_verified_at' => now(),
+            'primeiro_acesso'   => 1,
+            'status'            => 1,
+        ]);
+
+        EmailAssinatura::create([
+            'assinatura_id'    => $assinatura->id,
+            'email'            => $pending->email,
+            'user_id'          => $novoUser->id,
+            'is_administrador' => false,
+        ]);
+
+        $precoExtra              = $assinatura->tipo_plano_id
+            ? (TipoPlano::find($assinatura->tipo_plano_id)?->valor_por_email ?? 29.90)
+            : 29.90;
+        $assinatura->emails_extra += 1;
+        $assinatura->preco_total  += $precoExtra;
+
+        if ($pending->inclui_ativacao_admin) {
+            $assinatura->status        = 'ativo';
+            $assinatura->trial_ends_at = null;
+            $assinatura->next_charge   = Carbon::now()->addMonth();
+        }
+
+        $assinatura->save();
+        $pending->update(['status' => 'paid']);
     }
 
     public function processCharge(array $chargeEvent)
