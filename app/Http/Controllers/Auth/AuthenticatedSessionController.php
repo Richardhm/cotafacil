@@ -95,7 +95,32 @@ class AuthenticatedSessionController extends Controller
                 return;
             }
 
-            // Device completamente novo — verifica vagas
+            // UUID desconhecido — verifica se o hardware já está cadastrado (outro browser ou aba anônima)
+            $byHardware = UserDevice::where('user_id', $userId)
+                ->where('hardware_fingerprint', $fingerprint['hardware_fingerprint'])
+                ->where('is_blocked', false)
+                ->lockForUpdate()
+                ->first();
+
+            if ($byHardware) {
+                if (!$byHardware->is_active) {
+                    $total = UserDevice::where('user_id', $userId)
+                        ->where('is_active', true)
+                        ->lockForUpdate()
+                        ->count();
+
+                    if ($total >= 3) {
+                        $limitReached = true;
+                        return;
+                    }
+
+                    $byHardware->update(['is_active' => true]);
+                }
+                $device = $byHardware->fresh();
+                return;
+            }
+
+            // Hardware desconhecido — dispositivo verdadeiramente novo, verifica vagas
             $total = UserDevice::where('user_id', $userId)
                 ->where('is_active', true)
                 ->lockForUpdate()
@@ -107,14 +132,15 @@ class AuthenticatedSessionController extends Controller
             }
 
             $device = UserDevice::create([
-                'user_id'            => $userId,
-                'device_uuid'        => $deviceUuid,
-                'device_fingerprint' => $fingerprint['device_fingerprint'],
-                'device_name'        => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
-                'device_model'       => $fingerprint['device_model'],
-                'is_active'          => true,
-                'is_blocked'         => false,
-                'registered_at'      => now(),
+                'user_id'             => $userId,
+                'device_uuid'         => $deviceUuid,
+                'device_fingerprint'  => $fingerprint['device_fingerprint'],
+                'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
+                'device_name'         => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
+                'device_model'        => $fingerprint['device_model'],
+                'is_active'           => true,
+                'is_blocked'          => false,
+                'registered_at'       => now(),
             ]);
         });
 
@@ -154,10 +180,11 @@ class AuthenticatedSessionController extends Controller
 
         // Atualiza device_name/fingerprint para refletir versão atual do browser
         $device->update([
-            'last_used_at'       => now(),
-            'device_name'        => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
-            'device_fingerprint' => $fingerprint['device_fingerprint'],
-            'device_model'       => $fingerprint['device_model'],
+            'last_used_at'        => now(),
+            'device_name'         => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
+            'device_fingerprint'  => $fingerprint['device_fingerprint'],
+            'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
+            'device_model'        => $fingerprint['device_model'],
         ]);
 
         // Desloca sessões anteriores do mesmo dispositivo (outros dispositivos ficam ativos)

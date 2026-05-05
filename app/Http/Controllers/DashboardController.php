@@ -591,11 +591,7 @@ class DashboardController extends Controller
                 $layout_folder = auth()->user()->isFolder() ?: '';
 
             }
-
-
-
             $quantidade_cop = 0;
-
             $viewName = "cotacao.modelo{$layout_user}";
             if($apenasvalores == 0) {
                 $pdf_excecao = PdfExcecao::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->count();

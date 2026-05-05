@@ -12,6 +12,7 @@ class UserDevice extends Model
         'user_id',
         'device_uuid',
         'device_fingerprint',
+        'hardware_fingerprint',
         'device_name',
         'device_model',
         'is_active',
