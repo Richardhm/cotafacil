@@ -25,7 +25,10 @@ class DeviceFingerprintService
         $fingerprint = md5($ua . $lang . $platform . $ipPrefix . $timezone . $resolution . $canvas . $gpu . $cpuCores);
 
         // Identifica o hardware físico — estável entre browsers, redes e abas anônimas
-        $hardwareFingerprint = md5($platform . $timezone . $resolution . $cpuCores . $devMemory . $gpu);
+        $isMobileDevice      = $this->detectMobile($ua, $mobile);
+        $hardwareFingerprint = $isMobileDevice
+            ? md5($platform . $timezone . $resolution . $cpuCores . $devMemory . $gpu)
+            : md5($platform . $timezone . $cpuCores . $devMemory . $gpu);
 
         return [
             'device_fingerprint'  => $fingerprint,
