@@ -19,6 +19,41 @@ use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\TeamUserController;
 
 
+Route::get('/dev/atualizar-assinatura-efi/{id}/{valor_centavos}', function ($id, $valor_centavos) {
+    $mode    = config('gerencianet.mode');
+    $options = [
+        'client_id'     => config("gerencianet.{$mode}.client_id"),
+        'client_secret' => config("gerencianet.{$mode}.client_secret"),
+        'certificate'   => base_path('certs/' . config("gerencianet.{$mode}.certificate_name")),
+        'sandbox'       => config('gerencianet.is_sandbox'),
+        'debug'         => false,
+    ];
+
+    $efi      = new \Efi\EfiPay($options);
+    $resposta = $efi->updateSubscription(
+        ['id' => (int) $id],
+        ['items' => [['name' => 'Plano Multiusuário', 'value' => (int) $valor_centavos]]]
+    );
+
+    return response()->json($resposta, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+});
+
+Route::get('/dev/assinatura-efi/{id}', function ($id) {
+    $mode    = config('gerencianet.mode');
+    $options = [
+        'client_id'     => config("gerencianet.{$mode}.client_id"),
+        'client_secret' => config("gerencianet.{$mode}.client_secret"),
+        'certificate'   => base_path('certs/' . config("gerencianet.{$mode}.certificate_name")),
+        'sandbox'       => config('gerencianet.is_sandbox'),
+        'debug'         => false,
+    ];
+
+    $efi      = new \Efi\EfiPay($options);
+    $resposta = $efi->detailSubscription(['id' => (int) $id]);
+
+    return response()->json($resposta, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+});
+
 Route::get('/teste-tz', function () {
     return [
         'php_time' => date('Y-m-d H:i:s'),

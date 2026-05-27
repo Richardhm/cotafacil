@@ -479,6 +479,14 @@ class TeamUserController extends Controller
         }
 
         $assinatura->save();
+
+        if (strtolower($assinatura->tipo) === 'cartao' && $assinatura->subscription_id) {
+            $this->efi->updateSubscription(
+                ['id' => $assinatura->subscription_id],
+                ['items' => [['name' => 'Plano Multiusuário', 'value' => intval($assinatura->preco_total * 100)]]]
+            );
+        }
+
         $pending->update(['status' => 'paid']);
     }
 }
