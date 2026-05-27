@@ -6,13 +6,14 @@
         <div>
             <h1 class="text-2xl font-bold text-white">Logins Compartilhados</h1>
             <p class="text-sm text-gray-400 mt-1">
-                Monitoramento de credenciais utilizadas em múltiplos dispositivos distintos
+                Monitoramento de dispositivos e acessos dos usuários
             </p>
         </div>
         <form method="GET" class="flex items-center gap-2">
             <label class="text-sm text-gray-300">Período:</label>
             <select name="horas" onchange="this.form.submit()"
                 class="bg-white/10 text-white text-sm rounded-lg px-3 py-1.5 border border-white/20 focus:outline-none focus:ring-1 focus:ring-white/30 backdrop-blur">
+                <option value="hoje" {{ $horas === 'hoje' ? 'selected' : '' }} class="bg-gray-800">Hoje</option>
                 @foreach([24 => 'Últimas 24h', 48 => 'Últimas 48h', 72 => 'Últimas 72h', 168 => 'Últimos 7 dias'] as $val => $label)
                     <option value="{{ $val }}" {{ $horas == $val ? 'selected' : '' }} class="bg-gray-800">{{ $label }}</option>
                 @endforeach
@@ -62,9 +63,12 @@
             <svg class="w-10 h-10 text-green-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <p class="text-green-300 font-semibold text-lg">Nenhum login suspeito detectado</p>
+            <p class="text-green-300 font-semibold text-lg">Nenhum acesso registrado</p>
             <p class="text-gray-400 text-sm mt-1">
-                Nenhum usuário utilizou o mesmo login em dispositivos diferentes nas últimas {{ $horas }}h.
+                Nenhum usuário com dispositivo ativo
+                @if($horas === 'hoje') hoje.
+                @else nas últimas {{ $horas }}h.
+                @endif
             </p>
             <p class="text-gray-500 text-xs mt-2">
                 O monitoramento está ativo — os dados são coletados automaticamente a cada novo login.
@@ -76,7 +80,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div style="background: rgba(254,254,254,0.18)" class="backdrop-blur-[15px] rounded-2xl border border-red-500/30 p-4 text-center">
                 <p id="stat-usuarios" class="text-3xl font-bold text-red-300">{{ $suspeitos->count() }}</p>
-                <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide">Usuários com múltiplos dispositivos</p>
+                <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide">Usuários com dispositivos ativos</p>
             </div>
             <div style="background: rgba(254,254,254,0.18)" class="backdrop-blur-[15px] rounded-2xl border border-yellow-500/30 p-4 text-center">
                 <p id="stat-dispositivos" class="text-3xl font-bold text-yellow-300">{{ $suspeitos->sum('dispositivos_distintos') }}</p>
@@ -117,7 +121,7 @@
 
                         {{-- Avatar --}}
                         <div class="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0
-                            {{ $s->dispositivos_distintos >= 4 ? 'bg-red-600/50 text-red-200' : ($s->dispositivos_distintos == 3 ? 'bg-orange-600/50 text-orange-200' : 'bg-yellow-600/50 text-yellow-200') }}">
+                            {{ $s->dispositivos_distintos >= 4 ? 'bg-red-600/50 text-red-200' : ($s->dispositivos_distintos == 3 ? 'bg-orange-600/50 text-orange-200' : 'bg-green-700/50 text-green-200') }}">
                             {{ strtoupper(substr($s->name, 0, 1)) }}
                         </div>
 
@@ -189,17 +193,24 @@
 
                         {{-- Badges de resumo --}}
                         <div class="flex flex-wrap items-center gap-2">
-                            @if($s->dispositivos_distintos >= 4)
-                                <span class="bg-red-700/70 text-red-100 text-xs px-3 py-1 rounded-full border border-red-500/40 font-semibold">🔴 Risco Alto</span>
-                            @elseif($s->dispositivos_distintos == 3)
-                                <span class="bg-orange-700/70 text-orange-100 text-xs px-3 py-1 rounded-full border border-orange-500/40 font-semibold">🟠 Risco Médio</span>
+                            @php
+                                $desktopCount   = $dispositivos->where('device_type', 'desktop')->count();
+                                $mobileAppCount = $dispositivos->where('device_type', 'mobile_app')->count();
+                                $acessoNormal   = $desktopCount <= 1 && $mobileAppCount <= 1;
+                            @endphp
+                            @if($acessoNormal)
+                                <span class="bg-green-700/50 text-green-100 text-xs px-3 py-1 rounded-full border border-green-500/40 font-semibold">✅ Acesso Normal</span>
+                            @elseif($desktopCount > 1 || $mobileAppCount > 1)
+                                <span class="bg-red-700/70 text-red-100 text-xs px-3 py-1 rounded-full border border-red-500/40 font-semibold">🔴 Compartilhando Login</span>
                             @else
-                                <span class="bg-yellow-700/70 text-yellow-100 text-xs px-3 py-1 rounded-full border border-yellow-500/40 font-semibold">🟡 Risco Baixo</span>
+                                <span class="bg-yellow-700/70 text-yellow-100 text-xs px-3 py-1 rounded-full border border-yellow-500/40 font-semibold">🟡 Verificar</span>
                             @endif
 
                             <span class="text-xs text-gray-300 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                                <span class="font-bold {{ $s->dispositivos_distintos >= 3 ? 'text-red-400' : 'text-yellow-400' }}">{{ $s->dispositivos_distintos }}</span>
-                                / 3 dispositivos
+                                💻 <span class="font-bold {{ $desktopCount > 1 ? 'text-red-400' : 'text-green-400' }}">{{ $desktopCount }}</span>/1 desktop
+                            </span>
+                            <span class="text-xs text-gray-300 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                                📱 <span class="font-bold {{ $mobileAppCount > 1 ? 'text-red-400' : 'text-green-400' }}">{{ $mobileAppCount }}</span>/1 app
                             </span>
                             <span class="text-xs text-gray-300 bg-white/5 px-3 py-1 rounded-full border border-white/10">
                                 {{ $s->total_logins }} logins
@@ -230,6 +241,7 @@
                                     <thead>
                                         <tr class="bg-white/10 text-gray-400 uppercase tracking-wide text-[10px]">
                                             <th class="px-3 py-2.5 whitespace-nowrap">#</th>
+                                            <th class="px-3 py-2.5 whitespace-nowrap">Tipo</th>
                                             <th class="px-3 py-2.5 whitespace-nowrap">Navegador / SO</th>
                                             <th class="px-3 py-2.5 whitespace-nowrap">IP</th>
                                             <th class="px-3 py-2.5 whitespace-nowrap">Localização</th>
@@ -256,8 +268,15 @@
                                                 class="hover:bg-white/5 transition-colors {{ $dev->is_blocked ? 'bg-red-900/10' : (!$dev->is_active ? 'opacity-50' : '') }}">
                                                 <td class="px-3 py-2.5 text-gray-500 font-mono">{{ $i + 1 }}</td>
                                                 <td class="px-3 py-2.5 whitespace-nowrap">
+                                                    @if(($dev->device_type ?? 'desktop') === 'mobile_app')
+                                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-violet-700/60 text-violet-200 border border-violet-500/40 font-semibold whitespace-nowrap">📱 App</span>
+                                                    @else
+                                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-700/50 text-blue-200 border border-blue-500/30 font-semibold whitespace-nowrap">💻 Desktop</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-3 py-2.5 whitespace-nowrap">
                                                     <p class="text-yellow-300 font-semibold">{{ $dev->browser ?: '—' }}</p>
-                                                    <p class="text-white/60 text-[11px]">{{ $dev->device_model ?: ($dev->os ?: '—') }}{{ $dev->is_mobile ? ' 📱' : '' }}</p>
+                                                    <p class="text-white/60 text-[11px]">{{ $dev->device_model ?: ($dev->os ?: '—') }}</p>
                                                 </td>
                                                 <td class="px-3 py-2.5 text-yellow-200/80 font-mono whitespace-nowrap">{{ $dev->ip_address ?: '—' }}</td>
                                                 <td class="px-3 py-2.5 whitespace-nowrap">

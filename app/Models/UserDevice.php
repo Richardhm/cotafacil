@@ -15,6 +15,7 @@ class UserDevice extends Model
         'hardware_fingerprint',
         'device_name',
         'device_model',
+        'device_type',
         'is_active',
         'is_blocked',
         'registered_at',

@@ -101,9 +101,15 @@ class GerenciadorController extends Controller
 
     public function loginsCompartilhados(\Illuminate\Http\Request $request)
     {
-        $horas = (int) ($request->input("horas", 48));
-        $horas = in_array($horas, [24, 48, 72, 168]) ? $horas : 48;
-        $desde = now()->subHours($horas);
+        $horasInput = $request->input("horas", 48);
+
+        if ($horasInput === 'hoje') {
+            $horas = 'hoje';
+            $desde = \Carbon\Carbon::today();
+        } else {
+            $horas = in_array((int) $horasInput, [24, 48, 72, 168]) ? (int) $horasInput : 48;
+            $desde = now()->subHours($horas);
+        }
 
         // Usuários com 2+ dispositivos (ativos ou bloqueados) usados no período
         $suspeitos = \DB::table("user_devices as ud")
@@ -113,7 +119,7 @@ class GerenciadorController extends Controller
                   ->orWhere("ud.registered_at", ">=", $desde);
             })
             ->groupBy("ud.user_id", "users.name", "users.email", "users.status")
-            ->havingRaw("COUNT(ud.id) >= 2")
+            ->havingRaw("COUNT(ud.id) >= 1")
             ->selectRaw("ud.user_id, users.name, users.email, users.status, COUNT(ud.id) as dispositivos_distintos, MAX(COALESCE(ud.last_used_at, ud.registered_at)) as ultimo_login")
             ->orderByDesc("dispositivos_distintos")
             ->get();
@@ -164,15 +170,17 @@ class GerenciadorController extends Controller
             $detalhesPorUsuario[$s->user_id] = $devices->map(function ($d) use ($ultimasSessoes) {
                 $sess  = $ultimasSessoes[$d->device_uuid] ?? null;
                 $parts = explode(' em ', $d->device_name ?? '', 2);
+                $isMobileApp = $d->device_type === 'mobile_app';
                 return (object) [
                     'device_id'         => $d->id,
                     'device_uuid'       => $d->device_uuid,
+                    'device_type'       => $d->device_type ?? 'desktop',
                     'is_active'         => (bool) $d->is_active,
                     'is_blocked'        => $d->is_blocked,
-                    'browser'           => $sess->browser ?? ($parts[0] ?: null),
+                    'browser'           => $isMobileApp ? 'App Mobile' : ($sess->browser ?? ($parts[0] ?: null)),
                     'os'                => $sess->os ?? ($parts[1] ?? null),
-                    'device_model'      => $sess->device_model ?? $d->device_model,
-                    'is_mobile'         => (bool) ($sess->is_mobile ?? false),
+                    'device_model'      => $isMobileApp ? ($d->device_name ?: ($sess->device_model ?? $d->device_model)) : ($sess->device_model ?? $d->device_model),
+                    'is_mobile'         => $isMobileApp || (bool) ($sess->is_mobile ?? false),
                     'ip_address'        => $sess->ip_address ?? null,
                     'city'              => $sess->city ?? null,
                     'country'           => $sess->country ?? null,

@@ -494,6 +494,7 @@ class DashboardController extends Controller
         $cidade = request()->tabela_origem;
         $plano = request()->plano;
         $operadora = request()->operadora;
+        $administradora = request()->operadora;
         $odonto = request()->odonto;
 
         $sql = "";
@@ -600,38 +601,51 @@ class DashboardController extends Controller
                     $pdf_copar = PdfExcecao::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->first();
                     $quantidade_cop = 1;
                 } else {
-                    $hasTabelaOrigens = Pdf::where('plano_id', $plano)
-                        ->where('tabela_origens_id',$cidade)
+                    $hasFullMatch = Pdf::where('plano_id', $plano)
+                        ->where('tabela_origens_id', $cidade)
+                        ->where('administradora_id', $administradora)
                         ->exists();
-                    if ($hasTabelaOrigens) {
+
+                    if ($hasFullMatch) {
+                        // Caso plano_id, tabela_origens_id e administradora_id correspondam
                         $quantidade_cop = 1;
                         $pdf_copar = Pdf::where('plano_id', $plano)
-                            ->where('tabela_origens_id',$cidade)
+                            ->where('tabela_origens_id', $cidade)
+                            ->where('administradora_id', $administradora)
                             ->first();
 
-                        if($pdf_copar->linha02) {
-                            $itens = explode('|', $pdf_copar->linha02);
-                            $itensFormatados = array_map(function($item) {
-                                return trim($item); // Remove espaços extras
-                            }, $itens);
-                            $linha_01 = $itensFormatados[0];
-                            $linha_02 = $itensFormatados[1];
-                        }
-
-
                     } else {
-                        $pdf_copar = Pdf::where('plano_id', $plano)->first();
-                        if(isset($pdf_copar->linha02) && $pdf_copar->linha02) {
-                            $quantidade_cop = 1;
-                            $itens = explode('|', $pdf_copar->linha02);
-                            $itensFormatados = array_map(function($item) {
-                                return trim($item); // Remove espaços extras
-                            }, $itens);
-                            $linha_01 = $itensFormatados[0];
-                            $linha_02 = $itensFormatados[1];
-                        }
+                        // Verifica se existe plano_id e tabela_origens_id
+                        $hasTabelaOrigens = Pdf::where('plano_id', $plano)
+                            ->where('tabela_origens_id', $cidade)
+                            ->exists();
 
+                        if ($hasTabelaOrigens) {
+                            // Caso plano_id e tabela_origens_id correspondam
+                            $quantidade_cop = 1;
+                            $pdf_copar = Pdf::where('plano_id', $plano)
+                                ->where('tabela_origens_id', $cidade)
+                                ->first();
+
+                        } else {
+                            // Caso apenas plano_id corresponda
+                            $pdf_copar = Pdf::where('plano_id', $plano)->first();
+
+                        }
                     }
+
+                    // Processa os dados caso existam valores na coluna linha02
+                    if (isset($pdf_copar->linha02) && $pdf_copar->linha02) {
+                        $quantidade_cop = 1;
+                        $itens = explode('|', $pdf_copar->linha02);
+                        $itensFormatados = array_map(function ($item) {
+                            return trim($item); // Remove espaços extras
+                        }, $itens);
+
+                        $linha_01 = $itensFormatados[0];
+                        $linha_02 = $itensFormatados[1];
+                    }
+
                 }
 
 

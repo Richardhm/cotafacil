@@ -12,6 +12,7 @@
         "efipay/sdk-php-apis-efi": "^1.12",
         "laravel/breeze": "^2.3",
         "laravel/framework": "^11.31",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.9"
     },
     "require-dev": {

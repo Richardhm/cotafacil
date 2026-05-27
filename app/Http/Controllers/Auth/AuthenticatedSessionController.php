@@ -19,8 +19,17 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        // Mobile browsers devem usar o aplicativo
+        $ua = $request->userAgent() ?? '';
+        $isMobileBrowser = preg_match('/Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i', $ua)
+            && !str_contains($ua, 'iPad');
+
+        if ($isMobileBrowser) {
+            return view('auth.mobile-redirect');
+        }
+
         return response()
             ->view('auth.login')
             ->header('Accept-CH', 'Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Mobile');
@@ -79,13 +88,14 @@ class AuthenticatedSessionController extends Controller
                     return;
                 }
 
-                // Device inativo (ex: após liberarTitular) — verifica vagas antes de reativar
-                $total = UserDevice::where('user_id', $userId)
+                // Device inativo — verifica vaga desktop
+                $desktopTotal = UserDevice::where('user_id', $userId)
+                    ->where('device_type', 'desktop')
                     ->where('is_active', true)
                     ->lockForUpdate()
                     ->count();
 
-                if ($total >= 3) {
+                if ($desktopTotal >= 1) {
                     $limitReached = true;
                     return;
                 }
@@ -98,18 +108,20 @@ class AuthenticatedSessionController extends Controller
             // UUID desconhecido — verifica se o hardware já está cadastrado (outro browser ou aba anônima)
             $byHardware = UserDevice::where('user_id', $userId)
                 ->where('hardware_fingerprint', $fingerprint['hardware_fingerprint'])
+                ->where('device_type', 'desktop')
                 ->where('is_blocked', false)
                 ->lockForUpdate()
                 ->first();
 
             if ($byHardware) {
                 if (!$byHardware->is_active) {
-                    $total = UserDevice::where('user_id', $userId)
+                    $desktopTotal = UserDevice::where('user_id', $userId)
+                        ->where('device_type', 'desktop')
                         ->where('is_active', true)
                         ->lockForUpdate()
                         ->count();
 
-                    if ($total >= 3) {
+                    if ($desktopTotal >= 1) {
                         $limitReached = true;
                         return;
                     }
@@ -120,27 +132,29 @@ class AuthenticatedSessionController extends Controller
                 return;
             }
 
-            // Hardware desconhecido — dispositivo verdadeiramente novo, verifica vagas
-            $total = UserDevice::where('user_id', $userId)
+            // Hardware desconhecido — desktop verdadeiramente novo
+            $desktopTotal = UserDevice::where('user_id', $userId)
+                ->where('device_type', 'desktop')
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->count();
 
-            if ($total >= 3) {
+            if ($desktopTotal >= 1) {
                 $limitReached = true;
                 return;
             }
 
             $device = UserDevice::create([
-                'user_id'             => $userId,
-                'device_uuid'         => $deviceUuid,
-                'device_fingerprint'  => $fingerprint['device_fingerprint'],
+                'user_id'              => $userId,
+                'device_uuid'          => $deviceUuid,
+                'device_fingerprint'   => $fingerprint['device_fingerprint'],
                 'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
-                'device_name'         => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
-                'device_model'        => $fingerprint['device_model'],
-                'is_active'           => true,
-                'is_blocked'          => false,
-                'registered_at'       => now(),
+                'device_name'          => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
+                'device_model'         => $fingerprint['device_model'],
+                'device_type'          => 'desktop',
+                'is_active'            => true,
+                'is_blocked'           => false,
+                'registered_at'        => now(),
             ]);
         });
 
@@ -174,7 +188,7 @@ class AuthenticatedSessionController extends Controller
 
             Auth::guard('web')->logout();
             return back()->withErrors([
-                'email' => 'Limite de dispositivos atingido. Sua conta já possui 3 dispositivos registrados. Contate o suporte.',
+                'email' => 'Limite de computadores atingido. Sua conta já possui 1 computador registrado. Contate o suporte para trocar de dispositivo.',
             ])->onlyInput('email');
         }
 
