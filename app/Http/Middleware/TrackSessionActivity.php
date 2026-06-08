@@ -15,6 +15,21 @@ class TrackSessionActivity
 
     public function handle(Request $request, Closure $next)
     {
+        if (Auth::check()) {
+            $rememberUntil = $request->session()->get('remember_until');
+            if ($rememberUntil && time() > $rememberUntil) {
+                $sessionId = $request->session()->getId();
+                LoginSession::where('session_id', $sessionId)
+                    ->whereNull('logged_out_at')
+                    ->update(['logged_out_at' => now()]);
+                Auth::guard('web')->logout();
+                $request->session()->flush();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect('/');
+            }
+        }
+
         $response = $next($request);
 
         if (Auth::check()) {

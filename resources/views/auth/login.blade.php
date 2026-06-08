@@ -67,8 +67,8 @@
             </div>
             <div class="flex justify-between">
                 <div>
-                    <input type="checkbox" class="text-gray-950">
-                    <span class="text-sm dark:text-white text-white">Lembrar-me</span>
+                    <input type="checkbox" name="remember_me" value="1" id="remember_me" class="text-gray-950">
+                    <label for="remember_me" class="text-sm dark:text-white text-white cursor-pointer">Lembrar-me</label>
                 </div>
                 <div>
                     <a href="{{route('password.request')}}" style="text-decoration: underline;" class="text-sm dark:text-white text-white">Esqueceu a Senha?</a>

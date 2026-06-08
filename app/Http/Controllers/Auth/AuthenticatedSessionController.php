@@ -243,6 +243,10 @@ class AuthenticatedSessionController extends Controller
             'logged_in_at'       => now(),
         ]);
 
+        if ($request->boolean('remember_me')) {
+            session(['remember_until' => now()->addHours(8)->timestamp]);
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

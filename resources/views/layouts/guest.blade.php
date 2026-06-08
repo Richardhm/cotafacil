@@ -217,14 +217,8 @@
     const htmlElement = document.getElementById('html');
     const appContainer = document.getElementById('app-container');
     function applyThemeBackground() {
-        if (htmlElement.classList.contains('dark')) {
-            // Modo dark: fundo preto
-            appContainer.style.background = '#000';
-        } else {
-            // Modo light: fundo com imagem
-            appContainer.style.background = "url('{{ asset('fred01.jpeg') }}') no-repeat center center";
-            appContainer.style.backgroundSize = 'cover';
-        }
+        appContainer.style.background = "url('{{ asset('fred01.jpeg') }}') no-repeat center center";
+        appContainer.style.backgroundSize = 'cover';
     }
     // Executa ao carregar a página
     applyThemeBackground();
