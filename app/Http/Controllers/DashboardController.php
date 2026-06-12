@@ -556,10 +556,12 @@ class DashboardController extends Controller
 
 
             $valor_desconto = 0;
+            $texto_desconto = '';
             if($status_desconto) {
                 $desconto = Desconto::where('plano_id', $plano)->where('tabela_origens_id', $cidade)->where('administradora_id',$operadora)->first();
                 if($desconto) {
-                    $valor_desconto = $desconto->valor;
+                    $valor_desconto  = $desconto->valor;
+                    $texto_desconto  = $desconto->texto_desconto ?? ('Des. ' . (int)$desconto->valor . '% 3/meses');
                 }
 
             }
@@ -670,6 +672,7 @@ class DashboardController extends Controller
                     'linha_02' => $linha_02,
                     'carencia_texto' => $carencia,
                     'valor_desconto' => $valor_desconto,
+                    'texto_desconto' => $texto_desconto,
                     'desconto' => $status_desconto,
                     //'carencias' => $carencias,
                     'image' => $imagem_user,
@@ -827,10 +830,12 @@ class DashboardController extends Controller
             $viewName = "cotacao.cotacao-ambulatorial{$layout_user}";
 
             $valor_desconto = 0;
+            $texto_desconto = '';
             if($status_desconto) {
                 $desconto = Desconto::where('plano_id', $plano)->where('tabela_origens_id', $cidade)->where('administradora_id',$operadora)->first();
                 if($desconto) {
                     $valor_desconto = $desconto->valor;
+                    $texto_desconto = $desconto->texto_desconto ?? ('Des. ' . (int)$desconto->valor . '% 3/meses');
                 }
             }
 
@@ -888,6 +893,7 @@ class DashboardController extends Controller
                 'nome' => $nome,
                 'desconto' => $status_desconto,
                 'valor_desconto' => $valor_desconto,
+                'texto_desconto' => $texto_desconto,
                 'cidade' => $cidade_nome,
                 'plano' => $plano_nome,
                 'odonto_frase' => $odonto_frase,

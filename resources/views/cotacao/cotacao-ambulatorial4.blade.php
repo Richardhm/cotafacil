@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 
 <html lang="en">
 
@@ -86,7 +86,7 @@
 
             padding-bottom: 0 !important; /* Remove padding residual */
 
-            margin-bottom: -10px; /* Compensa espaçamento vertical */
+            margin-bottom: -10px; /* Compensa espaÃ§amento vertical */
 
         }
 
@@ -278,7 +278,7 @@
 
             margin: 0 auto;
 
-            border-spacing: 10px; /* Espaço entre blocos */
+            border-spacing: 10px; /* EspaÃ§o entre blocos */
 
             border-collapse: separate;
 
@@ -290,7 +290,7 @@
 
             border-spacing: 0;
 
-            margin-bottom: -5px; /* Compensa o espaçamento vertical residual */
+            margin-bottom: -5px; /* Compensa o espaÃ§amento vertical residual */
 
         }
 
@@ -662,7 +662,7 @@
 
 <body>
 
-<img style="position: absolute;top: 0;left: 0;height: 100%;width: 100%;object-fit: cover;" src="layouts/modelo4.png" alt="Orçamento">
+<img style="position: absolute;top: 0;left: 0;height: 100%;width: 100%;object-fit: cover;" src="layouts/modelo4.png" alt="OrÃ§amento">
 
 <p class="cidade_container" style="text-transform:uppercase;">{{$cidade}}</p>
 
@@ -704,7 +704,7 @@
 
         $quantidade = $dado->quantidade;
 
-        // Verifica se tem coparticipação
+        // Verifica se tem coparticipaÃ§Ã£o
 
         $index = ($coparticipacao == 1) ? 'com_copar' : 'sem_copar';
 
@@ -740,7 +740,7 @@
 
     // Calcular quantidade de blocos ativos
 
-    $totalBlocos = 1; // Bloco Faixa Etária sempre existe
+    $totalBlocos = 1; // Bloco Faixa EtÃ¡ria sempre existe
 
     if($com_coparticipacao == 1) $totalBlocos++;
 
@@ -748,7 +748,7 @@
 
 
 
-    // Definir larguras baseado no número de blocos
+    // Definir larguras baseado no nÃºmero de blocos
 
     $widths = [
 
@@ -786,7 +786,7 @@
 
         <tr>
 
-            <!-- Bloco 1 - Faixa Etária -->
+            <!-- Bloco 1 - Faixa EtÃ¡ria -->
 
             <td class="bloco" style="width: 22%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:8%;'}}">
 
@@ -815,7 +815,7 @@
 
             @if($com_coparticipacao == 1)
 
-                <!-- Bloco 2 - Com Coparticipação -->
+                <!-- Bloco 2 - Com CoparticipaÃ§Ã£o -->
 
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }}; margin: {{ $margins[$totalBlocos] }};">
 
@@ -823,7 +823,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">COM COPARTICIPAÃ‡ÃƒO</td>
 
                         </tr>
 
@@ -874,7 +874,7 @@
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}} ">
                     <table width="100%">
                         <tr>
-                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÇÃO *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÃ‡ÃƒO *</td>
                         </tr>
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)
                             @for($i=0;$i<$valores['quantidade'];$i++)
@@ -912,7 +912,7 @@
                         <tr>
                             <td>
                                 <div class="valor-copart" style="border-radius:50px;font-size: 1.4em;">
-                                    Des. {{ (int) $valor_desconto}}% 3/meses
+                                    {{ $texto_desconto }}
                                 </div>
                             </td>
                         </tr>
@@ -1011,7 +1011,7 @@
 
                                 <div class="linha-procedimento">
 
-                                    <span>Consultas Urgência</span>
+                                    <span>Consultas UrgÃªncia</span>
 
                                 </div>
 
@@ -1042,7 +1042,7 @@
                                 @if($pdf->internacoes_total && $pdf->internacoes_total != 'Isento')
                                     <div class="linha-procedimento">
 
-                                        <span>Internações</span>
+                                        <span>InternaÃ§Ãµes</span>
 
                                     </div>
                                 @endif
@@ -1166,11 +1166,11 @@
 
                 <div style="margin-left:30px;">
 
-                    <h3 style="color: white; font-size: 1.5em; margin: 0 0 10px 0;">CARÊNCIAS DE SAÚDE</h3>
+                    <h3 style="color: white; font-size: 1.5em; margin: 0 0 10px 0;">CARÃŠNCIAS DE SAÃšDE</h3>
 
 
 
-                    <!-- 1º Bloco -->
+                    <!-- 1Âº Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1194,7 +1194,7 @@
 
                                     <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
-                                        Urgência, Emergência e<br>
+                                        UrgÃªncia, EmergÃªncia e<br>
 
                                         Acidentes Pessoais
 
@@ -1210,7 +1210,7 @@
 
 
 
-                    <!-- 2º Bloco -->
+                    <!-- 2Âº Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1234,9 +1234,9 @@
 
                                     <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
-                                        Consultas Médicas,<br>
+                                        Consultas MÃ©dicas,<br>
 
-                                        Exames Médicos Simples
+                                        Exames MÃ©dicos Simples
 
                                     </span>
 
@@ -1250,7 +1250,7 @@
 
 
 
-                    <!-- 3º Bloco -->
+                    <!-- 3Âº Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1292,7 +1292,7 @@
 
 
 
-                    <!-- 4º Bloco -->
+                    <!-- 4Âº Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1318,7 +1318,7 @@
 
                                         Exames<br>
 
-                                        Alto Custo, Trat. Psicológico,<br>
+                                        Alto Custo, Trat. PsicolÃ³gico,<br>
 
                                         Terapia Ocupacional, Fisioterapia<br>
 
@@ -1332,7 +1332,7 @@
 
                     </div>
 
-                    <!-- 6º Bloco -->
+                    <!-- 6Âº Bloco -->
 
                     <div style="margin-bottom: 5px;">
 
@@ -1356,9 +1356,9 @@
 
                                     <span style="font-size: 1.3em; color: white;text-align:left;display: block;font-weight: bold;">
 
-                                        Doenças e Lesões<br>
+                                        DoenÃ§as e LesÃµes<br>
 
-                                        Pré-Existentes
+                                        PrÃ©-Existentes
 
                                     </span>
 
@@ -1408,7 +1408,7 @@
 
                                     <span style="font-size: 1.3em; color: yellow; font-weight: bold;">
 
-                                        Urgência, Emergência e<br>
+                                        UrgÃªncia, EmergÃªncia e<br>
 
                                         Acidentes Pessoais
 
@@ -1442,9 +1442,9 @@
 
                                     <span style="font-size: 1.3em; color: yellow; font-weight: bold;">
 
-                                        Consultas Médicas,<br>
+                                        Consultas MÃ©dicas,<br>
 
-                                        Exames Médicos Simples
+                                        Exames MÃ©dicos Simples
 
                                     </span>
 
@@ -1478,9 +1478,9 @@
 
                                     <span style="font-size: 1.3em; color: yellow; font-weight: bold;">
 
-                                        Doenças e Lesões<br>
+                                        DoenÃ§as e LesÃµes<br>
 
-                                        Pré-Existentes
+                                        PrÃ©-Existentes
 
                                     </span>
 
@@ -1532,9 +1532,9 @@
 
                                     <span style="font-size: 1.3em; color: yellow; font-weight: bold;">
 
-                                        Cirurgias, Internações, Exames<br>
+                                        Cirurgias, InternaÃ§Ãµes, Exames<br>
 
-                                        Alto Custo, Trat. Psicológico,<br>
+                                        Alto Custo, Trat. PsicolÃ³gico,<br>
 
                                         Terapia Ocupacional, Fisioterapia<br>
 

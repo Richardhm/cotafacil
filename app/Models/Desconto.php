@@ -13,6 +13,7 @@ class Desconto extends Model
         'plano_id',
         'administradora_id',
         'valor',
+        'texto_desconto',
     ];
 
 

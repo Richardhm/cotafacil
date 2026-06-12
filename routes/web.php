@@ -176,6 +176,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/mudar/valor/tabela', [ConfiguracoesController::class, 'mudarTabela'])->name('corretora.mudar.valor.tabela');
 
         Route::post('/desconto', [ConfiguracoesController::class, 'storeDesconto'])->name('descontos.store');
+        Route::patch('/desconto/{desconto}/texto', [ConfiguracoesController::class, 'updateTextoDesconto'])->name('descontos.update.texto');
         Route::delete('/desconto/{desconto}', [ConfiguracoesController::class, 'destroyDesconto'])->name('descontos.destroy');
 
         Route::get('/plano/administradoras/cidades', [ConfiguracoesController::class, 'index'])->name('admin-planos.index');

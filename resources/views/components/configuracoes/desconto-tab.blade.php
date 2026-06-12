@@ -81,6 +81,7 @@
                             <th class="px-6 py-3 text-left text-white">Plano</th>
                             <th class="px-6 py-3 text-left text-white">Cidade</th>
                             <th class="px-6 py-3 text-left text-white">Desconto</th>
+                            <th class="px-6 py-3 text-left text-white">Texto na Cotação</th>
                             <th class="px-6 py-3 text-left text-white">Ações</th>
                         </tr>
                         </thead>
@@ -90,7 +91,17 @@
                                 <td class="px-6 py-4 text-white">{{ $desconto->plano->nome }}</td>
                                 <td class="px-6 py-4 text-white">{{ $desconto->cidade->nome }}</td>
                                 <td class="px-6 py-4 text-white">
-                                    {{ $desconto->valor ? 'R$ ' . number_format($desconto->valor, 2, ',', '.') : 'N/A' }}
+                                    {{ $desconto->valor ? number_format($desconto->valor, 0, ',', '.') . '%' : 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <input type="text"
+                                               class="texto-desconto-input border border-gray-300 rounded px-2 py-1 text-sm text-gray-900 bg-white/90 w-44"
+                                               value="{{ $desconto->texto_desconto ?? 'Des. ' . (int)$desconto->valor . '% 3/meses' }}"
+                                               data-id="{{ $desconto->id }}"
+                                               data-url="{{ route('descontos.update.texto', $desconto->id) }}">
+                                        <button class="salvar-texto-desconto text-green-400 hover:text-green-200 text-sm font-medium" data-id="{{ $desconto->id }}">Salvar</button>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <form action="{{ route('descontos.destroy', $desconto->id) }}" method="POST">
@@ -111,6 +122,30 @@
             </div>
         </div>
     </div>
-
-
 </div>
+
+<script>
+document.querySelectorAll('.salvar-texto-desconto').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var id = this.dataset.id;
+        var input = document.querySelector('.texto-desconto-input[data-id="' + id + '"]');
+        var url = input.dataset.url;
+        fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ texto_desconto: input.value }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                toastr.success('Texto atualizado!');
+            } else {
+                toastr.error('Erro ao salvar.');
+            }
+        });
+    });
+});
+</script>

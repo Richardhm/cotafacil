@@ -394,14 +394,20 @@ class ConfiguracoesController extends Controller
             foreach ($request->planos as $planoId) {
                 foreach ($request->cidades as $cidadeId) {
                     foreach ($request->administradora as $administradoraId) {
-                        Desconto::updateOrCreate(
-                            [
-                                'plano_id' => $planoId,
-                                'tabela_origens_id' => $cidadeId,
-                                'administradora_id' => $administradoraId
-                            ],
-                            ['valor' => $request->valor]
-                        );
+                        $key = [
+                            'plano_id'          => $planoId,
+                            'tabela_origens_id' => $cidadeId,
+                            'administradora_id' => $administradoraId,
+                        ];
+                        $existing = Desconto::where($key)->first();
+                        if ($existing) {
+                            $existing->update(['valor' => $request->valor]);
+                        } else {
+                            Desconto::create(array_merge($key, [
+                                'valor'          => $request->valor,
+                                'texto_desconto' => 'Des. ' . (int) $request->valor . '% 3/meses',
+                            ]));
+                        }
                     }
                 }
             }
@@ -414,6 +420,13 @@ class ConfiguracoesController extends Controller
                 'message' => 'Erro: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function updateTextoDesconto(Request $request, Desconto $desconto)
+    {
+        $request->validate(['texto_desconto' => 'required|string|max:100']);
+        $desconto->update(['texto_desconto' => $request->texto_desconto]);
+        return response()->json(['success' => true]);
     }
 
     public function destroyDesconto(Desconto $desconto)
