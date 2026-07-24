@@ -1,4 +1,37 @@
 <nav x-data="{ open: false }" class="bg-opacity-10 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+    <style>
+        @keyframes hapvidaSsPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(219,39,119,0.6); }
+            50% { box-shadow: 0 0 0 6px rgba(219,39,119,0); }
+        }
+        @keyframes hapvidaSsArrow {
+            0%, 100% { transform: translateX(0); opacity: 1; }
+            50% { transform: translateX(4px); opacity: 0.5; }
+        }
+        @keyframes tabelaCompletaPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.6); }
+            50% { box-shadow: 0 0 0 6px rgba(37,99,235,0); }
+        }
+        .hapvida-ss-highlight {
+            background: linear-gradient(90deg,#7c3aed,#db2777);
+            animation: hapvidaSsPulse 1.6s infinite;
+        }
+        .tabela-completa-highlight {
+            background: linear-gradient(90deg,#2563eb,#0891b2);
+            animation: tabelaCompletaPulse 1.6s infinite;
+        }
+        .hapvida-ss-arrow {
+            display: inline-block;
+            animation: hapvidaSsArrow 0.9s infinite;
+        }
+        @media (prefers-reduced-motion: reduce), (prefers-reduced-data: reduce) {
+            .hapvida-ss-highlight,
+            .tabela-completa-highlight,
+            .hapvida-ss-arrow {
+                animation: none;
+            }
+        }
+    </style>
     <!-- Primary Navigation Menu -->
     <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
@@ -67,6 +100,22 @@
 {{--                    </a>--}}
 {{--                @endif--}}
 
+                    <a href="{{ route('hapvida-ss.index') }}"
+                       title="Cotações Empresariais"
+                       class="hapvida-ss-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
+                        <span class="hapvida-ss-arrow">➜</span>
+                        Cotações Empresariais
+                        <span class="hapvida-ss-arrow">➜</span>
+                    </a>
+
+                    <a href="{{ route('tabela_completa.index') }}"
+                       title="Tabela Completa"
+                       class="tabela-completa-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
+                        <span class="hapvida-ss-arrow">➜</span>
+                        Tabela Completa
+                        <span class="hapvida-ss-arrow">➜</span>
+                    </a>
+
                     @if(Auth::user()->isAdmin())
                         <a class="text-white relative flex items-center gap-1" title="Configurações" alt="Configurações" href="{{ route('gerenciamento.index') }}">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -95,12 +144,6 @@
 {{--                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />--}}
 {{--                        </svg>--}}
 {{--                    </a>--}}
-
-                    <a class="text-white ml-2" title="Tabela Completa" alt="Tabela Completa" href="{{route('tabela_completa.index')}}">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5" />
-                        </svg>
-                    </a>
 
                     @if(Auth::user()->isAdmin() && !auth()->user()->estaEmTrial())
 
@@ -190,6 +233,14 @@
                     📊 Dashboard
                 </x-responsive-nav-link>
 
+                <a href="{{ route('hapvida-ss.index') }}" class="hapvida-ss-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
+                    <span class="hapvida-ss-arrow">➜</span> Cotações Empresariais <span class="hapvida-ss-arrow">➜</span>
+                </a>
+
+                <a href="{{ route('tabela_completa.index') }}" class="tabela-completa-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
+                    <span class="hapvida-ss-arrow">➜</span> Tabela Completa <span class="hapvida-ss-arrow">➜</span>
+                </a>
+
                 @if(Auth::user()->isAdmin())
                     <a class="text-white relative flex items-center gap-1" title="Configurações" alt="Configurações" href="{{ route('gerenciamento.index') }}">
                         👥 Gerenciar Usuários
@@ -199,9 +250,6 @@
                         ✏️ Editar Perfil
                     </a>
                 @endif
-                <a href="{{route('tabela_completa.index')}}" class="flex items-center gap-2 p-3 rounded-lg hover:bg-gray-700 transition">
-                    📋 Tabela Completa
-                </a>
 
                 @if(Auth::check() && Auth::user()->isDesenvolvedor())
                     <a href="{{route('gerenciamento.logins-compartilhados')}}" class="text-white flex items-center gap-2 p-3 rounded-lg hover:bg-gray-700 transition">

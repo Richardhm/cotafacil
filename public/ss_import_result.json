@@ -1,0 +1,16 @@
+{
+    "sucesso": true,
+    "cidadesEncontradas": 41,
+    "tabelasAtualizadas": 2800,
+    "tabelasCadastradas": 60,
+    "registrosGravados": 8580,
+    "erros": [],
+    "avisos": [
+        "Página 30 (QUIRINÓPOLIS - GO): Cidade 'QUIRINÓPOLIS - GO' não encontrada em tabela_origens, pulando.",
+        "Página 35 (BARRETOS - SP): Cidade 'BARRETOS - SP' não encontrada em tabela_origens, pulando.",
+        "Página 36 (MARÍLIA - SP): Cidade 'MARÍLIA - SP' não encontrada em tabela_origens, pulando.",
+        "Página 38 (PIRACICABA - SP): Cidade 'PIRACICABA - SP' não encontrada em tabela_origens, pulando.",
+        "Página 39 (PIRASSUNUNGA - SP): Cidade 'PIRASSUNUNGA - SP' não encontrada em tabela_origens, pulando.",
+        "Página 40 (SÃO CARLOS - SP): Cidade 'SÃO CARLOS - SP' não encontrada em tabela_origens, pulando."
+    ]
+}

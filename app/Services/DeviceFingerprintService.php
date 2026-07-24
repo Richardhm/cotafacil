@@ -14,12 +14,12 @@ class DeviceFingerprintService
         $mobile          = $request->header('Sec-CH-UA-Mobile') ?? '';
         $clientHintModel = $request->header('Sec-CH-UA-Model') ?? '';
         $ip              = $request->ip() ?? '';
-        $timezone        = $request->input('timezone', '');
-        $resolution      = $request->input('screen_resolution', '');
-        $canvas          = $request->input('canvas_hash', '');
-        $gpu             = $request->input('gpu_renderer', '');
-        $cpuCores        = $request->input('cpu_cores', '');
-        $devMemory       = $request->input('device_memory', '');
+        $timezone        = (string) ($request->input('timezone') ?? '');
+        $resolution      = (string) ($request->input('screen_resolution') ?? '');
+        $canvas          = (string) ($request->input('canvas_hash') ?? '');
+        $gpu             = (string) ($request->input('gpu_renderer') ?? '');
+        $cpuCores        = (string) ($request->input('cpu_cores') ?? '');
+        $devMemory       = (string) ($request->input('device_memory') ?? '');
 
         $ipPrefix    = implode('.', array_slice(explode('.', $ip), 0, 2));
         $fingerprint = md5($ua . $lang . $platform . $ipPrefix . $timezone . $resolution . $canvas . $gpu . $cpuCores);

@@ -46,10 +46,14 @@
                     }
                 });
 
-                $("body").on('change touchstart',"input[name='operadoras']",function(e){
-                    e.preventDefault();
-                    let valor = $(this).val();
+                function filtrarPlanosPorCidadeEOperadora() {
+                    let valor = $("input[name='operadoras']:checked").val();
                     let cidade = $("#cidade").val();
+
+                    if (!valor || !cidade) {
+                        return;
+                    }
+
                     if($("#resultado").is(":visible")){
                         $("input[name='planos-radio']").prop('checked', false);
                         $("#resultado").hide().empty();
@@ -66,10 +70,24 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // Inclui o CSRF token
                         },
                         success: function(response) {
+                            // Monta a lista de ids de planos disponíveis para essa cidade + administradora
+                            let planosPermitidos = [];
+                            $.each(response.planos_por_grupo, function(grupoNome, planos) {
+                                $.each(planos, function(i, plano) {
+                                    planosPermitidos.push(Number(plano.id));
+                                });
+                            });
+                            $.each(response.planos_sem_grupo, function(i, plano) {
+                                planosPermitidos.push(Number(plano.id));
+                            });
+                            if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                                planosPermitidos.push(Number(response.plano_ambulatorial_id));
+                            }
+
                             // Atualiza a lista de planos com os dados recebidos
                             $('#planos').removeClass('hidden').find('div[data-plano]').each(function() {
-                                let planoId = $(this).data('plano');
-                                if (response.planos.includes(planoId)) {
+                                let planoId = Number($(this).data('plano'));
+                                if (planosPermitidos.includes(planoId)) {
                                     $(this).show();  // Mostra o plano
                                 } else {
                                     $(this).hide();  // Esconde o plano
@@ -80,7 +98,24 @@
                             alert('Erro ao buscar os planos. Tente novamente.');
                         }
                     });
+                }
+
+                function resetSelecao() {
+                    $("input[name='operadoras']").prop('checked', false);
+                    $("input[name='planos-radio']").prop('checked', false);
+                    $("#resultado").hide().empty();
+                    $("#planos").addClass('hidden').find('div[data-plano]').show();
+                }
+
+                $("body").on('change touchstart',"input[name='operadoras']",function(e){
+                    e.preventDefault();
+                    filtrarPlanosPorCidadeEOperadora();
                     return false;
+                })
+
+                $('#cidade').on('change', function(){
+                    resetSelecao();
+                    filtrarPlanosPorCidadeEOperadora();
                 })
 
 

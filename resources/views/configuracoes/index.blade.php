@@ -18,6 +18,7 @@
                         <a href="#tab9" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">Cupons</a>
                         <a href="#tab10" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">Carencia</a>
                         <a href="#tab11" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">PDF Exceção</a>
+                        <a href="#tab12" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">📥 Importar PDF</a>
 
                     </nav>
                 </div>
@@ -60,6 +61,9 @@
                     </div>
                     <div id="tab11" class="tab-content hidden">
                         <x-configuracoes.pdf-excecao-tab />
+                    </div>
+                    <div id="tab12" class="tab-content hidden">
+                        <x-configuracoes.importar-tabelas-tab />
                     </div>
                 </div>
             </div>

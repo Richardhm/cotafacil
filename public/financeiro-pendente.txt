@@ -1,0 +1,44 @@
+RESUMO - PARTE FINANCEIRA / EFI BANK
+=====================================
+
+SITUACAO ATUAL: sem webhook configurado no servidor, tudo roda no braco (polling + cron).
+
+1) PIX AVULSO (assinatura nova / trial)
+----------------------------------------
+- Rota que gera a cobranca: POST /assinatura/pix -> AssinaturaController@pix
+- Front-end faz POLLING: setInterval(verificarPagamento, 3000) chamando
+  POST /pix/verificar-pagamento a cada 3 segundos, perguntando a Efi se o txid ja foi pago.
+- Existe o model PixPendente guardando status "pending" / "approved".
+
+2) PIX AUTOMATICO (recorrencia mensal)
+----------------------------------------
+- Mesmo padrao: setInterval(verificarPagamentoAutomatico, 5000) chamando
+  POST /pix-automatico/verificar-pagamento a cada 5 segundos.
+
+3) CARTAO DE CREDITO
+----------------------------------------
+- Nao usa polling do navegador - depende de CRON JOB:
+  comando "cartao:sincronizar" (SincronizarAssinaturasCartao) consulta a API
+  da Efi (detailSubscription) e atualiza status / next_charge das assinaturas.
+
+4) WEBHOOK (existe no codigo, mas NAO esta configurado no servidor)
+----------------------------------------
+- PixWebhookController: registra (pixConfigWebhook), consulta (pixDetailWebhook)
+  e registra o webhook de PIX Automatico na Efi. Rotas protegidas, so para
+  desenvolvedores.
+- CallbackController: ja tem os handlers prontos:
+  - pixWebhook -> marca PixPendente como "approved" e ativa PendingTeamUser.
+  - pixWebhookRec -> autoriza recorrencia e atualiza next_charge.
+  - index() (cartao) -> processa notificacoes de assinatura/cobranca da Efi.
+- PORÉM isso nunca foi acionado em producao. Plano pendente: configurar mTLS
+  + registrar a URL do webhook na Efi no VPS HostGator (dominio
+  cotafacil.bmsys.com.br, certificado ja baixado em
+  /etc/nginx/certs/efi/chain.crt).
+
+CONCLUSAO
+----------------------------------------
+O termo correto e mesmo POLLING: o front faz requisicoes repetidas (a cada
+3s ou 5s) perguntando "ja pagou?" em vez de a Efi avisar o sistema em tempo
+real via webhook. Enquanto o webhook nao for registrado, o sistema depende
+desse polling para PIX e do cron "cartao:sincronizar" para cartao - funciona,
+mas com atraso e mais carga de requisicoes do que o ideal.

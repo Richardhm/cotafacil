@@ -17,6 +17,8 @@ use App\Http\Controllers\BemvindoController;
 use App\Http\Controllers\PixWebhookController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\TeamUserController;
+use App\Http\Controllers\HapvidaSuperSimplesController;
+use App\Http\Controllers\PdfImportController;
 
 
 Route::get('/dev/atualizar-assinatura-efi/{id}/{valor_centavos}', function ($id, $valor_centavos) {
@@ -197,10 +199,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/pdf-excecao', [ConfiguracoesController::class, 'storePdfExcecao'])->name('pdf-excecao.store');
         Route::delete('/pdf-excecao/{id}', [ConfiguracoesController::class, 'destroyPdfExcecao'])->name('pdf-excecao.destroy');
 
-
+        Route::post('/tabelas/importar-pdf', [PdfImportController::class, 'import'])->name('tabelas.importar.pdf');
 
     });
     /********* Fim Configurações **************/
+
+    /********* Importação Assistida **************/
+    Route::middleware(['apenasDesenvolvedores'])->prefix('importacao-assistida')->name('importacao-assistida.')->group(function () {
+        Route::get('/',          [\App\Http\Controllers\ImportacaoAssistidaController::class, 'index'])   ->name('index');
+        Route::post('/preview',  [\App\Http\Controllers\ImportacaoAssistidaController::class, 'preview']) ->name('preview');
+        Route::post('/importar', [\App\Http\Controllers\ImportacaoAssistidaController::class, 'importar'])->name('importar');
+        Route::post('/analisar', [\App\Http\Controllers\ImportacaoAssistidaController::class, 'analisar'])->name('analisar');
+    });
+    /********* Fim Importação Assistida **************/
 
 
     /************Gerenciar************************/
@@ -269,6 +280,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class,"index"])
         ->middleware(['verified','check'])
         ->name('dashboard');
+
+    // Hapvida Super Simples Empresarial — cotação sem limite de vidas
+    Route::get('/hapvida-super-simples', [HapvidaSuperSimplesController::class, 'index'])
+        ->middleware(['verified', 'check'])
+        ->name('hapvida-ss.index');
+    Route::post('/cidades/hapvida-ss/origem', [HapvidaSuperSimplesController::class, 'getCidades'])
+        ->name('hapvida-ss.cidades');
+    Route::post('/hapvida-super-simples/cotacao', [HapvidaSuperSimplesController::class, 'cotacao'])
+        ->name('hapvida-ss.cotacao');
+    Route::post('/hapvida-super-simples/gerar', [HapvidaSuperSimplesController::class, 'criarPDFEmpresarial'])
+        ->middleware(['verified', 'check'])->name('hapvida-ss.gerar');
 
     Route::post('/cidades/origem', [DashboardController::class, 'getCidadesDeOrigem'])->name('cidades.origem');
 
