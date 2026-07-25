@@ -45,7 +45,11 @@ return [
          * Times-Roman, Times-Bold, Times-BoldItalic, Times-Italic,
          * Symbol, ZapfDingbats.
          */
-        'font_dir' => public_path('fonts'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
+        // Precisa ser gravável pelo processo do webserver: o dompdf escreve aqui o
+        // installed-fonts.json e o cache das fontes registradas via @font-face.
+        // public_path('fonts') não é gravável em produção (Permission denied), por
+        // isso usamos storage/fonts (o mesmo diretório do font_cache).
+        'font_dir' => storage_path('fonts'),
 
         /**
          * The location of the DOMPDF font cache directory
