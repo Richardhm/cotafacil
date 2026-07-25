@@ -78,50 +78,68 @@
                         <th class="px-2 py-1 text-left">Ações</th>
                     </tr>
                     </thead>
-                    <tbody>
-                    @foreach($vinculosAgrupados as $assinaturaId => $vinculos)
+                    @forelse($assinaturasVinculadas as $resumo)
                         @php
-                            $firstVinculo = $vinculos->first();
+                            $assinaturaId = $resumo->assinatura_id;
+                            $usuario = $resumo->assinatura?->user;
                         @endphp
+                        <tbody>
                         <tr>
                             <td class="px-2 py-1 font-bold text-white">
-                                
+                                @if($usuario)
+                                    {{ $usuario->name }}
+                                    <span class="block font-normal text-[11px] opacity-80">{{ $usuario->email }}</span>
+                                @else
+                                    Assinatura #{{ $assinaturaId }}
+                                @endif
                             </td>
                             <td class="px-2 py-1">
-                                <button onclick="toggleVinculos('{{ $assinaturaId }}')"
-                                        class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
-                                    Ver Vínculos
+                                <button type="button"
+                                        id="btn-vinculos-{{ $assinaturaId }}"
+                                        onclick="abrirModalVinculos('{{ $assinaturaId }}', @js($usuario?->name ?? 'Assinatura #' . $assinaturaId))"
+                                        class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 whitespace-nowrap">
+                                    Ver Vínculos ({{ $resumo->total_vinculos }})
                                 </button>
                             </td>
                         </tr>
-
-                    <tbody id="vinculos-{{ $assinaturaId }}" style="display:none;">
-                    @foreach($vinculos as $vinculo)
-                        <tr class="bg-gray-700">
-                            <td class="px-2 py-1 text-white">
-                                {{ $vinculo->administradora->nome }} /
-                                {{ $vinculo->plano->nome }} /
-                                {{ $vinculo->tabelaOrigem->nome ?? 'N/A' }}
-                            </td>
-                            <td class="px-2 py-1">
-                                <form action="{{ route('admin-planos.destroy', $vinculo->id) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="text-red-500 hover:text-red-700"
-                                            onclick="return confirm('Excluir este vínculo?')">
-                                        Excluir
-                                    </button>
-                                </form>
+                        </tbody>
+                    @empty
+                        <tbody>
+                        <tr>
+                            <td colspan="2" class="px-2 py-3 text-white text-center opacity-80">
+                                Nenhuma associação cadastrada.
                             </td>
                         </tr>
-                    @endforeach
-                    </tbody>
-                    @endforeach
-                    </tbody>
+                        </tbody>
+                    @endforelse
                 </table>
 
             </div>
+        </div>
+    </div>
+
+    <!-- Modal de vínculos (cidade -> administradora/plano) -->
+    <div id="modal-vinculos"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4"
+         onclick="if (event.target === this) fecharModalVinculos()">
+        <div class="bg-gray-900 border border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+
+            <div class="flex items-start justify-between gap-4 px-4 py-3 border-b border-white/10">
+                <div>
+                    <h3 id="modal-vinculos-titulo" class="text-white font-semibold"></h3>
+                    <p id="modal-vinculos-subtitulo" class="text-white text-xs opacity-70"></p>
+                </div>
+                <button type="button" onclick="fecharModalVinculos()"
+                        class="text-white text-2xl leading-none opacity-70 hover:opacity-100">&times;</button>
+            </div>
+
+            <div class="px-4 py-2 border-b border-white/10">
+                <input type="text" id="modal-vinculos-busca" placeholder="Filtrar cidade..."
+                       oninput="renderVinculos()"
+                       class="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white placeholder-white/40">
+            </div>
+
+            <div id="modal-vinculos-corpo" class="overflow-y-auto flex-1"></div>
         </div>
     </div>
 </div>

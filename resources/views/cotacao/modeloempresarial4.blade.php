@@ -29,9 +29,9 @@
         }
 
         .footer {position: absolute;bottom: 0px;width: calc(100% - 40px);height: 200px;padding: 0px;box-sizing: border-box;}
-        .footer img {position: absolute;bottom:10px;left: 0px;width: 390px;height: 390px;border-radius: 50%;}
+        .footer img {position: absolute;bottom:15px;right: 0px;width: 400px;height: 400px;border-radius: 50%;}
         .footer .middle, .footer .right {position: absolute;bottom:0px;}
-        .footer .middle {bottom:30px;right: 10px;display:block;color: #0c0c0c;font-size:1.7em;line-height:1;padding:0;}
+        .footer .middle {bottom:30px;left: 10px;display:block;color: #0c0c0c;font-size:1.7em;line-height:1;padding:0;}
         .footer .middle p {margin: 0px;color:#0849bd;font-weight: bold;line-height:1;padding:0;}
         .footer .right {bottom:20px;right: 30px;text-align: left;display:block;font-size:2em;}
         .footer .right p {margin: 0;color:#0849bd;font-weight: bold;}
@@ -416,7 +416,7 @@
 
 <div class="footer">
     @if($image != "")
-        <img src='{{$image}}' alt='ser Image'>
+        <img src='{{$image}}' alt=''>
 
     @endif
     <div class="middle">

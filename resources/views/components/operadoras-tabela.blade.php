@@ -10,7 +10,7 @@
                     <span class="ml-1 text-sm">{{$op->nome}}</span>
                 </div>
                 <div class="flex w-[50%] justify-end">
-                    <img src="{{$op->logo}}" alt="Opção 1" class="image_operadora rounded-md" style="width:100px;border-radius:5px;padding:2px;background-color: white;">
+                    <img src="{{$op->logo}}" alt="{{$op->nome}}" width="100" height="40" loading="eager" decoding="async" class="image_operadora rounded-md" style="width:100px;height:40px;object-fit:contain;border-radius:5px;padding:2px;background-color: white;">
                 </div>
             </div>
         </label>

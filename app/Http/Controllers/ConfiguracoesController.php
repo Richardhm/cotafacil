@@ -480,7 +480,9 @@ class ConfiguracoesController extends Controller
         //}
 
         if (!empty($inserts)) {
-            AdministradoraPlano::insert($inserts);
+            // insertOrIgnore por causa do índice único: dois cliques seguidos ou a mesma
+            // cidade repetida no payload não podem virar erro 500 na tela.
+            AdministradoraPlano::insertOrIgnore($inserts);
         }
 
         return response()->json(['success' => 'Associações criadas com sucesso!']);
@@ -551,10 +553,55 @@ class ConfiguracoesController extends Controller
 
 
 
-    public function destroy($id)
+    /**
+     * Vínculos de uma assinatura agrupados por cidade, para o modal de "Ver Vínculos".
+     */
+    public function vinculosPorAssinatura($assinatura)
+    {
+        $vinculos = AdministradoraPlano::with(['administradora', 'plano', 'tabelaOrigem'])
+            ->select('administradora_planos.*')
+            ->leftJoin('tabela_origens', 'tabela_origens.id', '=', 'administradora_planos.tabela_origens_id')
+            ->leftJoin('administradoras', 'administradoras.id', '=', 'administradora_planos.administradora_id')
+            ->leftJoin('planos', 'planos.id', '=', 'administradora_planos.plano_id')
+            ->where('administradora_planos.assinatura_id', $assinatura)
+            ->orderByRaw('tabela_origens.nome IS NULL')
+            ->orderBy('tabela_origens.nome')
+            ->orderBy('administradoras.nome')
+            ->orderBy('planos.nome')
+            ->get();
+
+        // groupBy preserva a ordem de aparição, então as cidades já saem ordenadas pela query.
+        $cidades = $vinculos
+            ->groupBy(fn ($vinculo) => $vinculo->tabela_origens_id ?? 0)
+            ->map(function ($itens, $cidadeId) {
+                return [
+                    'cidade_id' => (int) $cidadeId,
+                    'cidade' => $itens->first()->tabelaOrigem->nome ?? 'Sem cidade',
+                    'total' => $itens->count(),
+                    'itens' => $itens->map(fn ($vinculo) => [
+                        'id' => $vinculo->id,
+                        'administradora' => $vinculo->administradora->nome ?? 'N/A',
+                        'plano' => $vinculo->plano->nome ?? 'N/A',
+                    ])->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'total' => $vinculos->count(),
+            'cidades' => $cidades,
+        ]);
+    }
+
+    public function destroy(Request $request, $id)
     {
         $vinculo = AdministradoraPlano::findOrFail($id);
         $vinculo->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return back()->with('success', 'Associação removida!');
     }

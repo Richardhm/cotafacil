@@ -183,6 +183,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/plano/administradoras/cidades', [ConfiguracoesController::class, 'index'])->name('admin-planos.index');
         Route::post('/plano/administradoras/cidades', [ConfiguracoesController::class, 'store'])->name('admin-planos.store');
+        Route::get('/plano/administradoras/cidades/{assinatura}/vinculos', [ConfiguracoesController::class, 'vinculosPorAssinatura'])->name('admin-planos.vinculos');
         Route::delete('/plano/administradoras/cidades/{id}', [ConfiguracoesController::class, 'destroy'])->name('admin-planos.destroy');
 
         Route::post('/cupons', [ConfiguracoesController::class, 'storeCupon'])->name('cupons.store');
@@ -285,6 +286,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/hapvida-super-simples', [HapvidaSuperSimplesController::class, 'index'])
         ->middleware(['verified', 'check'])
         ->name('hapvida-ss.index');
+    Route::post('/hapvida-super-simples/estados', [HapvidaSuperSimplesController::class, 'getEstados'])
+        ->name('hapvida-ss.estados');
     Route::post('/cidades/hapvida-ss/origem', [HapvidaSuperSimplesController::class, 'getCidades'])
         ->name('hapvida-ss.cidades');
     Route::post('/hapvida-super-simples/cotacao', [HapvidaSuperSimplesController::class, 'cotacao'])

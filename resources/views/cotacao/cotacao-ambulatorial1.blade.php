@@ -1738,7 +1738,7 @@
 
     @if($image != "")
 
-        <img src='{{$image}}' alt='ser Image'>
+        <img src='{{$image}}' alt=''>
 
     @endif
 

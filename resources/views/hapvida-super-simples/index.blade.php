@@ -13,7 +13,7 @@
 
         {{-- Cabeçalho identificador do plano --}}
         <div class="mb-2 p-2 rounded bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] border border-white text-white text-center font-bold text-sm uppercase">
-            Hapvida &mdash; Super Simples
+            Hapvida &mdash; <span id="titulo-plano">{{ $planos->firstWhere('id', $planoSelecionado)->nome ?? 'Super Simples' }}</span>
             <span class="block text-xs font-normal opacity-75 mt-0.5">Cotação sem limite de vidas</span>
         </div>
 
@@ -25,8 +25,8 @@
                     HAPVIDA
                 </span>
                 {{-- Item 2: Super Simples --}}
-                <span style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.28);color:white;font-size:.8rem;font-weight:800;padding:8px 28px 8px 30px;clip-path:polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%, 16px 50%);white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;position:relative;z-index:20;flex-shrink:0;margin-left:-14px;">
-                    SUPER SIMPLES
+                <span id="breadcrumb-plano" style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.28);color:white;font-size:.8rem;font-weight:800;padding:8px 28px 8px 30px;clip-path:polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%, 16px 50%);white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;position:relative;z-index:20;flex-shrink:0;margin-left:-14px;">
+                    {{ $planos->firstWhere('id', $planoSelecionado)->nome ?? 'Super Simples' }}
                 </span>
                 {{-- Item 3: Localidade — clip-path muda via JS quando cenários aparecem --}}
                 <span id="breadcrumb-localidade" style="display:inline-flex;align-items:center;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);font-size:.8rem;font-weight:600;padding:8px 20px 8px 30px;clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, 16px 50%);white-space:nowrap;letter-spacing:.04em;font-style:italic;position:relative;z-index:10;flex-shrink:0;margin-left:-14px;">
@@ -45,8 +45,16 @@
                     Tabela de Origem
                 </button>
 
-                {{-- Seletores UF / Cidade --}}
+                {{-- Seletores Plano / UF / Cidade --}}
                 <form id="form-localidade">
+                    <div class="w-full px-1">
+                        <label for="plano" class="text-white text-sm">Plano</label>
+                        <select id="plano" class="py-2 text-black w-full text-xs px-1 me-2 mb-2 font-medium rounded-lg dark:bg-transparent dark:text-white dark:border-white">
+                            @foreach($planos as $plano)
+                                <option value="{{ $plano->id }}" {{ $planoSelecionado == $plano->id ? 'selected' : '' }}>{{ $plano->nome }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="w-full flex">
                         <div class="ml-1 w-[32%]">
                             <label for="estado" class="text-white text-sm">UF</label>
@@ -287,6 +295,45 @@
                 if (carouselGoTo) carouselGoTo(idx);
             });
 
+            function planoAtual() {
+                return $('#plano').val();
+            }
+
+            // ------- Plano → UFs -------
+            // Cada plano atende um conjunto diferente de cidades, então trocar o plano
+            // obriga a recarregar as UFs e zerar tudo que vem depois.
+            $('#plano').on('change', function () {
+                const nomePlano = $(this).find('option:selected').text().trim();
+                $('#titulo-plano').text(nomePlano);
+                $('#breadcrumb-plano').text(nomePlano);
+
+                $('#estado').empty().append('<option value="">Escolher UF</option>');
+                $('#cidade').empty().append('<option value="">Escolher Cidade</option>');
+                $('#resultado').addClass('hidden').empty();
+                hideBreadcrumbCenarios();
+                updateBreadcrumbLocalidade();
+                atualizarTotalVidas();
+
+                $('#loading-cidades').fadeIn(150);
+                $.ajax({
+                    url: '{{ route('hapvida-ss.estados') }}',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { plano_id: planoAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
+                    success: function (data) {
+                        $.each(data, function (i, v) {
+                            $('#estado').append('<option value="' + v.uf + '">' + v.uf + '</option>');
+                        });
+                    },
+                    error: function () {
+                        alert('Erro ao carregar as UFs desse plano. Tente novamente.');
+                    },
+                    complete: function () {
+                        $('#loading-cidades').fadeOut(150);
+                    }
+                });
+            });
+
             // ------- UF → Cidades -------
             $('#estado').on('change', function () {
                 let uf = $(this).val();
@@ -294,6 +341,7 @@
                 $('#resultado').addClass('hidden').empty();
                 hideBreadcrumbCenarios();
                 updateBreadcrumbLocalidade();
+                atualizarTotalVidas();
                 if (!uf) return;
 
                 $('#loading-cidades').fadeIn(150);
@@ -301,7 +349,7 @@
                     url: '{{ route('hapvida-ss.cidades') }}',
                     type: 'POST',
                     dataType: 'json',
-                    data: { uf: uf, _token: $('meta[name="csrf-token"]').attr('content') },
+                    data: { uf: uf, plano_id: planoAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
                     success: function (data) {
                         $.each(data, function (i, v) {
                             $('#cidade').append('<option value="' + v.id + '">' + v.nome + '</option>');
@@ -409,6 +457,7 @@
                     type: 'POST',
                     data: {
                         tabela_origem: cidade,
+                        plano_id: planoAtual(),
                         faixas: faixas,
                         _token: '{{ csrf_token() }}'
                     },
@@ -522,6 +571,7 @@
                     data: {
                         coparticipacao: copart,
                         tabela_origem:  cidade,
+                        plano_id:       planoAtual(),
                         faixas:         faixas,
                         odonto:         odonto,
                         tipo_documento: tipo,

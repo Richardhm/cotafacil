@@ -13,24 +13,65 @@ class HapvidaSuperSimplesController extends Controller
     private const HAPVIDA_ID = 4;
     private const SUPER_SIMPLES_ID = 5;
 
-    public function index()
+    /**
+     * Planos que podem ser cotados nesta tela (sem limite de vidas).
+     * O primeiro é o padrão quando a requisição não manda plano.
+     */
+    private const PLANOS_PERMITIDOS = [
+        5,  // Super Simples
+        10, // Super Simples - Integrado
+        11, // Super Simples - Pleno
+    ];
+
+    /**
+     * Plano vindo da requisição, sempre validado contra a lista permitida —
+     * sem isso daria para cotar qualquer plano mandando outro id no POST.
+     */
+    private function planoSelecionado(Request $request): int
+    {
+        $plano = (int) $request->input('plano_id', self::SUPER_SIMPLES_ID);
+
+        return in_array($plano, self::PLANOS_PERMITIDOS, true)
+            ? $plano
+            : self::SUPER_SIMPLES_ID;
+    }
+
+    /** UFs que têm tabela para o plano informado. */
+    private function estadosDoPlano(int $planoId)
     {
         $cidadeIds = Tabela::where('administradora_id', self::HAPVIDA_ID)
-            ->where('plano_id', self::SUPER_SIMPLES_ID)
+            ->where('plano_id', $planoId)
             ->pluck('tabela_origens_id')
             ->unique();
 
-        $estados = TabelaOrigens::whereIn('id', $cidadeIds)
+        return TabelaOrigens::whereIn('id', $cidadeIds)
             ->groupBy('uf')
             ->select('uf')
             ->orderBy('uf')
             ->get();
+    }
+
+    public function index()
+    {
+        $planoPadrao = self::SUPER_SIMPLES_ID;
+
+        $planos = Plano::whereIn('id', self::PLANOS_PERMITIDOS)
+            ->orderByRaw('FIELD(id, ' . implode(',', self::PLANOS_PERMITIDOS) . ')')
+            ->get(['id', 'nome']);
+
+        $estados = $this->estadosDoPlano($planoPadrao);
 
         $ufpreferencia = auth()->user()->uf_preferencia ?? '';
 
-        return view('hapvida-super-simples.index', compact('estados', 'ufpreferencia'))
+        return view('hapvida-super-simples.index', compact('estados', 'ufpreferencia', 'planos'))
             ->with('hapvidaId', self::HAPVIDA_ID)
-            ->with('superSimplesId', self::SUPER_SIMPLES_ID);
+            ->with('planoSelecionado', $planoPadrao);
+    }
+
+    /** UFs disponíveis para o plano — usado quando o usuário troca de plano na tela. */
+    public function getEstados(Request $request)
+    {
+        return response()->json($this->estadosDoPlano($this->planoSelecionado($request)));
     }
 
     public function getCidades(Request $request)
@@ -38,7 +79,7 @@ class HapvidaSuperSimplesController extends Controller
         $uf = $request->input('uf');
 
         $cidadeIds = Tabela::where('administradora_id', self::HAPVIDA_ID)
-            ->where('plano_id', self::SUPER_SIMPLES_ID)
+            ->where('plano_id', $this->planoSelecionado($request))
             ->pluck('tabela_origens_id')
             ->unique();
 
@@ -54,6 +95,7 @@ class HapvidaSuperSimplesController extends Controller
     public function cotacao(Request $request)
     {
         $cidade = $request->input('tabela_origem');
+        $planoId = $this->planoSelecionado($request);
         $faixasInput = $request->input('faixas')[0];
 
         $sqlCase = '';
@@ -82,7 +124,7 @@ class HapvidaSuperSimplesController extends Controller
             $dadosTabela = Tabela::select('tabelas.*')
                 ->selectRaw("CASE {$sqlCase} END AS quantidade")
                 ->where('tabelas.tabela_origens_id', $cidade)
-                ->where('tabelas.plano_id', self::SUPER_SIMPLES_ID)
+                ->where('tabelas.plano_id', $planoId)
                 ->where('tabelas.administradora_id', self::HAPVIDA_ID)
                 ->where('tabelas.coparticipacao', $cenario['copart'])
                 ->where('tabelas.odonto', $cenario['odonto'])
@@ -144,6 +186,7 @@ class HapvidaSuperSimplesController extends Controller
         $odonto         = (int) $request->input('odonto', 1);
         $cidade         = $request->input('tabela_origem');
         $tipo           = $request->input('tipo_documento', 'jpg');
+        $planoId        = $this->planoSelecionado($request);
         $faixasInput    = $request->input('faixas')[0];
 
         $sqlCase  = '';
@@ -162,7 +205,7 @@ class HapvidaSuperSimplesController extends Controller
         $dadosTabela = Tabela::select('tabelas.*')
             ->selectRaw("CASE {$sqlCase} END AS quantidade")
             ->where('tabelas.tabela_origens_id', $cidade)
-            ->where('tabelas.plano_id', self::SUPER_SIMPLES_ID)
+            ->where('tabelas.plano_id', $planoId)
             ->where('tabelas.administradora_id', self::HAPVIDA_ID)
             ->where('tabelas.coparticipacao', $coparticipacao)
             ->where('tabelas.odonto', $odonto)
@@ -192,7 +235,7 @@ class HapvidaSuperSimplesController extends Controller
             ];
         });
 
-        $plano_nome  = Plano::find(self::SUPER_SIMPLES_ID)->nome;
+        $plano_nome  = Plano::find($planoId)->nome;
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
         $copart_frase = $coparticipacao == 1 ? ' c/ Copart' : ' s/ Copart';
         $odonto_frase = $odonto         == 1 ? ' c/ Odonto' : ' s/ Odonto';
@@ -200,7 +243,7 @@ class HapvidaSuperSimplesController extends Controller
 
         $imagem_user = '';
         $img = auth()->user()->imagem ?? '';
-        if ($img) $imagem_user = "storage/{$img}";
+        if ($img && \Illuminate\Support\Facades\Storage::disk('public')->exists($img)) $imagem_user = "storage/{$img}";
 
         $layout      = auth()->user()->layout_id ?? 1;
         $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
@@ -215,7 +258,14 @@ class HapvidaSuperSimplesController extends Controller
         ])->render();
 
         $nome_img = 'hapvida-ss-' . date('Ymd_His') . '_' . uniqid();
-        $pdfPath  = storage_path('app/temp/temp_hss.pdf');
+
+        // Nome exclusivo por requisição: com temp_hss.pdf fixo, dois usuários gerando ao
+        // mesmo tempo sobrescreviam o PDF um do outro no meio da leitura do ghostscript.
+        $diretorio = storage_path('app/temp');
+        if (!is_dir($diretorio)) {
+            mkdir($diretorio, 0775, true);
+        }
+        $pdfPath = $diretorio . DIRECTORY_SEPARATOR . 'hss_' . uniqid('', true) . '.pdf';
 
         $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
 
@@ -227,6 +277,8 @@ class HapvidaSuperSimplesController extends Controller
         $imagemPath = storage_path("app/temp/{$nome_img}.png");
         $command = "gs -sDEVICE=pngalpha -r300 -o {$imagemPath} {$pdfPath}";
         exec($command, $output, $status);
+
+        @unlink($pdfPath);
 
         if ($status !== 0 || !file_exists($imagemPath)) {
             return response()->json(['error' => 'Falha ao gerar imagem.'], 500);

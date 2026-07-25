@@ -23,6 +23,25 @@ use Barryvdh\DomPDF\Facade\Pdf as PDFFile;
 
 class DashboardController extends Controller
 {
+    /**
+     * Caminho exclusivo para o PDF intermediário da geração de imagem.
+     *
+     * Antes era sempre storage/app/temp/temp.pdf — nome fixo para todo mundo. Com dois
+     * usuários gerando cotação ao mesmo tempo, um salvava por cima do outro enquanto o
+     * ghostscript ainda estava lendo: ou saía a imagem do outro, ou o gs terminava com
+     * código 0 sem escrever nada e a requisição virava 500 (o spinner ficava eterno).
+     */
+    private function novoPdfTemporario(): string
+    {
+        $diretorio = storage_path('app/temp');
+
+        if (!is_dir($diretorio)) {
+            mkdir($diretorio, 0775, true);
+        }
+
+        return $diretorio . DIRECTORY_SEPARATOR . 'pdf_' . uniqid('', true) . '.pdf';
+    }
+
     public function tabelaCompletaAmbulatorial()
     {
         $layout = auth()->user()->layout_id;
@@ -77,11 +96,11 @@ class DashboardController extends Controller
             "frase" => $frase
         ]);
 
-        $pdfPath = storage_path('app/temp/temp.pdf');
+        $pdfPath = $this->novoPdfTemporario();
         $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
         $pdf->save($pdfPath);
 
-        $nomeArquivo = 'tabela-ambulatorial-' . date('dmY-His') . '.png';
+        $nomeArquivo = 'tabela-ambulatorial-' . date('dmY-His') . '-' . uniqid() . '.png';
 
         $imagemPath = storage_path("app/temp/{$nomeArquivo}");
 
@@ -91,6 +110,7 @@ class DashboardController extends Controller
 
         $command = "gs -sDEVICE=pngalpha -r300 -o {$imagemPath} {$pdfPath}";  // -r150 é a resolução, pode ser ajustada
         exec($command, $output, $status);
+        @unlink($pdfPath);
 
         if ($status !== 0 || !file_exists($imagemPath)) {
             return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);
@@ -165,11 +185,11 @@ class DashboardController extends Controller
             "frase" => $frase
         ]);
 
-        $pdfPath = storage_path('app/temp/temp.pdf');
+        $pdfPath = $this->novoPdfTemporario();
         $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
         $pdf->save($pdfPath);
 
-        $nomeArquivo = 'tabela-' . date('dmY-His') . '.png';
+        $nomeArquivo = 'tabela-' . date('dmY-His') . '-' . uniqid() . '.png';
 
 
         $imagemPath = storage_path("app/temp/{$nomeArquivo}");
@@ -180,6 +200,7 @@ class DashboardController extends Controller
 
         $command = "gs -sDEVICE=pngalpha -r300 -o {$imagemPath} {$pdfPath}";  // -r150 é a resolução, pode ser ajustada
         exec($command, $output, $status);
+        @unlink($pdfPath);
 
         if ($status !== 0 || !file_exists($imagemPath)) {
             return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);
@@ -525,7 +546,7 @@ class DashboardController extends Controller
         $keys = implode(",",$chaves);
         $imagem_user = "";
         $image = auth()->user()->imagem;
-        if($image != "") {
+        if($image != "" && \Illuminate\Support\Facades\Storage::disk('public')->exists($image)) {
             $imagem_user = "storage/".auth()->user()->imagem;
         }
 
@@ -752,7 +773,7 @@ class DashboardController extends Controller
                 }
             } else {
 
-                $pdfPath = storage_path('app/temp/temp.pdf');
+                $pdfPath = $this->novoPdfTemporario();
 
                 if($apenasvalores == 1) {
                     $pdf = PDFFile::loadHTML($view)
@@ -774,6 +795,8 @@ class DashboardController extends Controller
                     exec($command, $output, $status);
                 }
 
+                @unlink($pdfPath);
+
                 if ($status !== 0 || !file_exists($imagemPath)) {
                     return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);
                 }
@@ -793,7 +816,7 @@ class DashboardController extends Controller
 
             $imagem_user = "";
             $image = auth()->user()->imagem;
-            if($image != "") {
+            if($image != "" && \Illuminate\Support\Facades\Storage::disk('public')->exists($image)) {
                 $imagem_user = "storage/".auth()->user()->imagem;
             }
 
@@ -916,7 +939,7 @@ class DashboardController extends Controller
 
             } else {
 
-                $pdfPath = storage_path('app/temp/temp.pdf');
+                $pdfPath = $this->novoPdfTemporario();
                 $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
                 $pdf->save($pdfPath);
                 $imagemPath = storage_path("app/temp/{$nome_img}.png");
@@ -929,6 +952,7 @@ class DashboardController extends Controller
 
                 exec($command, $output, $status);
 
+                @unlink($pdfPath);
 
                 if ($status !== 0 || !file_exists($imagemPath)) {
                     return response()->json(['error' => 'Falha ao gerar a imagem.'], 500);

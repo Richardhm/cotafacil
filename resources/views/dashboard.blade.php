@@ -262,6 +262,10 @@
     @section('scripts')
        <script>
            $(document).ready(function(){
+               // Guarda a cidade selecionada para saber se um change é troca ou primeira escolha.
+               // Declarado aqui em cima porque mudarEstado() já é chamado logo abaixo.
+               let cidadeAnterior = $('#cidade').val() || '';
+
                let ufPreferida = "{{ $uf_preferencia }}";
 
                if (ufPreferida) {
@@ -279,8 +283,18 @@
                // });
 
 
-               function mudarEstado() {
+               // Zera tudo que vem depois da cidade: vidas, operadoras, planos e resultado.
+               // Usada tanto na troca de UF quanto na troca de cidade — trocar qualquer um
+               // dos dois invalida os preços das etapas seguintes.
+               function resetarEtapas() {
                    $('.faixa-etaria-input').val(0);
+                   desmarcarPlanos();
+                   verificarVisibilidade();
+               }
+
+               function mudarEstado() {
+                   resetarEtapas();
+                   cidadeAnterior = '';
                    let estado_id = $("#estado").val();
                    if(estado_id) {
                        $('#loading-cidades').fadeIn(150);
@@ -1048,7 +1062,7 @@
                                     <span class="ml-1 text-sm">${op.nome}</span>
                                 </div>
                                 <div class="flex w-[50%] justify-end">
-                                    <img src="${op.logo}" alt="${op.nome}" class="image_operadora rounded-md" style="width:100px;border-radius:5px;padding:2px;background-color: white;">
+                                    <img src="${op.logo}" alt="${op.nome}" width="100" height="40" loading="eager" decoding="async" class="image_operadora rounded-md" style="width:100px;height:40px;object-fit:contain;border-radius:5px;padding:2px;background-color: white;">
                                 </div>
                             </label>
                         </div>`;
@@ -1074,7 +1088,23 @@
                }
 
                $('input[type="text"]').on('input', checkFields);
-               $('#cidade').on('change', checkFields);
+
+               // Trocar de cidade zera as etapas seguintes, igual à troca de UF.
+               // Só que apenas quando é troca mesmo: na primeira escolha não há nada
+               // percorrido para desfazer, e resetar apagaria as vidas que a pessoa
+               // já tivesse digitado antes de escolher a cidade.
+               $('#cidade').on('change', function () {
+                   const cidadeAtual = $(this).val() || '';
+                   const trocou = cidadeAnterior !== '' && cidadeAnterior !== cidadeAtual;
+
+                   cidadeAnterior = cidadeAtual;
+
+                   if (trocou) {
+                       resetarEtapas();
+                   }
+
+                   checkFields();
+               });
                /*****************verificar se cidade e minus estão preenchidos para aparecer administradoras*******/
 
                /***********Incrementar valores aos input*****************************/
@@ -1267,8 +1297,34 @@
                    }
                });
 
+               // Trava para não disparar duas gerações ao mesmo tempo: cada clique no Gerar
+               // roda um ghostscript no servidor, e clicar várias vezes só piora a fila.
+               let gerandoImagem = false;
+
+               function avisarErroImagem(xhr) {
+                   let mensagem = 'Não foi possível gerar a imagem. Tente novamente.';
+
+                   if (xhr && xhr.status === 419) {
+                       mensagem = 'Sua sessão expirou. Atualize a página e tente de novo.';
+                   } else if (xhr && xhr.statusText === 'timeout') {
+                       mensagem = 'A geração demorou demais e foi cancelada. Tente novamente.';
+                   }
+
+                   if (window.toastr) {
+                       toastr.error(mensagem);
+                   } else {
+                       alert(mensagem);
+                   }
+               }
+
                $("body").on('click','#gerarImagemAmbulatorial',function(e){
                    e.preventDefault();
+
+                   if (gerandoImagem) {
+                       return false;
+                   }
+
+                   let botao = $(this);
                    let load = $(".ajax_load");
                    let linkUrl = $(this).attr("href");
                    let cidade = "";
@@ -1319,8 +1375,21 @@
                        xhrFields: {
                            responseType: 'blob'
                        },
+                       timeout: 120000,
                        beforeSend: function () {
+                           gerandoImagem = true;
+                           botao.prop('disabled', true).addClass('opacity-60');
                            load.fadeIn(100).css("display", "flex");
+                       },
+                       error: function (xhr) {
+                           avisarErroImagem(xhr);
+                       },
+                       // Sempre roda, dando certo ou errado: é o que garante que o spinner
+                       // não fique girando para sempre quando a requisição falha.
+                       complete: function () {
+                           gerandoImagem = false;
+                           botao.prop('disabled', false).removeClass('opacity-60');
+                           load.fadeOut(100).css("display", "none");
                        },
                        success:function(blob,status,xhr,ppp) {
                            if(blob.size && blob.size != undefined) {
@@ -1372,6 +1441,13 @@
 
 
                 $("body").on('click','#gerarImagem',function(e){
+                    e.preventDefault();
+
+                    if (gerandoImagem) {
+                        return false;
+                    }
+
+                    let botao = $(this);
                     let comCoparticipacaoMarcado = $("#comCoparticipacao").is(":checked");
                     let semCoparticipacaoMarcado = $("#semCoparticipacao").is(":checked");
                     let apenasValores = $("#apenasValores").is(":checked");
@@ -1437,8 +1513,21 @@
                         xhrFields: {
                             responseType: 'blob'
                         },
+                        timeout: 120000,
                         beforeSend: function () {
+                            gerandoImagem = true;
+                            botao.prop('disabled', true).addClass('opacity-60');
                             load.fadeIn(100).css("display", "flex");
+                        },
+                        error: function (xhr) {
+                            avisarErroImagem(xhr);
+                        },
+                        // Sempre roda, dando certo ou errado: é o que garante que o spinner
+                        // não fique girando para sempre quando a requisição falha.
+                        complete: function () {
+                            gerandoImagem = false;
+                            botao.prop('disabled', false).removeClass('opacity-60');
+                            load.fadeOut(100).css("display", "none");
                         },
                         success:function(blob,status,xhr,ppp) {
                             if(blob.size && blob.size != undefined) {

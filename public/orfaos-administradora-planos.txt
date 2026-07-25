@@ -1,0 +1,248 @@
+== ORFAOS EM administradora_planos - banco hostinger_orcamento ==
+gerado em 2026-07-24 10:19
+
+Total de linhas com tabela_origens_id NULL: 982
+FKs quebradas (cidade inexistente): 0 em todas as 9 tabelas com coluna de cidade
+
+
+Assinatura #22 - Richard Figueiredo Lopes <richardjonhshm@gmail.com>
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          6 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #28 - RENAN CORREA <renanseguross@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #47 - Mérito Corretora <hapvida.merito@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #48 - Mérito Corretora <ludmila.hapvida08@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #49 - Ludmila Teixeira <ludyeva08@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #51 - Diego Constantino <diego.costantino@me.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #53 - Moacir Abreu <moacir.americasaude@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #54 - Wanessa <wanessaplanosdesaude@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #55 - Denis da Silva Souza <denis.souzabrt@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #56 - Tiago Almeida <thiagoalmeidam18@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #57 - maria azevedo suele <lmjones107@hotmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #58 - Valdeon Junior <valdeooon@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #59 - Gabriel Manrick <gabrielmanrick972@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #60 - Cassio <cassiowambaster01@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #61 - Corretora Josy <josy.planosdesaude@hotmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #62 - Sergio Paiva <sergiopaiva3mps@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #64 - Deuza Nazareno <deuza.nazarnhp@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #65 - WGA Corretora altorizada Hapvida <wendelplanosdesaude@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #66 - Carlos swazrtza <xagav16198@cyclesat.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #67 - ECONOMIZE PLANO DE SAUDE ONLINE <coutinho@economizeplanodesaude.com.br>
+    plano 1   Individual                         3 linhas
+
+Assinatura #68 - Ana Paula Oliveira <anapaulalemes2010@hotmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #71 - Vinicius Silva <camargocorretora.adm@gmail.com>
+    plano 1   Individual                         3 linhas
+
+Assinatura #87 - Frederico Barros <fredbbarros@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          6 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #90 - Larissa Silva <larissasilva@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #91 - Gustavo Fernando Roque <gustavo.roque@tjkseguros.com.br>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #92 - MARCO ANTONIO VALIM <mm5valim@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #93 - Mateus França <mateus.francaplanosdesaude@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #94 - Diego Aragão <pesquisarplanos@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #95 - Wladimi <wladimisky@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #96 - Diego Aragão <Dyegosantos2004@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #97 - Gisele Cipriano <goianiaplanosdesaude@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #98 - CENTRAL COMERCIAL HAPVIDA <atendimentohpvsaude@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #99 - MARCIO JOSE DOS SANTOS <mateusamorim892@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #100 - Lucas Novato <alucasnovato@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #101 - Paulo Sérgio <paulopaiva725@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #103 - Pabliny Claudia <comercial4innovecorretora@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #104 - Miriam Isabel <paivamiriam948@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #105 - WGA PLANOS DE SAÚDE HAPVIDA <hapvidap29@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #106 - Amuedo Guimarães <amuedo2018@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #107 - Sara Cristina <saraplanosdesaudee@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #108 - Adriano Alfeno <adrianoallfeno@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #109 - Isadora carla da Silva Nascimento <isadoracarladasilva2604@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #110 - DAVY TIBURCIO AMANCIO <tiburciodavii@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #111 - Patrícia Rodrigues <patricia47rodriguesalmeida@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #112 - Ana Paula Rodrigues <anapaula_hgta@hotmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #113 - Lorrane Camilo <Lvitorcamilo@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #114 - GILSON DA SILVA <gilson.thxcorretora@hotmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #115 - Fabrício Barbosa <fabriciobarbosa_13@hotmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #116 - ESCRITORIO DE VENDAS <GABRIELLAWGAPLANOS@GMAIL.COM>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+Assinatura #117 - Grazielli Gonçalves planos de saude <Graziellegoncalves55@gmail.com>
+    plano 1   Individual                         3 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas
+
+SEM assinatura_id (assinatura ja excluida)
+    plano 1   Individual                         57 linhas
+    plano 5   Super Simples                      7 linhas
+    plano 10  Super Simples - Integrado          7 linhas
+    plano 11  Super Simples - Pleno              12 linhas

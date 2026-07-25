@@ -18,8 +18,7 @@ class AdministradoraPlanoCidade extends Component
     public $planos;
     public $tabelas;
     public $assinaturas;
-    public $vinculosAgrupados;
-    public $vinculos;
+    public $assinaturasVinculadas;
 
     public function __construct()
     {
@@ -27,14 +26,17 @@ class AdministradoraPlanoCidade extends Component
         $this->administradoras = Administradora::all();
         $this->planos = Plano::all();
         $this->tabelas = TabelaOrigens::all();
-        $this->vinculos = AdministradoraPlano::with(['administradora', 'plano', 'tabelaOrigem','assinatura'])
-            ->whereNotNull('assinatura_id')
-            ->get();
-        $this->vinculosAgrupados = AdministradoraPlano::with(['administradora', 'plano', 'tabelaOrigem', 'assinatura.user'])
-            ->whereNotNull('assinatura_id')
-            ->get()
-            ->groupBy('assinatura_id');
 
+        // Só o resumo por assinatura — os vínculos em si são carregados via AJAX
+        // ao clicar em "Ver Vínculos" (são +12 mil registros no total).
+        $this->assinaturasVinculadas = AdministradoraPlano::query()
+            ->select('assinatura_id')
+            ->selectRaw('COUNT(*) as total_vinculos')
+            ->whereNotNull('assinatura_id')
+            ->groupBy('assinatura_id')
+            ->orderBy('assinatura_id')
+            ->with('assinatura.user')
+            ->get();
     }
 
 

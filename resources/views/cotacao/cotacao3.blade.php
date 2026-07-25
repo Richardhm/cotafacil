@@ -837,7 +837,7 @@
 
 <div class="footer">
     @if($image != "")
-        <img src='{{$image}}' alt='ser Image'>
+        <img src='{{$image}}' alt=''>
     @endif
     <div class="middle">
         <p>{{$nome}}</p>

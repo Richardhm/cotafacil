@@ -456,14 +456,177 @@
 
 
 
-            function toggleVinculos(assinaturaId) {
-                const tbody = document.getElementById('vinculos-' + assinaturaId);
-                if (tbody.style.display === 'none') {
-                    tbody.style.display = '';
+            const URL_VINCULOS = "{{ route('admin-planos.vinculos', ['assinatura' => '__ID__']) }}";
+            const URL_EXCLUIR_VINCULO = "{{ route('admin-planos.destroy', ['id' => '__ID__']) }}";
+
+            function escapeHtml(texto) {
+                return $('<div>').text(texto == null ? '' : texto).html();
+            }
+
+            // Estado do modal de vínculos
+            let vinculosAssinaturaId = null;   // assinatura aberta no momento
+            let vinculosDados = null;          // { total, cidades: [...] } devolvido pelo servidor
+            let cidadesAbertas = new Set();    // cidades expandidas dentro do modal
+
+            function abrirModalVinculos(assinaturaId, titulo) {
+                const modal = document.getElementById('modal-vinculos');
+                if (!modal) {
+                    return;
+                }
+
+                vinculosAssinaturaId = assinaturaId;
+                vinculosDados = null;
+                cidadesAbertas = new Set();
+
+                document.getElementById('modal-vinculos-titulo').textContent = titulo;
+                document.getElementById('modal-vinculos-subtitulo').textContent = 'Carregando...';
+                document.getElementById('modal-vinculos-busca').value = '';
+                document.getElementById('modal-vinculos-corpo').innerHTML =
+                    '<p class="px-4 py-4 text-white text-sm opacity-80">Carregando...</p>';
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('overflow-hidden');
+
+                $.getJSON(URL_VINCULOS.replace('__ID__', assinaturaId))
+                    .done(function (data) {
+                        vinculosDados = data;
+                        renderVinculos();
+                    })
+                    .fail(function () {
+                        document.getElementById('modal-vinculos-subtitulo').textContent = '';
+                        document.getElementById('modal-vinculos-corpo').innerHTML =
+                            '<p class="px-4 py-4 text-red-300 text-sm">Erro ao carregar os vínculos.</p>';
+                    });
+            }
+
+            function fecharModalVinculos() {
+                const modal = document.getElementById('modal-vinculos');
+                if (!modal) {
+                    return;
+                }
+
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+                vinculosAssinaturaId = null;
+                vinculosDados = null;
+            }
+
+            function toggleCidadeVinculos(cidadeId) {
+                if (cidadesAbertas.has(cidadeId)) {
+                    cidadesAbertas.delete(cidadeId);
                 } else {
-                    tbody.style.display = 'none';
+                    cidadesAbertas.add(cidadeId);
+                }
+
+                renderVinculos();
+            }
+
+            function renderVinculos() {
+                if (!vinculosDados) {
+                    return;
+                }
+
+                const corpo = document.getElementById('modal-vinculos-corpo');
+                const filtro = (document.getElementById('modal-vinculos-busca').value || '').trim().toLowerCase();
+                const todas = vinculosDados.cidades || [];
+                const cidades = filtro
+                    ? todas.filter(c => (c.cidade || '').toLowerCase().indexOf(filtro) !== -1)
+                    : todas;
+
+                document.getElementById('modal-vinculos-subtitulo').textContent =
+                    todas.length + ' cidade(s) · ' + (vinculosDados.total || 0) + ' vínculo(s)';
+
+                if (!cidades.length) {
+                    corpo.innerHTML = '<p class="px-4 py-4 text-white text-sm opacity-80">'
+                        + (todas.length ? 'Nenhuma cidade com esse nome.' : 'Nenhum vínculo cadastrado.')
+                        + '</p>';
+                    return;
+                }
+
+                corpo.innerHTML = cidades.map(montarBlocoCidade).join('');
+            }
+
+            function montarBlocoCidade(cidade) {
+                const aberta = cidadesAbertas.has(cidade.cidade_id);
+
+                return '<div class="border-b border-white/10">'
+                    + '<button type="button" onclick="toggleCidadeVinculos(' + cidade.cidade_id + ')" '
+                    + 'class="w-full flex items-center justify-between gap-3 px-4 py-2 text-left text-white hover:bg-white/10">'
+                    + '<span class="font-medium text-sm">'
+                    + '<span class="inline-block w-3 opacity-70">' + (aberta ? '▾' : '▸') + '</span> '
+                    + escapeHtml(cidade.cidade) + '</span>'
+                    + '<span class="text-[11px] opacity-70 whitespace-nowrap">' + cidade.total + ' vínculo(s)</span>'
+                    + '</button>'
+                    + (aberta
+                        ? '<div class="bg-black/25">' + cidade.itens.map(montarItemVinculo).join('') + '</div>'
+                        : '')
+                    + '</div>';
+            }
+
+            function montarItemVinculo(item) {
+                return '<div class="flex items-center justify-between gap-3 pl-10 pr-4 py-1.5 '
+                    + 'text-white text-xs border-t border-white/5">'
+                    + '<span>' + escapeHtml(item.administradora)
+                    + ' <span class="opacity-50">/</span> ' + escapeHtml(item.plano) + '</span>'
+                    + '<button type="button" onclick="excluirVinculo(' + item.id + ')" '
+                    + 'class="text-red-400 hover:text-red-300 whitespace-nowrap">Excluir</button>'
+                    + '</div>';
+            }
+
+            function excluirVinculo(vinculoId) {
+                if (!confirm('Excluir este vínculo?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: URL_EXCLUIR_VINCULO.replace('__ID__', vinculoId),
+                    method: 'POST',
+                    dataType: 'json',
+                    data: {
+                        _method: 'DELETE',
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    }
+                })
+                    .done(function () {
+                        // Tira o vínculo do estado local e some com a cidade que ficou vazia
+                        vinculosDados.cidades.forEach(function (cidade) {
+                            cidade.itens = cidade.itens.filter(item => item.id !== vinculoId);
+                            cidade.total = cidade.itens.length;
+                        });
+                        vinculosDados.cidades = vinculosDados.cidades.filter(cidade => cidade.total > 0);
+                        vinculosDados.total = vinculosDados.cidades.reduce((soma, c) => soma + c.total, 0);
+
+                        atualizarContadorAssinatura();
+                        renderVinculos();
+                    })
+                    .fail(function () {
+                        alert('Erro ao excluir o vínculo.');
+                    });
+            }
+
+            function atualizarContadorAssinatura() {
+                const botao = document.getElementById('btn-vinculos-' + vinculosAssinaturaId);
+                if (botao) {
+                    botao.textContent = 'Ver Vínculos (' + (vinculosDados.total || 0) + ')';
                 }
             }
+
+            document.addEventListener('keydown', function (evento) {
+                if (evento.key === 'Escape') {
+                    fecharModalVinculos();
+                }
+            });
+
+            $(function () {
+                // A aba mora dentro de um container com backdrop-blur + overflow-hidden, que vira
+                // containing block de position:fixed e cortaria o modal. Solta ele no body.
+                const modal = document.getElementById('modal-vinculos');
+                if (modal && modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
 
 
 

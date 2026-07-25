@@ -18,7 +18,8 @@ class TabelaController extends Controller
     public function index()
     {
         $cidades = TabelaOrigens::all();
-        $administradoras = Administradora::all();
+        // Qualicorp não deve ser listada como operadora na tabela completa.
+        $administradoras = Administradora::where('nome', '!=', 'Qualicorp')->get();
         $planos = Plano::all();
         return view('tabela.index', compact('cidades', 'administradoras','planos'));
 

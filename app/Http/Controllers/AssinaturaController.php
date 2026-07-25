@@ -265,80 +265,73 @@ class AssinaturaController extends Controller
 
     }
 
+    /**
+     * Copia para a assinatura nova os vínculos administradora/plano/cidade da
+     * assinatura modelo (config/vinculos.php), pulando os planos excluídos.
+     *
+     * Antes isso era uma lista fixa de 40 combinações no código, que envelhecia a
+     * cada cidade ou plano novo — e ainda apontava para cidades já excluídas.
+     */
     private function administradoraPlanos($assinatura_id)
     {
-        // Array de associações, cada um é um registro que será inserido
-        $dados = [
-            [3, 1, 1],
-            [3, 1, 2],
-            [3, 1, 8],
-            [3, 1, 9],
-            [3, 2, 1],
-            [3, 2, 2],
-            [3, 2, 8],
-            [3, 2, 9],
-            [3, 3, 1],
-            [3, 3, 2],
-            [3, 3, 8],
-            [3, 3, 9],
-            [1, 4, 1],
-            [1, 4, 2],
-            [1, 4, 8],
-            [1, 4, 9],
-            [10, 4, 9],
-            [11, 4, 9],
-            [8, 2, 9],
-            [14, 2, 9],
-            [1, 4, 11],
-            [1, 4, 12],
-            [1, 4, 13],
-            [16, 4, 14],
-            [17, 4, 14],
-            [18, 4, 14],
-            [19, 4, 14],
-            [20, 4, 14],
-            [21, 4, 14],
-            [22, 4, 14],
-            [1, 4, 15],
-            [5, 4, 15],
-            [1, 4, 16],
-            [5, 4, 16],
-            [1, 4, 17],
-            [1, 4, 18],
-            [1, 4, 19],
-            [1, 4, 21],
-            [1, 4, 22],
-            [1, 4, 23],
-            [1, 4, 26],
-            [1, 4, 27],
-            [1, 4, 25],
-            [1, 4, 29],
-            [1, 4, 30],
-            [1, 4, 32],
-            [1, 4, 31],
-            [1, 4, 33],
-            [1, 4, 34],
-            [1, 4, 36],
-        ];
+        $modeloId = (int) config('vinculos.assinatura_modelo');
+        $planosExcluidos = (array) config('vinculos.planos_excluidos', []);
 
-        $associacoes = array_map(function($item) {
-            return [
-                'plano_id' => $item[0],
-                'administradora_id' => $item[1],
-                'tabela_origens_id' => $item[2],
-            ];
-        }, $dados);
-
-
-        foreach ($associacoes as $associacao) {
-            // Cria o registro no banco vinculando a assinatura
-            \App\Models\AdministradoraPlano::create([
-                'plano_id'          => $associacao['plano_id'],
-                'administradora_id' => $associacao['administradora_id'],
-                'tabela_origens_id' => $associacao['tabela_origens_id'],
-                'assinatura_id'     => $assinatura_id,
-            ]);
+        if ($modeloId === $assinatura_id) {
+            return;
         }
+
+        $modelo = \App\Models\AdministradoraPlano::query()
+            ->where('assinatura_id', $modeloId)
+            ->whereNotNull('tabela_origens_id')
+            ->when($planosExcluidos, fn ($query) => $query->whereNotIn('plano_id', $planosExcluidos))
+            ->get(['administradora_id', 'plano_id', 'tabela_origens_id']);
+
+        if ($modelo->isEmpty()) {
+            \Illuminate\Support\Facades\Log::critical(
+                "Assinatura modelo {$modeloId} não tem vínculos: a assinatura {$assinatura_id} "
+                . 'foi criada sem nenhum plano. Conferir config/vinculos.php.'
+            );
+
+            return;
+        }
+
+        // A tabela não tem índice único, então a deduplicação é por conta do código:
+        // nem repetir combinação do modelo, nem recriar o que a assinatura já tem.
+        $jaExistem = \App\Models\AdministradoraPlano::where('assinatura_id', $assinatura_id)
+            ->get(['administradora_id', 'plano_id', 'tabela_origens_id'])
+            ->mapWithKeys(fn ($vinculo) => [$this->chaveVinculo($vinculo) => true]);
+
+        $agora = now();
+        $novos = [];
+
+        foreach ($modelo as $vinculo) {
+            $chave = $this->chaveVinculo($vinculo);
+
+            if (isset($jaExistem[$chave])) {
+                continue;
+            }
+
+            $jaExistem[$chave] = true;
+
+            $novos[] = [
+                'plano_id'          => $vinculo->plano_id,
+                'administradora_id' => $vinculo->administradora_id,
+                'tabela_origens_id' => $vinculo->tabela_origens_id,
+                'assinatura_id'     => $assinatura_id,
+                'created_at'        => $agora,
+                'updated_at'        => $agora,
+            ];
+        }
+
+        foreach (array_chunk($novos, 500) as $lote) {
+            \App\Models\AdministradoraPlano::insert($lote);
+        }
+    }
+
+    private function chaveVinculo($vinculo): string
+    {
+        return $vinculo->administradora_id . '-' . $vinculo->plano_id . '-' . $vinculo->tabela_origens_id;
     }
 
     public function pixTrial(Request $request)

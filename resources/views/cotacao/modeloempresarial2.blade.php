@@ -44,13 +44,13 @@
 
             position: absolute;
 
-            bottom:10px;
+            bottom:15px;
 
-            left: 0px;
+            right: 0px;
 
-            width: 390px;
+            width: 400px;
 
-            height: 390px;
+            height: 400px;
 
             border-radius: 50%;
 
@@ -76,7 +76,7 @@
 
             bottom:30px;
 
-            right: 10px;
+            left: 10px;
 
             display:block;
 
@@ -490,7 +490,7 @@
         </p>
     </div>
     @if($image != "")
-        <img src='{{$image}}' alt='ser Image'>
+        <img src='{{$image}}' alt=''>
     @endif
 </div>
 
