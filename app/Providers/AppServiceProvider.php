@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \URL::forceRootUrl('http://179.197.70.72:8080');
+        \URL::forceScheme('http');
     }
 }
