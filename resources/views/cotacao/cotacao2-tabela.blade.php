@@ -154,8 +154,8 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
 
         <tr>
             <td rowspan="2" style="vertical-align:middle;text-align:center;font-size:0.7em;border-right:1px solid #FFF;border-bottom:1px solid #FFF;color:#FFF;">Faixa Etária</td>
-            <td colspan="3" style="text-align:center;font-size:0.7em;border-bottom:1px solid #FFF;border-right:1px solid #FFF;color:#FFF;" class="">Com Copar</td>
-            <td colspan="3" style="text-align:center;font-size:0.7em;border-bottom:1px solid #FFF;color:#FFF;" class="">Sem Copar</td>
+            <td colspan="2" style="text-align:center;font-size:0.7em;border-bottom:1px solid #FFF;border-right:1px solid #FFF;color:#FFF;" class="">Com Copar</td>
+            <td colspan="2" style="text-align:center;font-size:0.7em;border-bottom:1px solid #FFF;color:#FFF;" class="">Sem Copar</td>
         </tr>
         <tr>
             <td style="text-align:center;font-size:0.7em;border-right:1px solid #FFF;border-bottom:1px solid #FFF;color:#FFF;" class="">APART</td>

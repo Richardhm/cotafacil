@@ -1,4 +1,4 @@
-﻿<!doctype html>
+?<!doctype html>
 
 <html lang="en">
 
@@ -86,7 +86,7 @@
 
             padding-bottom: 0 !important; /* Remove padding residual */
 
-            margin-bottom: -10px; /* Compensa espaÃ§amento vertical */
+            margin-bottom: -10px; /* Compensa espaçamento vertical */
 
         }
 
@@ -278,7 +278,7 @@
 
             margin: 0 auto;
 
-            border-spacing: 10px; /* EspaÃ§o entre blocos */
+            border-spacing: 10px; /* Espaço entre blocos */
 
             border-collapse: separate;
 
@@ -290,7 +290,7 @@
 
             border-spacing: 0;
 
-            margin-bottom: -5px; /* Compensa o espaÃ§amento vertical residual */
+            margin-bottom: -5px; /* Compensa o espaçamento vertical residual */
 
         }
 
@@ -688,7 +688,7 @@
 
 <body>
 
-<img style="position: absolute;top: 0;left: 0;height: 100%;width: 100%;object-fit: cover;" src="layouts/modelo2.png" alt="OrÃ§amento">
+<img style="position: absolute;top: 0;left: 0;height: 100%;width: 100%;object-fit: cover;" src="layouts/modelo2.png" alt="Orçamento">
 
 <p class="cidade_container" style="text-transform:uppercase;">{{$cidade}}</p>
 
@@ -730,7 +730,7 @@
 
         $quantidade = $dado->quantidade;
 
-        // Verifica se tem coparticipaÃ§Ã£o
+        // Verifica se tem coparticipação
 
         $index = ($coparticipacao == 1) ? 'com_copar' : 'sem_copar';
 
@@ -766,7 +766,7 @@
 
     // Calcular quantidade de blocos ativos
 
-    $totalBlocos = 1; // Bloco Faixa EtÃ¡ria sempre existe
+    $totalBlocos = 1; // Bloco Faixa Etária sempre existe
 
     if($com_coparticipacao == 1) $totalBlocos++;
 
@@ -774,7 +774,7 @@
 
 
 
-    // Definir larguras baseado no nÃºmero de blocos
+    // Definir larguras baseado no número de blocos
 
     $widths = [
 
@@ -812,7 +812,7 @@
 
         <tr>
 
-            <!-- Bloco 1 - Faixa EtÃ¡ria -->
+            <!-- Bloco 1 - Faixa Etária -->
 
             <td class="bloco" style="width: 22%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:8%;'}}">
 
@@ -866,7 +866,7 @@
 
             @if($com_coparticipacao == 1)
 
-                <!-- Bloco 2 - Com CoparticipaÃ§Ã£o -->
+                <!-- Bloco 2 - Com Coparticipação -->
 
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }}; margin: {{ $margins[$totalBlocos] }};">
 
@@ -874,7 +874,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">COM COPARTICIPAÃ‡ÃƒO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">COM COPARTICIPAÇÃO</td>
 
                         </tr>
 
@@ -929,7 +929,7 @@
 
             @if($sem_coparticipacao == 1)
 
-                <!-- Bloco 3 - Sem CoparticipaÃ§Ã£o -->
+                <!-- Bloco 3 - Sem Coparticipação -->
 
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}} ">
 
@@ -937,7 +937,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÃ‡ÃƒO *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.2em;">SEM COPARTICIPAÇÃO *</td>
 
                         </tr>
 
@@ -1112,7 +1112,7 @@
 
                                 <div class="linha-procedimento">
 
-                                    <span>Consultas UrgÃªncia</span>
+                                    <span>Consultas Urgência</span>
 
                                 </div>
 
@@ -1143,7 +1143,7 @@
                                 @if($pdf->internacoes_total && $pdf->internacoes_total != 'Isento')
                                     <div class="linha-procedimento">
 
-                                        <span>InternaÃ§Ãµes</span>
+                                        <span>Internações</span>
 
                                     </div>
                                 @endif
@@ -1265,11 +1265,11 @@
 
                 <div style="margin-left:100px;">
 
-                    <h3 style="color:rgb(12,77,193); font-size: 1.5em; margin: 0 0 10px 0;">CARÃŠNCIAS DE SAÃšDE</h3>
+                    <h3 style="color:rgb(12,77,193); font-size: 1.5em; margin: 0 0 10px 0;">CARÊNCIAS DE SAÚDE</h3>
 
 
 
-                    <!-- 1Âº Bloco -->
+                    <!-- 1º Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1293,7 +1293,7 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193);text-align:left;display: block;font-weight: bold;">
 
-                                        UrgÃªncia, EmergÃªncia e<br>
+                                        Urgência, Emergência e<br>
 
                                         Acidentes Pessoais
 
@@ -1309,7 +1309,7 @@
 
 
 
-                    <!-- 2Âº Bloco -->
+                    <!-- 2º Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1333,9 +1333,9 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193);text-align:left;display: block;font-weight: bold;">
 
-                                        Consultas MÃ©dicas,<br>
+                                        Consultas Médicas,<br>
 
-                                        Exames MÃ©dicos Simples
+                                        Exames Médicos Simples
 
                                     </span>
 
@@ -1349,7 +1349,7 @@
 
 
 
-                    <!-- 3Âº Bloco -->
+                    <!-- 3º Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1391,7 +1391,7 @@
 
 
 
-                    <!-- 4Âº Bloco -->
+                    <!-- 4º Bloco -->
 
                     <div style="padding-bottom: 10px;">
 
@@ -1417,7 +1417,7 @@
 
                                         Exames<br>
 
-                                        Alto Custo, Trat. PsicolÃ³gico,<br>
+                                        Alto Custo, Trat. Psicológico,<br>
 
                                         Terapia Ocupacional, Fisioterapia<br>
 
@@ -1431,7 +1431,7 @@
 
                     </div>
 
-                    <!-- 6Âº Bloco -->
+                    <!-- 6º Bloco -->
 
                     <div style="margin-bottom: 5px;">
 
@@ -1455,9 +1455,9 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193);text-align:left;display: block;font-weight: bold;">
 
-                                        DoenÃ§as e LesÃµes<br>
+                                        Doenças e Lesões<br>
 
-                                        PrÃ©-Existentes
+                                        Pré-Existentes
 
                                     </span>
 
@@ -1507,7 +1507,7 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193); font-weight: bold;">
 
-                                        UrgÃªncia, EmergÃªncia e<br>
+                                        Urgência, Emergência e<br>
 
                                         Acidentes Pessoais
 
@@ -1541,9 +1541,9 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193); font-weight: bold;">
 
-                                        Consultas MÃ©dicas,<br>
+                                        Consultas Médicas,<br>
 
-                                        Exames MÃ©dicos Simples
+                                        Exames Médicos Simples
 
                                     </span>
 
@@ -1577,9 +1577,9 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193); font-weight: bold;">
 
-                                        DoenÃ§as e LesÃµes<br>
+                                        Doenças e Lesões<br>
 
-                                        PrÃ©-Existentes
+                                        Pré-Existentes
 
                                     </span>
 
@@ -1631,9 +1631,9 @@
 
                                     <span style="font-size: 1.3em; color:rgb(12,77,193); font-weight: bold;">
 
-                                        Cirurgias, InternaÃ§Ãµes, Exames<br>
+                                        Cirurgias, Internações, Exames<br>
 
-                                        Alto Custo, Trat. PsicolÃ³gico,<br>
+                                        Alto Custo, Trat. Psicológico,<br>
 
                                         Terapia Ocupacional, Fisioterapia<br>
 
