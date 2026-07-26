@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             '/callback',
             '/callback/*',
             '/pix/webhook',
+            '/pix/webhook/pix',
             '/pix/webhook-rec',
         ]);
         $middleware->append(MobileSessionFix::class);

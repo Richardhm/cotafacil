@@ -94,6 +94,8 @@ Route::get('/', function () {
 
 Route::post('/callback', [CallbackController::class,'index']);
 Route::post('/pix/webhook', [CallbackController::class, 'pixWebhook'])->name('pix.webhook');
+// A Efi anexa "/pix" ao final da URL registrada. Rota espelho para não cair em 404.
+Route::post('/pix/webhook/pix', [CallbackController::class, 'pixWebhook'])->name('pix.webhook.pix');
 Route::post('/pix/webhook-rec', [CallbackController::class, 'pixWebhookRec'])->name('pix.webhook.rec');
 
 Route::post('/assinatura/pix-automatico', [AssinaturaController::class, 'pixAutomatico'])->name('assinatura.pix.automatico');

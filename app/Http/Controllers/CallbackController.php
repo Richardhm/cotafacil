@@ -179,23 +179,29 @@ class CallbackController extends Controller
         if (isset($data['pix'][0]['txid'])) {
             $txid = $data['pix'][0]['txid'];
 
-            \App\Models\PixPendente::where('txid', $txid)
-                ->where('status', 'pending')
-                ->update(['status' => 'approved']);
-
             $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
 
-            if ($pixPendente && $pixPendente->tipo === 'team_user') {
-                $pendings = PendingTeamUser::where('txid', $txid)
+            if ($pixPendente && $pixPendente->tipo === 'renewal') {
+                // Renovação de assinatura: libera em tempo real. Idempotente — o polling
+                // do navegador é apenas reserva e não reprocessa.
+                app(\App\Services\PixSubscriptionService::class)->confirmarRenovacao($txid);
+            } else {
+                \App\Models\PixPendente::where('txid', $txid)
                     ->where('status', 'pending')
-                    ->get();
+                    ->update(['status' => 'approved']);
 
-                if ($pendings->isNotEmpty()) {
-                    DB::transaction(function () use ($pendings) {
-                        foreach ($pendings as $p) {
-                            $this->ativarTeamUser($p);
-                        }
-                    });
+                if ($pixPendente && $pixPendente->tipo === 'team_user') {
+                    $pendings = PendingTeamUser::where('txid', $txid)
+                        ->where('status', 'pending')
+                        ->get();
+
+                    if ($pendings->isNotEmpty()) {
+                        DB::transaction(function () use ($pendings) {
+                            foreach ($pendings as $p) {
+                                $this->ativarTeamUser($p);
+                            }
+                        });
+                    }
                 }
             }
         }

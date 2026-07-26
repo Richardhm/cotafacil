@@ -377,12 +377,19 @@ class AssinaturaController extends Controller
             // Adicionar espaço no final do código
             $qrcode = ' ' . $qrcode;
 
-            // Salva txid na tabela pix_pendentes para o webhook atualizar
+            // Salva txid na tabela pix_pendentes para o webhook atualizar.
+            // Guarda valor + assinatura para o webhook liberar sem depender do navegador.
+            $assinaturaId = auth()->check()
+                ? optional(auth()->user()->assinaturas()->first())->id
+                : null;
+
             \App\Models\PixPendente::create([
-                'txid'    => $responsePix['txid'],
-                'status'  => 'pending',
-                'tipo'    => auth()->check() ? 'renewal' : 'new_user',
-                'user_id' => auth()->check() ? auth()->id() : null,
+                'txid'          => $responsePix['txid'],
+                'status'        => 'pending',
+                'tipo'          => auth()->check() ? 'renewal' : 'new_user',
+                'user_id'       => auth()->check() ? auth()->id() : null,
+                'assinatura_id' => $assinaturaId,
+                'valor'         => $valor,
             ]);
 
             return [
@@ -687,39 +694,13 @@ class AssinaturaController extends Controller
             return response()->json(['success' => false]);
         }
 
-        // Se já foi processado antes (polling duplo), só redireciona
-        if (\App\Models\PixPagamento::where('txid', $txid)->exists()) {
-            return response()->json([
-                'success'  => true,
-                'redirect' => route('dashboard'),
-            ]);
+        // Mesma liberação usada pelo webhook (idempotente): se o webhook já tiver
+        // liberado, aqui só confirma e redireciona. É o caminho de reserva.
+        $assinatura = app(\App\Services\PixSubscriptionService::class)->confirmarRenovacao($txid);
+
+        if ($assinatura) {
+            session()->flash('success', 'Sua Assinatura foi renovada até a data ' . $assinatura->next_charge->format('d/m/Y'));
         }
-
-        $pixPendente = \App\Models\PixPendente::where('txid', $txid)->first();
-        if ($pixPendente && $pixPendente->status !== 'approved') {
-            $pixPendente->update(['status' => 'approved']);
-        }
-
-        $user       = auth()->user();
-        $assinatura = $user->assinaturas()->first();
-
-        $assinatura->next_charge   = Carbon::now()->addMonth();
-        $assinatura->preco_total   = $request->precoFinal;
-        $assinatura->tipo          = 'PIX';
-        $assinatura->status        = 'ativo';
-        $assinatura->trial_ends_at = null;
-        $assinatura->save();
-
-        \App\Models\PixPagamento::create([
-            'user_id'       => $user->id,
-            'assinatura_id' => $assinatura->id,
-            'txid'          => $txid,
-            'valor'         => $request->precoFinal,
-            'tipo'          => 'PIX',
-            'pago_em'       => Carbon::now(),
-        ]);
-
-        session()->flash('success', 'Sua Assinatura foi renovada até a data ' . $assinatura->next_charge->format('d/m/Y'));
 
         return response()->json([
             'success'  => true,
