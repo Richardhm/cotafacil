@@ -13,12 +13,18 @@ use App\Services\GeoIpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
+    private const UUID_REGEX = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
+
+    // Espelha o cf_device_uuid do localStorage para sobreviver à limpeza de dados do navegador
+    private const DEVICE_COOKIE = 'cf_device_uuid';
+
     public function create(Request $request)
     {
         // Mobile browsers devem usar o aplicativo
@@ -54,9 +60,32 @@ class AuthenticatedSessionController extends Controller
             return back()->withErrors(['email' => 'Este dispositivo está bloqueado para a sua conta. Entre em contato com o suporte.'])->onlyInput('email');
         }
 
-        // Valida ou gera UUID do dispositivo
-        $deviceUuid = $request->input('device_uuid', '');
-        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $deviceUuid)) {
+        // Valida o UUID enviado pelo localStorage
+        $deviceUuid = (string) $request->input('device_uuid', '');
+        if (!preg_match(self::UUID_REGEX, $deviceUuid)) {
+            $deviceUuid = '';
+        }
+
+        // Fallback em cookie: o localStorage é isolado por origem e some quando o usuário
+        // limpa os dados do navegador. Se o UUID recebido é desconhecido para esta conta
+        // mas o cookie aponta para um dispositivo já cadastrado, reaproveita o cadastro
+        // em vez de queimar uma vaga nova no mesmo computador.
+        $cookieUuid = (string) $request->cookie(self::DEVICE_COOKIE, '');
+        if ($cookieUuid !== $deviceUuid && preg_match(self::UUID_REGEX, $cookieUuid)) {
+            $conheceEnviado = $deviceUuid !== '' && UserDevice::where('user_id', $userId)
+                ->where('device_uuid', $deviceUuid)
+                ->exists();
+
+            $conheceCookie = UserDevice::where('user_id', $userId)
+                ->where('device_uuid', $cookieUuid)
+                ->exists();
+
+            if (! $conheceEnviado && $conheceCookie) {
+                $deviceUuid = $cookieUuid;
+            }
+        }
+
+        if ($deviceUuid === '') {
             $deviceUuid = (string) Str::uuid();
         }
 
@@ -200,6 +229,10 @@ class AuthenticatedSessionController extends Controller
             'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
             'device_model'        => $fingerprint['device_model'],
         ]);
+
+        // Persiste o UUID também em cookie (5 anos) — se o localStorage for limpo, o
+        // próximo login reencontra este mesmo dispositivo pelo cookie.
+        Cookie::queue(self::DEVICE_COOKIE, $deviceUuid, 60 * 24 * 365 * 5);
 
         // Desloca sessões anteriores do mesmo dispositivo (outros dispositivos ficam ativos)
         $sessoesDoMesmoDispositivo = LoginSession::where('user_id', $userId)
