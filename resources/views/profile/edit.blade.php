@@ -210,13 +210,24 @@
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
-                    }).then(response => response.json())
-                        .then(data => {
-                            const userAvatar = document.getElementById('user-avatar');
-                            const newSrc = URL.createObjectURL(event.target.files[0]);
-                            userAvatar.src = newSrc;
-                        }).catch(error => {
+                    }).then(async response => {
+                        const data = await response.json().catch(() => ({}));
+
+                        // O servidor pode recusar o upload (422 de validação, 500 do
+                        // controller). Sem esta checagem a foto trocava na tela do mesmo
+                        // jeito, porque a imagem exibida vem do arquivo local — e só o F5
+                        // revelava que nada tinha sido salvo.
+                        if (!response.ok || data.error) {
+                            toastr.error(data.error || data.message || 'Erro ao atualizar a imagem.', 'Erro');
+                            return;
+                        }
+
+                        document.getElementById('user-avatar').src =
+                            URL.createObjectURL(event.target.files[0]);
+                        toastr.success(data.message || 'Imagem atualizada com sucesso!', 'Sucesso');
+                    }).catch(error => {
                         console.error('Erro:', error);
+                        toastr.error('Não foi possível enviar a imagem.', 'Erro');
                     });
 
 
