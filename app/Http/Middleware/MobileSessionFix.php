@@ -15,10 +15,13 @@ class MobileSessionFix
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // 'secure' acompanha a conexão real (com trustProxies, isSecure() enxerga o
+        // X-Forwarded-Proto do Nginx). Fixar false marcava o cookie de sessão como
+        // não-seguro mesmo em HTTPS.
         config([
             'session.path' => '/',
             'session.domain' => null,
-            'session.secure' => false,
+            'session.secure' => $request->isSecure(),
             'session.same_site' => 'lax'
         ]);
 

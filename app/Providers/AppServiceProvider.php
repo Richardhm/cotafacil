@@ -19,14 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Em produção o app roda atrás de um proxy na porta 8080, então forçamos o
-        // root/scheme para as URLs geradas (route(), url(), asset()) ficarem corretas.
-        // Em ambiente local isso geraria URLs de produção e quebraria as chamadas AJAX
-        // com erro de CORS, por isso só aplicamos fora do ambiente local.
-        if (! $this->app->environment('local')) {
-            \URL::forceRootUrl('http://179.197.70.72:8080');
-            \URL::forceScheme('http');
-        }
+        // Em produção o app roda atrás de um proxy (Nginx) na porta 8080. O host e o
+        // scheme corretos vêm dos headers X-Forwarded-Host/X-Forwarded-Proto, confiados
+        // via trustProxies() no bootstrap/app.php.
+        //
+        // Não voltar a usar URL::forceRootUrl() aqui: além de duplicar o que o
+        // trustProxies já resolve, um root URL fixo vaza para as respostas da API do app
+        // mobile (apimobile.bmsys.com.br), que geraria links para o host errado.
 
         // Garante que o diretório de fontes do dompdf (font_dir/font_cache) exista.
         // O dompdf grava aqui o installed-fonts.json e o cache das fontes, mas NÃO

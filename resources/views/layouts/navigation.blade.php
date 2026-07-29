@@ -47,7 +47,7 @@
                     $assinaturaId = \Illuminate\Support\Facades\Auth::user()->assinaturas()->first()?->id;
                 @endphp
 
-                @if(in_array($assinaturaId, [29]))
+                @if(in_array($assinaturaId, [22,29,77,71]))
                     <div class="shrink-0 flex items-center">
                         <a href="https://select.bmsys.com.br/dashboard" class="h-8">
                             <img src="{{ asset('logo_select.png') }}" alt="Logo" style="width:50px;height:30px;" class="bg-white rounded-lg hover:bg-blue-100 ml-3">

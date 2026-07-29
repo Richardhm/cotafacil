@@ -11,6 +11,7 @@ use App\Http\Middleware\MobileSessionFix;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -21,6 +22,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // O app roda atrás do Nginx (proxy para a porta 8080). Sem isto o Laravel gera
+        // URLs http:// e $request->ip() devolve o IP do proxy para TODOS os usuários,
+        // contaminando device_fingerprint, login_sessions.ip_address e BlockedIp.
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
+
         $middleware->validateCsrfTokens(except: [
             'login',
             'logout',
