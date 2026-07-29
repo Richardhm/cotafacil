@@ -5,6 +5,7 @@ use App\Http\Middleware\ApenasDesenvolvedor;
 use App\Http\Middleware\CheckBlockedIp;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\CheckSubscriptionExpired;
+use App\Http\Middleware\KeepRememberedSessionAlive;
 use App\Http\Middleware\PreventSimultaneousLogins;
 use App\Http\Middleware\TrackSessionActivity;
 use App\Http\Middleware\MobileSessionFix;
@@ -44,7 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->append(MobileSessionFix::class);
         $middleware->append(TrackSessionActivity::class);
-        $middleware->web(append: [CheckBlockedIp::class]);
+        // KeepRememberedSessionAlive precisa estar no grupo web (dentro do StartSession)
+        // para ajustar a expiração do cookie antes de ele ser gravado na resposta.
+        $middleware->web(append: [CheckBlockedIp::class, KeepRememberedSessionAlive::class]);
         $middleware->alias([
             'prevent-simultaneous-logins' => PreventSimultaneousLogins::class,
             'apenasDesenvolvedores' => ApenasDesenvolvedor::class,

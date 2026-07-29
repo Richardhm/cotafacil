@@ -66,7 +66,10 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // Sem "remember" nativo do Laravel (login persistente): o "Lembrar-me" é
+        // tratado pelo mecanismo próprio de 8h (remember_until), definido no
+        // AuthenticatedSessionController e aplicado no middleware TrackSessionActivity.
+        if (! Auth::attempt($this->only('email', 'password'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

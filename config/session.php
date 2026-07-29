@@ -34,7 +34,10 @@ return [
 
     'lifetime' => 480,
 
-    'expire_on_close' => false,
+    // Padrão: a sessão encerra ao fechar o navegador (usuário que NÃO marca "Lembrar-me").
+    // Quando "Lembrar-me" é marcado, o middleware KeepRememberedSessionAlive reativa a
+    // persistência do cookie por 8h (limite garantido pelo remember_until + TrackSessionActivity).
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true),
 
     /*
     |--------------------------------------------------------------------------
