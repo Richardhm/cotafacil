@@ -32,7 +32,10 @@ return [
     |
     */
 
-    'lifetime' => 480,
+    // 8h, decidido em 2026-07-29. Antes o valor era 480 fixo, ignorando o
+    // SESSION_LIFETIME do .env (que dizia 120) — quem lia o .env achava que a
+    // sessão durava 2h. O default continua 480 para não mudar o comportamento.
+    'lifetime' => (int) env('SESSION_LIFETIME', 480),
 
     'expire_on_close' => false,
 
