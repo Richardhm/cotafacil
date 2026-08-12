@@ -279,7 +279,7 @@ class TabelaController extends Controller
         $chaves = [];
         foreach(request()->faixas[0] as $k => $v) {
             if($v != null AND $v != 0) {
-                $sql .= " WHEN tabelas.faixa_etaria_id = {$k} THEN ${v} ";
+                $sql .= " WHEN tabelas.faixa_etaria_id = {$k} THEN {$v} ";
                 $chaves[] = $k;
             }
         }
