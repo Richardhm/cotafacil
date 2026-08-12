@@ -191,6 +191,35 @@
                     {{-- Detalhes expansíveis --}}
                     <div id="detalhes-{{ $s->user_id }}" class="hidden border-t border-white/10 px-5 pt-4 pb-5 space-y-4">
 
+                        {{-- Limite de aparelhos da conta: substitui o UPDATE manual em
+                             user_devices que era feito para liberar um aparelho a mais. --}}
+                        <form method="POST" action="{{ route('gerenciamento.limites-dispositivos', $s->user_id) }}"
+                              class="flex flex-wrap items-end gap-3 rounded-lg border border-white/10 bg-black/20 px-4 py-3">
+                            @csrf
+                            <input type="hidden" name="horas" value="{{ $horas }}">
+                            <div>
+                                <label class="block text-[11px] uppercase tracking-wide text-gray-400 mb-1">Computadores</label>
+                                <input type="number" name="max_desktops" min="1" max="20"
+                                       value="{{ $s->max_desktops ?? 1 }}"
+                                       class="w-20 rounded bg-gray-900 border border-white/20 text-gray-100 text-sm px-2 py-1">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] uppercase tracking-wide text-gray-400 mb-1">Celulares</label>
+                                <input type="number" name="max_mobiles" min="1" max="20"
+                                       value="{{ $s->max_mobiles ?? 1 }}"
+                                       class="w-20 rounded bg-gray-900 border border-white/20 text-gray-100 text-sm px-2 py-1">
+                            </div>
+                            <button type="submit"
+                                class="text-xs px-3 py-1.5 rounded-full border border-sky-500/50 bg-sky-900/40 text-sky-300 hover:bg-sky-700/60 transition-colors">
+                                Salvar limites
+                            </button>
+                            <p class="text-[11px] text-gray-500 basis-full">
+                                Só muda o teto — nenhum aparelho é desconectado. Reduzir o limite não derruba
+                                quem já está ativo; apenas impede o cadastro de aparelhos novos.
+                            </p>
+                        </form>
+
+
                         {{-- Badges de resumo --}}
                         <div class="flex flex-wrap items-center gap-2">
                             @php

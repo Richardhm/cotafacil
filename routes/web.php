@@ -232,6 +232,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post("/gerenciamento/bloquear-dispositivo/{device}", [GerenciadorController::class, 'bloquearDispositivo'])->name('gerenciamento.bloquear-dispositivo')->middleware(['apenasDesenvolvedores']);
     Route::post("/gerenciamento/desbloquear-dispositivo/{device}", [GerenciadorController::class, 'desbloquearDispositivo'])->name('gerenciamento.desbloquear-dispositivo')->middleware(['apenasDesenvolvedores']);
     Route::post("/gerenciamento/liberar-titular/{user}", [GerenciadorController::class, 'liberarTitular'])->name('gerenciamento.liberar-titular')->middleware(['apenasDesenvolvedores']);
+    Route::post("/gerenciamento/limites-dispositivos/{user}", [GerenciadorController::class, 'limitesDispositivos'])->name('gerenciamento.limites-dispositivos')->middleware(['apenasDesenvolvedores']);
 
 
 

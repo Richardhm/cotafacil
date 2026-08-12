@@ -28,6 +28,8 @@ class User extends Authenticatable
         'imagem',
         'cpf',
         'birth_date',
+        'max_desktops',
+        'max_mobiles',
     ];
 
     /**
@@ -51,7 +53,26 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'birth_date' => 'date',
+            'max_desktops' => 'integer',
+            'max_mobiles' => 'integer',
         ];
+    }
+
+    /**
+     * Quantos computadores esta conta pode ter ativos ao mesmo tempo.
+     * Mínimo 1 — nunca deixar a conta sem nenhuma vaga por dado ruim no banco.
+     */
+    public function limiteDesktops(): int
+    {
+        return max(1, (int) ($this->max_desktops ?? 1));
+    }
+
+    /**
+     * Quantos celulares esta conta pode ter ativos ao mesmo tempo.
+     */
+    public function limiteMobiles(): int
+    {
+        return max(1, (int) ($this->max_mobiles ?? 1));
     }
 
     public function isOnTrial()

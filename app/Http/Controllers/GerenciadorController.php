@@ -118,9 +118,9 @@ class GerenciadorController extends Controller
                 $q->where("ud.last_used_at", ">=", $desde)
                   ->orWhere("ud.registered_at", ">=", $desde);
             })
-            ->groupBy("ud.user_id", "users.name", "users.email", "users.status")
+            ->groupBy("ud.user_id", "users.name", "users.email", "users.status", "users.max_desktops", "users.max_mobiles")
             ->havingRaw("COUNT(ud.id) >= 1")
-            ->selectRaw("ud.user_id, users.name, users.email, users.status, COUNT(ud.id) as dispositivos_distintos, MAX(COALESCE(ud.last_used_at, ud.registered_at)) as ultimo_login")
+            ->selectRaw("ud.user_id, users.name, users.email, users.status, users.max_desktops, users.max_mobiles, COUNT(ud.id) as dispositivos_distintos, MAX(COALESCE(ud.last_used_at, ud.registered_at)) as ultimo_login")
             ->orderByDesc("dispositivos_distintos")
             ->get();
 
@@ -232,6 +232,36 @@ class GerenciadorController extends Controller
             "horas", "ipsBlockeados", "sessoesPorIp", "userIpsBlockeados",
             "emailAssins", "titularesPorAssinatura"
         ));
+    }
+
+    /**
+     * Ajusta quantos aparelhos a conta pode ter ativos ao mesmo tempo.
+     *
+     * Substitui o UPDATE manual em user_devices que era feito toda vez que um
+     * cliente precisava de um aparelho a mais. Não mexe nos dispositivos já
+     * cadastrados: só muda o teto. Se o limite for reduzido abaixo do que já
+     * está ativo, ninguém é desconectado — o excedente simplesmente não
+     * consegue registrar aparelho novo até alguém ser removido.
+     */
+    public function limitesDispositivos(User $user, \Illuminate\Http\Request $request)
+    {
+        $dados = $request->validate([
+            'max_desktops' => 'required|integer|min:1|max:20',
+            'max_mobiles'  => 'required|integer|min:1|max:20',
+        ], [], [
+            'max_desktops' => 'limite de computadores',
+            'max_mobiles'  => 'limite de celulares',
+        ]);
+
+        $user->update([
+            'max_desktops' => $dados['max_desktops'],
+            'max_mobiles'  => $dados['max_mobiles'],
+        ]);
+
+        return back()->with(
+            'success',
+            "Limites de {$user->name} atualizados: {$dados['max_desktops']} computador(es) e {$dados['max_mobiles']} celular(es)."
+        );
     }
 
     public function removerDispositivo(\App\Models\UserDevice $device, \Illuminate\Http\Request $request)
