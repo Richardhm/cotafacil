@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckBlockedIp;
 use App\Http\Middleware\CheckSubscription;
 use App\Http\Middleware\CheckSubscriptionExpired;
 use App\Http\Middleware\PreventSimultaneousLogins;
+use App\Http\Middleware\SomentePagamento;
 use App\Http\Middleware\TrackSessionActivity;
 use App\Http\Middleware\MobileSessionFix;
 use Illuminate\Foundation\Application;
@@ -44,7 +45,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->append(MobileSessionFix::class);
         $middleware->append(TrackSessionActivity::class);
-        $middleware->web(append: [CheckBlockedIp::class]);
+        // SomentePagamento depois do CheckBlockedIp: só age quando a sessão tem a
+        // marca 'modo_pagamento' (login de celular com ?pagamento=1) e a tranca nas
+        // rotas de assinatura. Para todas as outras sessões é um no-op.
+        $middleware->web(append: [CheckBlockedIp::class, SomentePagamento::class]);
         $middleware->alias([
             'prevent-simultaneous-logins' => PreventSimultaneousLogins::class,
             'apenasDesenvolvedores' => ApenasDesenvolvedor::class,

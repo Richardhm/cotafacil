@@ -38,6 +38,15 @@
         <form method="POST" action="{{ route('login') }}" id="loginForm" class="p-4 rounded-lg w-full max-w-sm bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px]">
             @csrf
             <input type="hidden" name="device_uuid" id="device_uuid">
+            @if (!empty($modoPagamento))
+                {{-- Sessão só para regularizar assinatura pelo celular: não registra
+                     dispositivo e fica trancada nas rotas de assinatura. --}}
+                <input type="hidden" name="pagamento" value="1">
+                <p class="text-sm text-white mb-3 p-2 rounded bg-[rgba(0,0,0,0.25)]">
+                    Acesso para <strong>regularizar assinatura</strong>. Depois de pagar,
+                    volte ao aplicativo e toque em "Já realizei o pagamento".
+                </p>
+            @endif
             <input type="hidden" name="timezone" id="timezone">
             <input type="hidden" name="screen_resolution" id="screen_resolution">
             <input type="hidden" name="canvas_hash" id="canvas_hash">

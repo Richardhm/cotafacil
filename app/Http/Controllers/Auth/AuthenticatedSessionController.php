@@ -32,12 +32,26 @@ class AuthenticatedSessionController extends Controller
         $isMobileBrowser = preg_match('/Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i', $ua)
             && !str_contains($ua, 'iPad');
 
-        if ($isMobileBrowser) {
+        // Exceção: regularizar assinatura. O app bloqueia o cliente com assinatura
+        // vencida e o manda para cá, mas quem está na rua só tem o celular. Esta
+        // sessão entra SEM registrar dispositivo e fica trancada nas rotas de
+        // assinatura pelo middleware SomentePagamento — não serve para usar o sistema.
+        //
+        // Aceita tanto ?pagamento=1 explícito quanto o destino pretendido guardado
+        // pelo Laravel: o botão "Regularizar" do app aponta para /assinatura/alterar,
+        // e o desvio para o login descarta a query string. Ler url.intended faz o
+        // fluxo funcionar com o app que já está publicado, sem novo build.
+        $intended = (string) $request->session()->get('url.intended', '');
+        $querPagar = $request->boolean('pagamento') || str_contains($intended, '/assinatura');
+
+        $modoPagamento = $isMobileBrowser && $querPagar;
+
+        if ($isMobileBrowser && ! $modoPagamento) {
             return view('auth.mobile-redirect');
         }
 
         return response()
-            ->view('auth.login')
+            ->view('auth.login', ['modoPagamento' => $modoPagamento])
             ->header('Accept-CH', 'Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Mobile');
     }
 
@@ -91,6 +105,13 @@ class AuthenticatedSessionController extends Controller
 
         $fingerprint = app(DeviceFingerprintService::class)->fromRequest($request);
 
+        // Sessão de pagamento (celular vindo do app para regularizar assinatura):
+        // não registra dispositivo e não consome vaga. A sessão é marcada e o
+        // middleware SomentePagamento a tranca nas rotas de assinatura.
+        if ($request->boolean('pagamento') && $fingerprint['is_mobile']) {
+            return $this->iniciarSessaoDePagamento($request, $userId, $ip, $fingerprint);
+        }
+
         // Dispositivo explicitamente bloqueado pelo administrador
         if (UserDevice::where('user_id', $userId)->where('device_uuid', $deviceUuid)->where('is_blocked', true)->exists()) {
             Auth::guard('web')->logout();
@@ -103,7 +124,11 @@ class AuthenticatedSessionController extends Controller
         $device       = null;
         $limitReached = false;
 
-        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, &$device, &$limitReached) {
+        // Limite por conta (default 1) — antes era ">= 1" fixo em três pontos,
+        // e liberar um computador a mais exigia UPDATE na mão em user_devices.
+        $limiteDesktops = Auth::user()->limiteDesktops();
+
+        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, $limiteDesktops, &$device, &$limitReached) {
             // Busca qualquer registro existente para este UUID (ativo ou inativo)
             $existing = UserDevice::where('user_id', $userId)
                 ->where('device_uuid', $deviceUuid)
@@ -124,7 +149,7 @@ class AuthenticatedSessionController extends Controller
                     ->lockForUpdate()
                     ->count();
 
-                if ($desktopTotal >= 1) {
+                if ($desktopTotal >= $limiteDesktops) {
                     $limitReached = true;
                     return;
                 }
@@ -150,7 +175,7 @@ class AuthenticatedSessionController extends Controller
                         ->lockForUpdate()
                         ->count();
 
-                    if ($desktopTotal >= 1) {
+                    if ($desktopTotal >= $limiteDesktops) {
                         $limitReached = true;
                         return;
                     }
@@ -168,7 +193,7 @@ class AuthenticatedSessionController extends Controller
                 ->lockForUpdate()
                 ->count();
 
-            if ($desktopTotal >= 1) {
+            if ($desktopTotal >= $limiteDesktops) {
                 $limitReached = true;
                 return;
             }
@@ -217,7 +242,9 @@ class AuthenticatedSessionController extends Controller
 
             Auth::guard('web')->logout();
             return back()->withErrors([
-                'email' => 'Limite de computadores atingido. Sua conta já possui 1 computador registrado. Contate o suporte para trocar de dispositivo.',
+                'email' => $limiteDesktops === 1
+                    ? 'Limite de computadores atingido. Sua conta já possui 1 computador registrado. Contate o suporte para trocar de dispositivo.'
+                    : "Limite de computadores atingido. Sua conta permite {$limiteDesktops} computadores e todos já estão registrados. Contate o suporte para trocar de dispositivo.",
             ])->onlyInput('email');
         }
 
@@ -281,6 +308,47 @@ class AuthenticatedSessionController extends Controller
         }
 
         return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    /**
+     * Sessão restrita para regularizar assinatura pelo celular.
+     *
+     * NÃO registra dispositivo e NÃO consome vaga: o cliente está na rua, com o app
+     * bloqueado por assinatura vencida, e precisa pagar. Registrar o celular aqui
+     * queimaria a vaga do computador dele (foi o que aconteceu no caso Fabricio,
+     * quando o iPhone em "modo desktop" roubou a vaga do desktop).
+     *
+     * A sessão fica marcada com 'modo_pagamento' e o middleware SomentePagamento
+     * só a deixa acessar as rotas de assinatura. Sem esse middleware isto seria um
+     * bypass universal do limite de dispositivos.
+     */
+    private function iniciarSessaoDePagamento(Request $request, int $userId, string $ip, array $fingerprint): RedirectResponse
+    {
+        $request->session()->regenerate();
+        $request->session()->put('modo_pagamento', true);
+
+        $geo = app(GeoIpService::class)->resolve($ip);
+
+        LoginSession::create([
+            'user_id'            => $userId,
+            'session_id'         => session()->getId(),
+            'device_uuid'        => '',
+            'ip_address'         => $ip,
+            'city'               => $geo['city'],
+            'country'            => $geo['country'],
+            'timezone'           => $fingerprint['timezone'],
+            'screen_resolution'  => $fingerprint['screen_resolution'],
+            'user_agent'         => $request->userAgent(),
+            'device_fingerprint' => $fingerprint['device_fingerprint'],
+            'browser'            => $fingerprint['browser'],
+            // Marcador auditável — consultar com LIKE '%(pagamento)'
+            'os'                 => trim(($fingerprint['os'] ?? '') . ' (pagamento)'),
+            'is_mobile'          => true,
+            'device_model'       => $fingerprint['device_model'],
+            'logged_in_at'       => now(),
+        ]);
+
+        return redirect()->route('assinatura.edit');
     }
 
     public function destroy(Request $request): RedirectResponse

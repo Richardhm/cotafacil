@@ -56,6 +56,14 @@
             margin-top: 8px;
         }
         .note { font-size: 12px; color: #64748b; margin-top: 20px; }
+        .link-pagamento {
+            display: inline-block;
+            margin-top: 28px;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            font-size: 14px;
+            text-decoration: underline;
+        }
         #msg { font-size: 13px; color: #94a3b8; min-height: 20px; margin-bottom: 8px; }
     </style>
 </head>
@@ -73,6 +81,13 @@
 
     <p class="note">Caso o aplicativo não abra automaticamente,<br>clique no botão acima para instalar.</p>
 
+    {{-- Saída para quem precisa pagar: leva ao login em modo pagamento, que entra
+         sem registrar dispositivo e só alcança as telas de assinatura. Cancela o
+         redirecionamento automático para o app, senão a página some antes do toque. --}}
+    <a href="{{ route('login') }}?pagamento=1" class="link-pagamento" id="link-pagamento">
+        Preciso regularizar minha assinatura
+    </a>
+
     <script>
         var appScheme  = 'intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=bmsys.com.br.cotacao;S.browser_fallback_url=https%3A%2F%2Fapp.bmsys.com.br%2Finstall;end';
         var installUrl = 'https://app.bmsys.com.br/install';
@@ -80,6 +95,12 @@
         var ua = navigator.userAgent;
         var isAndroid = /Android/i.test(ua);
         var isIOS     = /iPhone|iPod/i.test(ua);
+        var redirecionar = true;
+
+        // Se o usuário tocar no link de pagamento, nenhum timer pode levá-lo embora
+        document.getElementById('link-pagamento').addEventListener('click', function () {
+            redirecionar = false;
+        });
 
         function showInstallBtn() {
             document.getElementById('spinner').style.display = 'none';
@@ -92,15 +113,15 @@
             window.location.href = appScheme;
             setTimeout(showInstallBtn, 2500);
         } else if (isIOS) {
-            // iOS: vai direto para install
+            // iOS: vai direto para install (2,5s dá tempo de tocar no link de pagamento)
             setTimeout(function() {
-                window.location.href = installUrl;
-            }, 800);
+                if (redirecionar) window.location.href = installUrl;
+            }, 2500);
         } else {
             // Outros (tablet, etc.) — vai para install
             setTimeout(function() {
-                window.location.href = installUrl;
-            }, 1000);
+                if (redirecionar) window.location.href = installUrl;
+            }, 2500);
         }
     </script>
 </body>
