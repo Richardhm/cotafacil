@@ -29,7 +29,8 @@ return [
     */
 
     'planos_excluidos' => [
-        15, // SindiLojas
+        // vazio desde 13/08/2026 — o SindiLojas (15), único excluído, foi
+        // removido do banco de vez (plano, preços e vínculos)
     ],
 
 ];
