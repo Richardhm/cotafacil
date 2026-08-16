@@ -29,8 +29,15 @@ return [
     */
 
     'planos_excluidos' => [
-        // vazio desde 13/08/2026 — o SindiLojas (15), único excluído, foi
-        // removido do banco de vez (plano, preços e vínculos)
+        15,  // SindiLojas
+        140, // Sindilojas (duplicado do 15, com outra caixa)
+        // O SindiLojas continua ATIVO para quem já o usa (assinaturas 22, 26,
+        // 59 e 65) — inclusive na assinatura modelo, para o Richard poder cotar.
+        // O que não pode é cliente NOVO herdar: o plano é de sindicato e não
+        // faz parte do pacote do SaaS.
+        //
+        // O 140 estava faltando aqui, e é por isso que os cadastros 122, 123,
+        // 124 e 125 (07 a 14/08/2026) nasceram com SindiLojas por engano.
     ],
 
 ];
