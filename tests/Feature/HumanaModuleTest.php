@@ -53,10 +53,8 @@ class HumanaModuleTest extends TestCase
 
     private function liberarHumana(User $user, bool $ativo = true): void
     {
-        HumanaAcesso::updateOrCreate(
-            ['assinatura_id' => EmailAssinatura::where('email', $user->email)->first()->assinatura_id],
-            ['ativo' => $ativo]
-        );
+        // Liberação POR USUÁRIO (não por assinatura — equipe não herda)
+        HumanaAcesso::updateOrCreate(['user_id' => $user->id], ['ativo' => $ativo]);
     }
 
     /** Catálogo completo: seeders + importação do JSON real versionado no repo. */
@@ -156,6 +154,25 @@ class HumanaModuleTest extends TestCase
 
         $resposta->assertOk();
         $this->assertStringStartsWith('%PDF', $resposta->getContent());
+    }
+
+    public function test_equipe_da_mesma_assinatura_nao_herda_o_acesso(): void
+    {
+        $titular = $this->usuarioComAssinatura();
+        $this->liberarHumana($titular);
+
+        // Colega na MESMA assinatura do titular, sem liberação própria
+        $assinaturaId = EmailAssinatura::where('email', $titular->email)->first()->assinatura_id;
+        $colega = User::factory()->create(['layout_id' => null]);
+        EmailAssinatura::create([
+            'assinatura_id'    => $assinaturaId,
+            'email'            => $colega->email,
+            'user_id'          => $colega->id,
+            'is_administrador' => 0,
+        ]);
+
+        $this->actingAs($titular)->get('/humanas')->assertOk();
+        $this->actingAs($colega)->get('/humanas')->assertForbidden();
     }
 
     public function test_importador_e_idempotente(): void

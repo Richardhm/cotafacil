@@ -1,11 +1,11 @@
-{{-- Gestão de acesso ao módulo Humana — só desenvolvedor. --}}
+{{-- Gestão de acesso ao módulo Humana — só desenvolvedor. Liberação POR USUÁRIO. --}}
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h1 class="text-2xl font-bold mb-1">Acessos ao módulo Humana</h1>
                 <p class="text-gray-600 mb-4 text-sm">
-                    A liberação é por assinatura: vale para o titular e toda a equipe dela.
+                    A liberação é por usuário: liberar um titular NÃO libera a equipe dele.
                     Desenvolvedores sempre têm acesso.
                 </p>
 
@@ -13,40 +13,38 @@
                     <div class="mb-4 p-3 rounded bg-green-100 text-green-800 text-sm">{{ session('status') }}</div>
                 @endif
 
-                <input type="text" id="filtro-assinatura" placeholder="Filtrar por nome ou e-mail..."
+                <input type="text" id="filtro-usuario" placeholder="Filtrar por nome ou e-mail..."
                        class="mb-4 w-full border-gray-300 rounded-md shadow-sm text-sm">
 
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-left border-b">
                             <th class="py-2 pr-2">#</th>
-                            <th class="py-2 pr-2">Titular</th>
+                            <th class="py-2 pr-2">Nome</th>
                             <th class="py-2 pr-2">E-mail</th>
-                            <th class="py-2 pr-2">Status</th>
                             <th class="py-2">Humana</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($assinaturas as $assinatura)
-                            <tr class="border-b linha-assinatura"
-                                data-busca="{{ mb_strtolower(($assinatura->user->name ?? '') . ' ' . ($assinatura->user->email ?? '')) }}">
-                                <td class="py-2 pr-2">{{ $assinatura->id }}</td>
-                                <td class="py-2 pr-2">{{ $assinatura->user->name ?? '—' }}</td>
-                                <td class="py-2 pr-2">{{ $assinatura->user->email ?? '—' }}</td>
-                                <td class="py-2 pr-2">{{ $assinatura->status }}</td>
+                        @foreach ($usuarios as $usuario)
+                            <tr class="border-b linha-usuario"
+                                data-busca="{{ mb_strtolower($usuario->name . ' ' . $usuario->email) }}">
+                                <td class="py-2 pr-2">{{ $usuario->id }}</td>
+                                <td class="py-2 pr-2">{{ $usuario->name }}</td>
+                                <td class="py-2 pr-2">{{ $usuario->email }}</td>
                                 <td class="py-2">
                                     <form method="POST" action="{{ route('humana-acessos.toggle') }}">
                                         @csrf
-                                        <input type="hidden" name="assinatura_id" value="{{ $assinatura->id }}">
-                                        @if (isset($liberadas[$assinatura->id]))
+                                        <input type="hidden" name="user_id" value="{{ $usuario->id }}">
+                                        @if (isset($liberados[$usuario->id]))
                                             <button type="submit"
                                                     class="px-3 py-1 rounded bg-green-600 text-white text-xs font-bold">
-                                                LIBERADA — clique p/ bloquear
+                                                LIBERADO — clique p/ bloquear
                                             </button>
                                         @else
                                             <button type="submit"
                                                     class="px-3 py-1 rounded bg-gray-300 text-gray-700 text-xs">
-                                                bloqueada — clique p/ liberar
+                                                bloqueado — clique p/ liberar
                                             </button>
                                         @endif
                                     </form>
@@ -61,9 +59,9 @@
 
     @section('scripts')
         <script>
-            document.getElementById('filtro-assinatura').addEventListener('input', function () {
+            document.getElementById('filtro-usuario').addEventListener('input', function () {
                 const termo = this.value.toLowerCase();
-                document.querySelectorAll('.linha-assinatura').forEach(function (linha) {
+                document.querySelectorAll('.linha-usuario').forEach(function (linha) {
                     linha.style.display = linha.dataset.busca.includes(termo) ? '' : 'none';
                 });
             });

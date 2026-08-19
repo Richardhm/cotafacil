@@ -170,7 +170,8 @@ class User extends Authenticatable
         return in_array($this->email, $emailsPermitidos);
     }
 
-    // Módulo Humana (/humanas): liberado por assinatura em humana_acessos.
+    // Módulo Humana (/humanas): liberado POR USUÁRIO em humana_acessos
+    // (decisão do Richard: liberar o titular não libera a equipe).
     // Desenvolvedor sempre tem acesso (para testar sem precisar se liberar).
     public function temAcessoHumana(): bool
     {
@@ -182,9 +183,7 @@ class User extends Authenticatable
             return $this->temAcessoHumana = true;
         }
 
-        $assinaturaId = EmailAssinatura::where('email', $this->email)->first()?->assinatura_id;
-
-        return $this->temAcessoHumana = \App\Models\Humana\HumanaAcesso::assinaturaTemAcesso($assinaturaId);
+        return $this->temAcessoHumana = \App\Models\Humana\HumanaAcesso::usuarioTemAcesso($this->id);
     }
 
     private ?bool $temAcessoHumana = null;

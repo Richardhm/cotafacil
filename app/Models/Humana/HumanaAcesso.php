@@ -8,16 +8,16 @@ class HumanaAcesso extends Model
 {
     protected $table = 'humana_acessos';
 
-    protected $fillable = ['assinatura_id', 'ativo'];
+    protected $fillable = ['user_id', 'ativo'];
 
     protected $casts = ['ativo' => 'boolean'];
 
-    public static function assinaturaTemAcesso(?int $assinaturaId): bool
+    public static function usuarioTemAcesso(?int $userId): bool
     {
-        if (!$assinaturaId) {
+        if (!$userId) {
             return false;
         }
 
-        return static::where('assinatura_id', $assinaturaId)->where('ativo', true)->exists();
+        return static::where('user_id', $userId)->where('ativo', true)->exists();
     }
 }
