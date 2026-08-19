@@ -15,7 +15,7 @@ class TrackSessionActivity
 
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::check()) {
+        if (Auth::check() && $request->hasSession()) {
             $rememberUntil = $request->session()->get('remember_until');
             if ($rememberUntil && time() > $rememberUntil) {
                 $sessionId = $request->session()->getId();
@@ -32,7 +32,7 @@ class TrackSessionActivity
 
         $response = $next($request);
 
-        if (Auth::check()) {
+        if (Auth::check() && $request->hasSession()) {
             $sessionId  = $request->session()->getId();
             $cacheKey   = "last_seen_update_{$sessionId}";
             $lastUpdate = $request->session()->get($cacheKey, 0);

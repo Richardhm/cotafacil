@@ -108,6 +108,16 @@
                         <span class="hapvida-ss-arrow">➜</span>
                     </a>
 
+                    @if (Auth::user()->temAcessoHumana())
+                        <a href="{{ route('humanas.index') }}"
+                           title="Cotação Humana — Teresina (PI)"
+                           class="hapvida-ss-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
+                            <span class="hapvida-ss-arrow">➜</span>
+                            Humana
+                            <span class="hapvida-ss-arrow">➜</span>
+                        </a>
+                    @endif
+
                     <a href="{{ route('tabela_completa.index') }}"
                        title="Tabela Completa"
                        class="tabela-completa-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
@@ -236,6 +246,12 @@
                 <a href="{{ route('hapvida-ss.index') }}" class="hapvida-ss-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
                     <span class="hapvida-ss-arrow">➜</span> Cotações Empresariais <span class="hapvida-ss-arrow">➜</span>
                 </a>
+
+                @if (Auth::user()->temAcessoHumana())
+                    <a href="{{ route('humanas.index') }}" class="hapvida-ss-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
+                        <span class="hapvida-ss-arrow">➜</span> Humana <span class="hapvida-ss-arrow">➜</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('tabela_completa.index') }}" class="tabela-completa-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
                     <span class="hapvida-ss-arrow">➜</span> Tabela Completa <span class="hapvida-ss-arrow">➜</span>

@@ -170,6 +170,25 @@ class User extends Authenticatable
         return in_array($this->email, $emailsPermitidos);
     }
 
+    // Módulo Humana (/humanas): liberado por assinatura em humana_acessos.
+    // Desenvolvedor sempre tem acesso (para testar sem precisar se liberar).
+    public function temAcessoHumana(): bool
+    {
+        if ($this->temAcessoHumana !== null) {
+            return $this->temAcessoHumana;
+        }
+
+        if ($this->isDesenvolvedor()) {
+            return $this->temAcessoHumana = true;
+        }
+
+        $assinaturaId = EmailAssinatura::where('email', $this->email)->first()?->assinatura_id;
+
+        return $this->temAcessoHumana = \App\Models\Humana\HumanaAcesso::assinaturaTemAcesso($assinaturaId);
+    }
+
+    private ?bool $temAcessoHumana = null;
+
     public function isFolder()
     {
         $assinaturaId = \App\Models\EmailAssinatura::where('email', $this->email)->first()?->assinatura_id;

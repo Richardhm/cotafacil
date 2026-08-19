@@ -56,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check' => CheckSubscription::class,
             'checkExpired' => CheckSubscriptionExpired::class,
             'email.verified.afterDeadline' => \App\Http\Middleware\EnsureEmailIsVerifiedAfterDeadline::class,
+            'humana' => \App\Http\Middleware\AcessoHumana::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

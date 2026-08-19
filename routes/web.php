@@ -18,6 +18,8 @@ use App\Http\Controllers\PixWebhookController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\TeamUserController;
 use App\Http\Controllers\HapvidaSuperSimplesController;
+use App\Http\Controllers\HumanaAcessosController;
+use App\Http\Controllers\HumanaController;
 use App\Http\Controllers\PdfImportController;
 
 
@@ -154,6 +156,10 @@ Route::middleware(['auth'])->group(function () {
     /********* Configurações **************/
     Route::middleware(['apenasDesenvolvedores'])->group(function () {
         Route::get("/configuracoes", [ConfiguracoesController::class, 'index'])->name('configuracoes.index');
+
+        // Quem pode usar o módulo Humana (liberação por assinatura)
+        Route::get('/configuracoes/humana-acessos', [HumanaAcessosController::class, 'index'])->name('humana-acessos.index');
+        Route::post('/configuracoes/humana-acessos/toggle', [HumanaAcessosController::class, 'toggle'])->name('humana-acessos.toggle');
 
         Route::post('/configuracoes/cidades/', [ConfiguracoesController::class, 'cidadeStore'])->name('cidades.store');
         Route::delete('/configuracoes/cidades/{id}', [ConfiguracoesController::class, 'cidadeDestroy'])->name('cidades.destroy');
@@ -297,6 +303,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('hapvida-ss.cotacao');
     Route::post('/hapvida-super-simples/gerar', [HapvidaSuperSimplesController::class, 'criarPDFEmpresarial'])
         ->middleware(['verified', 'check'])->name('hapvida-ss.gerar');
+
+    // Módulo Humana (Teresina-PI) — TODAS as rotas (inclusive AJAX futuras)
+    // dentro deste grupo, com a pilha completa: assinatura em dia + liberação
+    // em humana_acessos. Não repetir o vacilo do Hapvida SS, que deixou os
+    // endpoints AJAX só com 'auth'.
+    Route::middleware(['verified', 'check', 'humana'])->prefix('humanas')->group(function () {
+        Route::get('/', [HumanaController::class, 'index'])->name('humanas.index');
+        Route::post('/precos', [HumanaController::class, 'precos'])->name('humanas.precos');
+        Route::post('/gerar', [HumanaController::class, 'gerar'])->name('humanas.gerar');
+    });
 
     Route::post('/cidades/origem', [DashboardController::class, 'getCidadesDeOrigem'])->name('cidades.origem');
 
