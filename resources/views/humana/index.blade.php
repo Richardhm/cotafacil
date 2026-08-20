@@ -170,6 +170,14 @@
         let planoAtual = null;            // resposta de /humanas/precos do plano escolhido
         let selAcomodacao = null;         // pill ativa
         let selCopay = null;              // pill ativa
+        let selProduto = 'todos';         // pill ativa: todos | saude | essencial | pleno
+
+        const PRODUTOS = [
+            ['todos', 'Todos'],
+            ['saude', 'Valor Saúde'],
+            ['essencial', 'Combo Essencial'],
+            ['pleno', 'Combo Odonto Pleno'],
+        ];
         const cachePrecos = {};           // plano_id -> resposta
 
         const MAPA_INPUTS = {
@@ -296,6 +304,14 @@
                     html += pillHtml(c === selCopay, t.coparticipacao_label, 'copay', c);
                 });
             }
+            // Pills de produto (pedido da usuária) — só onde os combos existem
+            const temCombosPlano = tabela.precos['1'].essencial !== null;
+            if (temCombosPlano) {
+                html += '<span class="text-xs opacity-75 ml-2">Produto:</span>';
+                PRODUTOS.forEach(([valor, rotulo]) => {
+                    html += pillHtml(valor === selProduto, rotulo, 'produto', valor);
+                });
+            }
             html += '</div>';
 
             // Linha de identificação da tabela ativa
@@ -311,9 +327,12 @@
             if (faixasComVidas.length === 0) {
                 html += '<p class="text-sm opacity-80 mt-2">Informe a quantidade de vidas por faixa etária para calcular.</p>';
             } else {
-                const colunas = temCombos
+                let colunas = temCombos
                     ? [['saude', 'Valor Saúde'], ['essencial', 'Combo Essencial'], ['pleno', 'Combo Odonto Pleno']]
                     : [['saude', 'Valor Saúde']];
+                if (temCombos && selProduto !== 'todos') {
+                    colunas = colunas.filter(([chave]) => chave === selProduto);
+                }
 
                 html += '<div class="overflow-x-auto"><table class="w-full text-sm">';
                 html += '<thead><tr class="border-b border-white/50 text-left">' +
@@ -355,10 +374,18 @@
                             'Combo Odonto Pleno = saúde + odonto completo.</p>';
                 }
 
-                html += '<div class="flex gap-2 mt-3">' +
+                html += '<div class="flex flex-wrap gap-2 mt-3">' +
                         '<button type="button" id="btn-gerar-pdf" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Gerar PDF</button>' +
-                        '<button type="button" id="btn-gerar-jpg" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Gerar Imagem</button>' +
-                        '</div>';
+                        '<button type="button" id="btn-gerar-jpg" class="py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Gerar Imagem</button>';
+                // Comparativo Completa × Básica: só onde existem as duas copays
+                const copaysDaAcomodacao = planoAtual.tabelas
+                    .filter(t => t.acomodacao === selAcomodacao)
+                    .map(t => t.coparticipacao);
+                if (copaysDaAcomodacao.includes('completa') && copaysDaAcomodacao.includes('basica')) {
+                    html += '<button type="button" id="btn-comparativo-pdf" class="py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Comparativo PDF</button>' +
+                            '<button type="button" id="btn-comparativo-jpg" class="py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Comparativo Imagem</button>';
+                }
+                html += '</div>';
             }
 
             // Grade de coparticipação
@@ -380,22 +407,27 @@
 
             $('#resultado .pill').on('click', function (e) {
                 e.preventDefault();
-                if ($(this).data('tipo') === 'acomodacao') {
+                const tipo = $(this).data('tipo');
+                if (tipo === 'acomodacao') {
                     selAcomodacao = $(this).data('valor');
-                } else {
+                } else if (tipo === 'copay') {
                     selCopay = $(this).data('valor');
+                } else {
+                    selProduto = $(this).data('valor');
                 }
                 renderizar();   // instantâneo: os preços já estão no cliente
             });
 
-            $('#btn-gerar-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf'); });
-            $('#btn-gerar-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg'); });
+            $('#btn-gerar-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', false); });
+            $('#btn-gerar-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', false); });
+            $('#btn-comparativo-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', true); });
+            $('#btn-comparativo-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', true); });
         }
 
         // Download via AJAX + blob (mesmo padrão do dashboard): gerenciadores de
         // download interceptam form POST e tentam rebaixar a URL com GET — que
         // não existe nesta rota. Com blob o arquivo nasce no próprio navegador.
-        function gerarDocumento(tipo) {
+        function gerarDocumento(tipo, comparativo) {
             const tabela = tabelaSelecionada();
             if (!tabela) return;
 
@@ -404,7 +436,7 @@
                 if (qtd > 0) faixas[faixaId] = qtd;
             }
 
-            const $botoes = $('#btn-gerar-pdf, #btn-gerar-jpg');
+            const $botoes = $('#btn-gerar-pdf, #btn-gerar-jpg, #btn-comparativo-pdf, #btn-comparativo-jpg');
 
             $.ajax({
                 url: "{{ route('humanas.gerar') }}",
@@ -414,6 +446,8 @@
                     acomodacao: tabela.acomodacao,
                     coparticipacao: tabela.coparticipacao,
                     tipo_documento: tipo,
+                    produto: selProduto,
+                    comparativo: comparativo ? 1 : 0,
                     faixas: faixas,
                 },
                 headers: { 'X-CSRF-TOKEN': CSRF },

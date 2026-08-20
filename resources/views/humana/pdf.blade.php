@@ -81,11 +81,9 @@
             <tr>
                 <th class="esq">Faixa etária</th>
                 <th class="centro">Vidas</th>
-                <th>Valor Saúde</th>
-                @if ($temCombos)
-                    <th>Combo Essencial</th>
-                    <th>Combo Odonto Pleno</th>
-                @endif
+                @foreach ($produtos as $titulo)
+                    <th>{{ $titulo }}</th>
+                @endforeach
             </tr>
         </thead>
         <tbody>
@@ -93,30 +91,20 @@
                 <tr>
                     <td class="esq">{{ $linha['faixa'] }}</td>
                     <td class="centro">{{ $linha['qtd'] }}</td>
-                    <td>
-                        <span class="unit">{{ $linha['qtd'] }} × R$ {{ number_format($linha['saude'], 2, ',', '.') }}</span><br>
-                        <strong>R$ {{ number_format($linha['saude'] * $linha['qtd'], 2, ',', '.') }}</strong>
-                    </td>
-                    @if ($temCombos)
+                    @foreach ($produtos as $chave => $titulo)
                         <td>
-                            <span class="unit">{{ $linha['qtd'] }} × R$ {{ number_format($linha['essencial'], 2, ',', '.') }}</span><br>
-                            <strong>R$ {{ number_format($linha['essencial'] * $linha['qtd'], 2, ',', '.') }}</strong>
+                            <span class="unit">{{ $linha['qtd'] }} × R$ {{ number_format($linha[$chave], 2, ',', '.') }}</span><br>
+                            <strong>R$ {{ number_format($linha[$chave] * $linha['qtd'], 2, ',', '.') }}</strong>
                         </td>
-                        <td>
-                            <span class="unit">{{ $linha['qtd'] }} × R$ {{ number_format($linha['pleno'], 2, ',', '.') }}</span><br>
-                            <strong>R$ {{ number_format($linha['pleno'] * $linha['qtd'], 2, ',', '.') }}</strong>
-                        </td>
-                    @endif
+                    @endforeach
                 </tr>
             @endforeach
             <tr class="total">
                 <td class="esq">TOTAL</td>
                 <td class="centro">{{ $totalVidas }}</td>
-                <td>R$ {{ number_format($totais['saude'], 2, ',', '.') }}</td>
-                @if ($temCombos)
-                    <td>R$ {{ number_format($totais['essencial'], 2, ',', '.') }}</td>
-                    <td>R$ {{ number_format($totais['pleno'], 2, ',', '.') }}</td>
-                @endif
+                @foreach ($produtos as $chave => $titulo)
+                    <td>R$ {{ number_format($totais[$chave], 2, ',', '.') }}</td>
+                @endforeach
             </tr>
         </tbody>
     </table>

@@ -156,6 +156,35 @@ class HumanaModuleTest extends TestCase
         $this->assertStringStartsWith('%PDF', $resposta->getContent());
     }
 
+    public function test_gerar_com_produto_unico_e_comparativo(): void
+    {
+        $this->prepararCatalogo();
+        $user = $this->usuarioComAssinatura();
+        $this->liberarHumana($user);
+
+        // Produto único (pedido da usuária): PDF sai só com a coluna escolhida
+        $unico = $this->actingAs($user)->post('/humanas/gerar', [
+            'plano_id' => 1, 'acomodacao' => 'enfermaria', 'coparticipacao' => 'completa',
+            'faixas' => [1 => 1], 'tipo_documento' => 'pdf', 'produto' => 'essencial',
+        ]);
+        $unico->assertOk();
+        $this->assertStringStartsWith('%PDF', $unico->getContent());
+
+        // Comparativo: Completa × Básica no mesmo documento
+        $comparativo = $this->actingAs($user)->post('/humanas/gerar', [
+            'plano_id' => 1, 'acomodacao' => 'enfermaria', 'coparticipacao' => 'completa',
+            'faixas' => [1 => 1], 'tipo_documento' => 'pdf', 'produto' => 'todos', 'comparativo' => 1,
+        ]);
+        $comparativo->assertOk();
+        $this->assertStringStartsWith('%PDF', $comparativo->getContent());
+
+        // REFERÊNCIA não tem as duas copays -> comparativo é 404
+        $this->actingAs($user)->post('/humanas/gerar', [
+            'plano_id' => 5, 'acomodacao' => 'enfermaria', 'coparticipacao' => 'nao_se_aplica',
+            'faixas' => [1 => 1], 'tipo_documento' => 'pdf', 'comparativo' => 1,
+        ])->assertNotFound();
+    }
+
     public function test_equipe_da_mesma_assinatura_nao_herda_o_acesso(): void
     {
         $titular = $this->usuarioComAssinatura();

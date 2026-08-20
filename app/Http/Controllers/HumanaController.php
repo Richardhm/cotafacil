@@ -128,9 +128,18 @@ class HumanaController extends Controller
         ['Internação', 'Isento'],
     ];
 
+    // Colunas de produto exibíveis no documento (pedido da usuária: poder
+    // escolher UMA, como escolhe acomodação/copay — 'todos' = as 3 juntas)
+    private const PRODUTOS = [
+        'saude'     => 'Valor Saúde',
+        'essencial' => 'Combo Essencial',
+        'pleno'     => 'Combo Odonto Pleno',
+    ];
+
     /**
      * Gera o documento da cotação (PDF ou imagem PNG via Ghostscript).
      * Os valores são SEMPRE recalculados do banco — nada vem pronto do cliente.
+     * comparativo=1: Copay Completa e Básica lado a lado no MESMO documento.
      */
     public function gerar(Request $request)
     {
@@ -141,14 +150,11 @@ class HumanaController extends Controller
             'faixas'         => 'required|array',
             'faixas.*'       => 'integer|min:0|max:999',
             'tipo_documento' => 'required|in:pdf,jpg',
+            'produto'        => 'nullable|in:todos,saude,essencial,pleno',
+            'comparativo'    => 'nullable|boolean',
         ]);
 
-        $plano  = HumanaPlano::where('ativo', true)->findOrFail($dados['plano_id']);
-        $tabela = HumanaTabela::with('precos.faixaEtaria')
-            ->where('humana_plano_id', $plano->id)
-            ->where('acomodacao', $dados['acomodacao'])
-            ->where('coparticipacao', $dados['coparticipacao'])
-            ->firstOrFail();   // combinação inválida = 404, não documento errado
+        $plano = HumanaPlano::where('ativo', true)->findOrFail($dados['plano_id']);
 
         $vidas = collect($dados['faixas'])
             ->map(fn ($qtd) => (int) $qtd)
@@ -157,56 +163,126 @@ class HumanaController extends Controller
             return response()->json(['error' => 'Nenhuma faixa etária com vidas.'], 422);
         }
 
-        $temCombos = $tabela->coparticipacao !== 'nao_se_aplica';
-        $linhas    = [];
-        $totais    = ['saude' => 0, 'essencial' => 0, 'pleno' => 0];
-        foreach ($tabela->precos->sortBy('humana_faixa_etaria_id') as $preco) {
-            $qtd = $vidas->get($preco->humana_faixa_etaria_id) ?? $vidas->get((string) $preco->humana_faixa_etaria_id);
-            if (!$qtd) {
-                continue;
-            }
-            $linha = [
-                'faixa'     => $preco->faixaEtaria->nome,
-                'qtd'       => $qtd,
-                'saude'     => (float) $preco->valor_saude,
-                'essencial' => $preco->valor_combo_essencial !== null ? (float) $preco->valor_combo_essencial : null,
-                'pleno'     => $preco->valor_combo_pleno !== null ? (float) $preco->valor_combo_pleno : null,
-            ];
-            $totais['saude']     += $linha['saude'] * $qtd;
-            $totais['essencial'] += ($linha['essencial'] ?? 0) * $qtd;
-            $totais['pleno']     += ($linha['pleno'] ?? 0) * $qtd;
-            $linhas[] = $linha;
-        }
+        $produto     = $dados['produto'] ?? 'todos';
+        $comparativo = (bool) ($dados['comparativo'] ?? false);
+
+        $buscarTabela = fn (string $copay) => HumanaTabela::with('precos.faixaEtaria')
+            ->where('humana_plano_id', $plano->id)
+            ->where('acomodacao', $dados['acomodacao'])
+            ->where('coparticipacao', $copay)
+            ->firstOrFail();   // combinação inválida = 404, não documento errado
 
         $grupoCopay = in_array($plano->linha, ['VITAL', 'AMBULATORIAL']) ? 'vital' : 'superior';
-        $gradeCopay = match ($tabela->coparticipacao) {
-            'completa' => self::COPAY_COMPLETA[$grupoCopay],
-            'basica'   => self::COPAY_BASICA,
-            default    => null,
-        };
-        if ($gradeCopay && $plano->linha === 'AMBULATORIAL') {
-            $gradeCopay = array_map(
+        $ajustarGrade = function (array $grade) use ($plano): array {
+            if ($plano->linha !== 'AMBULATORIAL') {
+                return $grade;
+            }
+            return array_map(
                 fn ($item) => $item[0] === 'Internação' ? ['Internação', 'Não se aplica'] : $item,
-                $gradeCopay
+                $grade
             );
+        };
+
+        // Extrai de uma tabela as linhas (só faixas com vidas) e os totais
+        $montar = function (HumanaTabela $tabela) use ($vidas): array {
+            $linhas = [];
+            $totais = ['saude' => 0, 'essencial' => 0, 'pleno' => 0];
+            foreach ($tabela->precos->sortBy('humana_faixa_etaria_id') as $preco) {
+                $qtd = $vidas->get($preco->humana_faixa_etaria_id) ?? $vidas->get((string) $preco->humana_faixa_etaria_id);
+                if (!$qtd) {
+                    continue;
+                }
+                $linha = [
+                    'faixa'     => $preco->faixaEtaria->nome,
+                    'qtd'       => $qtd,
+                    'saude'     => (float) $preco->valor_saude,
+                    'essencial' => $preco->valor_combo_essencial !== null ? (float) $preco->valor_combo_essencial : null,
+                    'pleno'     => $preco->valor_combo_pleno !== null ? (float) $preco->valor_combo_pleno : null,
+                ];
+                $totais['saude']     += $linha['saude'] * $qtd;
+                $totais['essencial'] += ($linha['essencial'] ?? 0) * $qtd;
+                $totais['pleno']     += ($linha['pleno'] ?? 0) * $qtd;
+                $linhas[] = $linha;
+            }
+            return [$linhas, $totais];
+        };
+
+        if ($comparativo) {
+            // Completa e Básica lado a lado — só existe onde há as duas
+            $tabelaCompleta = $buscarTabela('completa');
+            $tabelaBasica   = $buscarTabela('basica');
+            [$linhasCompleta, $totaisCompleta] = $montar($tabelaCompleta);
+            [, $totaisBasica] = $montar($tabelaBasica);
+            $precosBasica = [];
+            foreach ($tabelaBasica->precos as $preco) {
+                $precosBasica[$preco->faixaEtaria->nome] = [
+                    'saude'     => (float) $preco->valor_saude,
+                    'essencial' => $preco->valor_combo_essencial !== null ? (float) $preco->valor_combo_essencial : null,
+                    'pleno'     => $preco->valor_combo_pleno !== null ? (float) $preco->valor_combo_pleno : null,
+                ];
+            }
+
+            $produtos = $produto === 'todos'
+                ? self::PRODUTOS
+                : [$produto => self::PRODUTOS[$produto]];
+
+            $view = view('humana.pdf-comparativo', [
+                'plano'           => $plano,
+                'tabela'          => $tabelaCompleta,
+                'acomodacaoLabel' => self::LABELS_ACOMODACAO[$plano->contratacao][$dados['acomodacao']],
+                'produtos'        => $produtos,
+                'linhas'          => $linhasCompleta,
+                'precosBasica'    => $precosBasica,
+                'totaisCompleta'  => $totaisCompleta,
+                'totaisBasica'    => $totaisBasica,
+                'totalVidas'      => $vidas->sum(),
+                'gradeCompleta'   => $ajustarGrade(self::COPAY_COMPLETA[$grupoCopay]),
+                'gradeBasica'     => $ajustarGrade(self::COPAY_BASICA),
+                'corretor'        => ['nome' => auth()->user()->name, 'celular' => auth()->user()->phone],
+                'geradoEm'        => now()->format('d/m/Y'),
+            ])->render();
+
+            // Com os 3 produtos são 6 colunas de valores: paisagem respira melhor
+            $orientacao  = $produto === 'todos' ? 'landscape' : 'portrait';
+            $nomeArquivo = 'humana-comparativo-' . date('Ymd_His') . '_' . uniqid();
+            $pdf = PDFFile::loadHTML($view)->setPaper('a4', $orientacao);
+        } else {
+            $tabela = $buscarTabela($dados['coparticipacao']);
+            [$linhas, $totais] = $montar($tabela);
+
+            $temCombos = $tabela->coparticipacao !== 'nao_se_aplica';
+            if (!$temCombos) {
+                $produtos = ['saude' => self::PRODUTOS['saude']];   // REFERÊNCIA só tem saúde
+            } elseif ($produto === 'todos') {
+                $produtos = self::PRODUTOS;
+            } else {
+                $produtos = [$produto => self::PRODUTOS[$produto]];
+            }
+
+            $gradeCopay = match ($tabela->coparticipacao) {
+                'completa' => $ajustarGrade(self::COPAY_COMPLETA[$grupoCopay]),
+                'basica'   => $ajustarGrade(self::COPAY_BASICA),
+                default    => null,
+            };
+
+            $view = view('humana.pdf', [
+                'plano'           => $plano,
+                'tabela'          => $tabela,
+                'acomodacaoLabel' => self::LABELS_ACOMODACAO[$plano->contratacao][$tabela->acomodacao],
+                'copayLabel'      => self::LABELS_COPAY[$tabela->coparticipacao],
+                'produtos'        => $produtos,
+                'linhas'          => $linhas,
+                'totais'          => $totais,
+                'totalVidas'      => $vidas->sum(),
+                'temCombos'       => $temCombos,
+                'gradeCopay'      => $gradeCopay,
+                'corretor'        => ['nome' => auth()->user()->name, 'celular' => auth()->user()->phone],
+                'geradoEm'        => now()->format('d/m/Y'),
+            ])->render();
+
+            $nomeArquivo = 'humana-' . date('Ymd_His') . '_' . uniqid();
+            $pdf = PDFFile::loadHTML($view)->setPaper('a4', 'portrait');
         }
-
-        $view = view('humana.pdf', [
-            'plano'           => $plano,
-            'tabela'          => $tabela,
-            'acomodacaoLabel' => self::LABELS_ACOMODACAO[$plano->contratacao][$tabela->acomodacao],
-            'copayLabel'      => self::LABELS_COPAY[$tabela->coparticipacao],
-            'linhas'          => $linhas,
-            'totais'          => $totais,
-            'totalVidas'      => $vidas->sum(),
-            'temCombos'       => $temCombos,
-            'gradeCopay'      => $gradeCopay,
-            'corretor'        => ['nome' => auth()->user()->name, 'celular' => auth()->user()->phone],
-            'geradoEm'        => now()->format('d/m/Y'),
-        ])->render();
-
-        $nomeArquivo = 'humana-' . date('Ymd_His') . '_' . uniqid();
-        $pdf = PDFFile::loadHTML($view)->setPaper('a4', 'portrait');
 
         if ($dados['tipo_documento'] === 'pdf') {
             return $pdf->download("{$nomeArquivo}.pdf");
