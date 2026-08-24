@@ -185,6 +185,29 @@ class HumanaModuleTest extends TestCase
         ])->assertNotFound();
     }
 
+    public function test_gerar_cotacao_completa_com_as_4_combinacoes(): void
+    {
+        $this->prepararCatalogo();
+        $user = $this->usuarioComAssinatura();
+        $this->liberarHumana($user);
+
+        // As 4 combinações (Completa/Básica x Apto/Enf) num documento só
+        foreach (['saude', 'todos'] as $produto) {
+            $resposta = $this->actingAs($user)->post('/humanas/gerar', [
+                'plano_id' => 1, 'acomodacao' => 'enfermaria', 'coparticipacao' => 'completa',
+                'faixas' => [1 => 1], 'tipo_documento' => 'pdf', 'produto' => $produto, 'completo' => 1,
+            ]);
+            $resposta->assertOk();
+            $this->assertStringStartsWith('%PDF', $resposta->getContent());
+        }
+
+        // AMBULATORIAL PME não tem acomodação -> cotação completa é 404
+        $this->actingAs($user)->post('/humanas/gerar', [
+            'plano_id' => 6, 'acomodacao' => 'nenhuma', 'coparticipacao' => 'completa',
+            'faixas' => [1 => 1], 'tipo_documento' => 'pdf', 'completo' => 1,
+        ])->assertNotFound();
+    }
+
     public function test_equipe_da_mesma_assinatura_nao_herda_o_acesso(): void
     {
         $titular = $this->usuarioComAssinatura();

@@ -385,6 +385,15 @@
                     html += '<button type="button" id="btn-comparativo-pdf" class="py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Comparativo PDF</button>' +
                             '<button type="button" id="btn-comparativo-jpg" class="py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Comparativo Imagem</button>';
                 }
+                // Cotação Completa (feedback 2): as 4 combinações num documento só —
+                // só existe onde o plano tem as 2 acomodações E as 2 copays
+                const acomsDoPlano = new Set(planoAtual.tabelas.map(t => t.acomodacao));
+                const copaysDoPlano = new Set(planoAtual.tabelas.map(t => t.coparticipacao));
+                if (acomsDoPlano.has('apartamento') && acomsDoPlano.has('enfermaria') &&
+                    copaysDoPlano.has('completa') && copaysDoPlano.has('basica')) {
+                    html += '<button type="button" id="btn-completa-pdf" class="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">Cotação Completa PDF</button>' +
+                            '<button type="button" id="btn-completa-jpg" class="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">Cotação Completa Imagem</button>';
+                }
                 html += '</div>';
             }
 
@@ -418,16 +427,18 @@
                 renderizar();   // instantâneo: os preços já estão no cliente
             });
 
-            $('#btn-gerar-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', false); });
-            $('#btn-gerar-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', false); });
-            $('#btn-comparativo-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', true); });
-            $('#btn-comparativo-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', true); });
+            $('#btn-gerar-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', false, false); });
+            $('#btn-gerar-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', false, false); });
+            $('#btn-comparativo-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', true, false); });
+            $('#btn-comparativo-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', true, false); });
+            $('#btn-completa-pdf').on('click', function (e) { e.preventDefault(); gerarDocumento('pdf', false, true); });
+            $('#btn-completa-jpg').on('click', function (e) { e.preventDefault(); gerarDocumento('jpg', false, true); });
         }
 
         // Download via AJAX + blob (mesmo padrão do dashboard): gerenciadores de
         // download interceptam form POST e tentam rebaixar a URL com GET — que
         // não existe nesta rota. Com blob o arquivo nasce no próprio navegador.
-        function gerarDocumento(tipo, comparativo) {
+        function gerarDocumento(tipo, comparativo, completo) {
             const tabela = tabelaSelecionada();
             if (!tabela) return;
 
@@ -436,7 +447,7 @@
                 if (qtd > 0) faixas[faixaId] = qtd;
             }
 
-            const $botoes = $('#btn-gerar-pdf, #btn-gerar-jpg, #btn-comparativo-pdf, #btn-comparativo-jpg');
+            const $botoes = $('#btn-gerar-pdf, #btn-gerar-jpg, #btn-comparativo-pdf, #btn-comparativo-jpg, #btn-completa-pdf, #btn-completa-jpg');
 
             $.ajax({
                 url: "{{ route('humanas.gerar') }}",
@@ -448,6 +459,7 @@
                     tipo_documento: tipo,
                     produto: selProduto,
                     comparativo: comparativo ? 1 : 0,
+                    completo: completo ? 1 : 0,
                     faixas: faixas,
                 },
                 headers: { 'X-CSRF-TOKEN': CSRF },

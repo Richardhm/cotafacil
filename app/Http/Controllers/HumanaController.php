@@ -152,6 +152,7 @@ class HumanaController extends Controller
             'tipo_documento' => 'required|in:pdf,jpg',
             'produto'        => 'nullable|in:todos,saude,essencial,pleno',
             'comparativo'    => 'nullable|boolean',
+            'completo'       => 'nullable|boolean',
         ]);
 
         $plano = HumanaPlano::where('ativo', true)->findOrFail($dados['plano_id']);
@@ -165,10 +166,11 @@ class HumanaController extends Controller
 
         $produto     = $dados['produto'] ?? 'todos';
         $comparativo = (bool) ($dados['comparativo'] ?? false);
+        $completo    = (bool) ($dados['completo'] ?? false);
 
-        $buscarTabela = fn (string $copay) => HumanaTabela::with('precos.faixaEtaria')
+        $buscarTabela = fn (string $copay, ?string $acomodacao = null) => HumanaTabela::with('precos.faixaEtaria')
             ->where('humana_plano_id', $plano->id)
-            ->where('acomodacao', $dados['acomodacao'])
+            ->where('acomodacao', $acomodacao ?? $dados['acomodacao'])
             ->where('coparticipacao', $copay)
             ->firstOrFail();   // combinação inválida = 404, não documento errado
 
@@ -207,7 +209,57 @@ class HumanaController extends Controller
             return [$linhas, $totais];
         };
 
-        if ($comparativo) {
+        if ($completo) {
+            // Feedback 2 da usuária: as 4 combinações num documento só —
+            // Completa (Apto+Enf) | Básica (Apto+Enf), como a cotação da Hapvida.
+            $combos = [];
+            foreach (['completa', 'basica'] as $cp) {
+                foreach (['apartamento', 'enfermaria'] as $ac) {
+                    $combos["$cp/$ac"] = $buscarTabela($cp, $ac);   // 404 se o plano não tiver as 4
+                }
+            }
+
+            [$linhasBase] = $montar($combos['completa/apartamento']);   // faixa + qtd
+            $precosPorCombo = [];
+            $totaisPorCombo = [];
+            foreach ($combos as $chave => $tabelaCombo) {
+                [$lin, $tot] = $montar($tabelaCombo);
+                foreach ($lin as $l) {
+                    $precosPorCombo[$chave][$l['faixa']] = $l;
+                }
+                $totaisPorCombo[$chave] = $tot;
+            }
+
+            $produtos = $produto === 'todos'
+                ? self::PRODUTOS
+                : [$produto => self::PRODUTOS[$produto]];
+
+            $labels = self::LABELS_ACOMODACAO[$plano->contratacao];
+
+            $view = view('humana.pdf-completo', [
+                'plano'           => $plano,
+                'tabela'          => $combos['completa/apartamento'],   // vigência
+                'labels'          => $labels,
+                'ansPorAcomodacao' => [
+                    $labels['apartamento'] => $combos['completa/apartamento']->registro_ans,
+                    $labels['enfermaria']  => $combos['completa/enfermaria']->registro_ans,
+                ],
+                'produtos'        => $produtos,
+                'linhas'          => $linhasBase,
+                'precosPorCombo'  => $precosPorCombo,
+                'totaisPorCombo'  => $totaisPorCombo,
+                'totalVidas'      => $vidas->sum(),
+                'gradeCompleta'   => $ajustarGrade(self::COPAY_COMPLETA[$grupoCopay]),
+                'gradeBasica'     => $ajustarGrade(self::COPAY_BASICA),
+                'corretor'        => ['nome' => auth()->user()->name, 'celular' => auth()->user()->phone],
+                'geradoEm'        => now()->format('d/m/Y'),
+            ])->render();
+
+            // 4 colunas de valores por bloco: retrato serve; com "Todos" são
+            // 3 blocos (um por produto) empilhados e o dompdf pagina sozinho.
+            $nomeArquivo = 'humana-completa-' . date('Ymd_His') . '_' . uniqid();
+            $pdf = PDFFile::loadHTML($view)->setPaper('a4', 'portrait');
+        } elseif ($comparativo) {
             // Completa e Básica lado a lado — só existe onde há as duas
             $tabelaCompleta = $buscarTabela('completa');
             $tabelaBasica   = $buscarTabela('basica');
