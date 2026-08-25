@@ -24,6 +24,10 @@
         .faixa-titulo .plano { font-size: 34px; font-weight: bold; }
         .faixa-titulo .contratacao { font-size: 18px; color: #f5a623; font-weight: bold; margin-top: 2px; }
         .faixa-titulo .detalhes { font-size: 20px; margin-top: 12px; line-height: 1.7; color: #e5e7f5; }
+        .promocao { background-color: #f5a623; color: #0f0f6d; padding: 10px 40px; font-weight: bold; font-size: 19px; line-height: 1.5; }
+        tr.desconto td { font-weight: bold; color: #0f0f6d; font-size: 20px; border-bottom: none; padding-top: 6px; }
+        .selo { display: inline-block; background-color: #e11d48; color: #fff; padding: 4px 10px; border-radius: 14px; font-size: 15px; font-weight: bold; }
+
 
         .conteudo { padding: 26px 40px; }
         table.valores { width: 100%; border-collapse: collapse; font-size: 20px; }
@@ -75,6 +79,14 @@
     </div>
 </div>
 
+@if (!empty($promocoes))
+<div class="promocao">
+    @foreach ($promocoes as $promo)
+        <div>PROMOÇÃO{{ $promo['copay'] ? ' (Coparticipação ' . ($promo['copay'] === 'basica' ? 'Básica' : 'Completa') . ')' : '' }}: {{ $promo['texto'] }}</div>
+    @endforeach
+</div>
+@endif
+
 <div class="conteudo">
     <table class="valores">
         <thead>
@@ -106,6 +118,18 @@
                     <td>R$ {{ number_format($totais[$chave], 2, ',', '.') }}</td>
                 @endforeach
             </tr>
+            {{-- Linhas "com desconto" (como na Hapvida): total × (1 − pct) --}}
+            @foreach ($promocoes as $promo)
+                @if ($promo['pct'] !== null)
+                <tr class="desconto">
+                    <td class="esq"><span class="selo">{{ $promo['rotulo'] }}</span></td>
+                    <td class="centro"></td>
+                    @foreach ($produtos as $chave => $titulo)
+                        <td>R$ {{ number_format($totais[$chave] * (1 - $promo['pct'] / 100), 2, ',', '.') }}</td>
+                    @endforeach
+                </tr>
+                @endif
+            @endforeach
         </tbody>
     </table>
 

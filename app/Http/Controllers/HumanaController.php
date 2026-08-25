@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Humana\HumanaFaixaEtaria;
 use App\Models\Humana\HumanaPlano;
+use App\Models\Humana\HumanaPromocao;
 use App\Models\Humana\HumanaTabela;
 use Barryvdh\DomPDF\Facade\Pdf as PDFFile;
 use Illuminate\Http\Request;
@@ -88,6 +89,7 @@ class HumanaController extends Controller
                 'abrangencia' => $plano->abrangencia,
             ],
             'faixas'  => HumanaFaixaEtaria::orderBy('id')->get(['id', 'nome']),
+            'promocoes' => HumanaPromocao::daContratacao($plano->contratacao),
             'tabelas' => $tabelas,
         ]);
     }
@@ -168,6 +170,22 @@ class HumanaController extends Controller
         $comparativo = (bool) ($dados['comparativo'] ?? false);
         $completo    = (bool) ($dados['completo'] ?? false);
 
+        // Promoções vigentes (humana_promocoes): no documento de UMA copay entra
+        // só a promo daquela copay; comparativo/completo mostram as duas.
+        $promocoes = HumanaPromocao::daContratacao($plano->contratacao);
+        $promosDoc = function (?string $copay) use ($promocoes) {
+            return $promocoes
+                ->filter(fn ($p) => $p->coparticipacao === null || $copay === null || $p->coparticipacao === $copay)
+                ->map(fn ($p) => [
+                    'copay'  => $p->coparticipacao,
+                    'texto'  => $p->texto,
+                    'pct'    => $p->pct_desconto,   // null = só a faixa de texto
+                    'rotulo' => $p->rotulo,
+                ])
+                ->values()
+                ->all();
+        };
+
         $buscarTabela = fn (string $copay, ?string $acomodacao = null) => HumanaTabela::with('precos.faixaEtaria')
             ->where('humana_plano_id', $plano->id)
             ->where('acomodacao', $acomodacao ?? $dados['acomodacao'])
@@ -238,6 +256,7 @@ class HumanaController extends Controller
 
             $view = view('humana.pdf-completo', [
                 'plano'           => $plano,
+                'promocoes'       => $promosDoc(null),
                 'tabela'          => $combos['completa/apartamento'],   // vigência
                 'labels'          => $labels,
                 'ansPorAcomodacao' => [
@@ -280,6 +299,7 @@ class HumanaController extends Controller
 
             $view = view('humana.pdf-comparativo', [
                 'plano'           => $plano,
+                'promocoes'       => $promosDoc(null),
                 'tabela'          => $tabelaCompleta,
                 'acomodacaoLabel' => self::LABELS_ACOMODACAO[$plano->contratacao][$dados['acomodacao']],
                 'produtos'        => $produtos,
@@ -319,6 +339,7 @@ class HumanaController extends Controller
 
             $view = view('humana.pdf', [
                 'plano'           => $plano,
+                'promocoes'       => $promosDoc($tabela->coparticipacao),
                 'tabela'          => $tabela,
                 'acomodacaoLabel' => self::LABELS_ACOMODACAO[$plano->contratacao][$tabela->acomodacao],
                 'copayLabel'      => self::LABELS_COPAY[$tabela->coparticipacao],

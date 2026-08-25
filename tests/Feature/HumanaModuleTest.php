@@ -10,6 +10,7 @@ use App\Models\Humana\HumanaTabela;
 use App\Models\User;
 use Database\Seeders\HumanaFaixaEtariasSeeder;
 use Database\Seeders\HumanaPlanosSeeder;
+use Database\Seeders\HumanaPromocoesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -62,6 +63,7 @@ class HumanaModuleTest extends TestCase
     {
         $this->seed(HumanaFaixaEtariasSeeder::class);
         $this->seed(HumanaPlanosSeeder::class);
+        $this->seed(HumanaPromocoesSeeder::class);
         Artisan::call('humana:importar', ['arquivo' => 'teresina-2026-08.json']);
     }
 
@@ -108,6 +110,24 @@ class HumanaModuleTest extends TestCase
         $ref = $this->actingAs($user)->post('/humanas/precos', ['plano_id' => 5])->assertOk()->json();
         $this->assertCount(1, $ref['tabelas']);
         $this->assertNull($ref['tabelas'][0]['precos']['1']['essencial']);
+    }
+
+    public function test_precos_traz_promocoes_da_contratacao(): void
+    {
+        $this->prepararCatalogo();
+        $user = $this->usuarioComAssinatura();
+        $this->liberarHumana($user);
+
+        // PF: 3 promocoes (2 da completa + 1 da basica); PME: 1 (vale para as duas copays)
+        $pf = $this->actingAs($user)->post('/humanas/precos', ['plano_id' => 1])->assertOk()->json();
+        $this->assertCount(3, $pf['promocoes']);
+        $this->assertStringContainsString('boleto', $pf['promocoes'][0]['texto']);
+        $this->assertSame(100, $pf['promocoes'][0]['pct_desconto']);   // 1º boleto grátis
+
+        $pme = $this->actingAs($user)->post('/humanas/precos', ['plano_id' => 7])->assertOk()->json();
+        $this->assertCount(1, $pme['promocoes']);
+        $this->assertStringContainsString('30%', $pme['promocoes'][0]['texto']);
+        $this->assertSame(30, $pme['promocoes'][0]['pct_desconto']);
     }
 
     public function test_liberacao_desativada_volta_a_bloquear(): void

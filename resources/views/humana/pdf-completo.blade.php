@@ -21,6 +21,10 @@
         .faixa-titulo .plano { font-size: 30px; font-weight: bold; }
         .faixa-titulo .contratacao { font-size: 17px; color: #f5a623; font-weight: bold; margin-top: 2px; }
         .faixa-titulo .detalhes { font-size: 17px; margin-top: 8px; line-height: 1.6; color: #e5e7f5; }
+        .promocao { background-color: #f5a623; color: #0f0f6d; padding: 10px 40px; font-weight: bold; font-size: 17px; line-height: 1.5; }
+        tr.desconto td { font-weight: bold; color: #0f0f6d; font-size: 16px; border-bottom: none; padding-top: 6px; }
+        .selo { display: inline-block; background-color: #e11d48; color: #fff; padding: 4px 10px; border-radius: 14px; font-size: 12px; font-weight: bold; }
+
 
         .conteudo { padding: 22px 40px; }
         .bloco-produto { margin-bottom: 26px; }
@@ -76,6 +80,14 @@
     </div>
 </div>
 
+@if (!empty($promocoes))
+<div class="promocao">
+    @foreach ($promocoes as $promo)
+        <div>PROMOÇÃO{{ $promo['copay'] ? ' (Coparticipação ' . ($promo['copay'] === 'basica' ? 'Básica' : 'Completa') . ')' : '' }}: {{ $promo['texto'] }}</div>
+    @endforeach
+</div>
+@endif
+
 <div class="conteudo">
     @foreach ($produtos as $chave => $titulo)
         <div class="bloco-produto">
@@ -118,6 +130,19 @@
                             </td>
                         @endforeach
                     </tr>
+                    {{-- Linhas "com desconto": só nas colunas da copay que a promo cobre --}}
+                    @foreach ($promocoes as $promo)
+                        @if ($promo['pct'] !== null)
+                        <tr class="desconto">
+                            <td class="esq"><span class="selo">{{ $promo['rotulo'] }}</span></td>
+                            <td class="centro"></td>
+                            @foreach (['completa/apartamento', 'completa/enfermaria', 'basica/apartamento', 'basica/enfermaria'] as $combo)
+                                @php $copayCombo = explode('/', $combo)[0]; @endphp
+                                <td @if ($combo === 'basica/apartamento') class="divisa" @endif>{{ in_array($promo['copay'], [null, $copayCombo], true) ? 'R$ ' . number_format($totaisPorCombo[$combo][$chave] * (1 - $promo['pct'] / 100), 2, ',', '.') : '—' }}</td>
+                            @endforeach
+                        </tr>
+                        @endif
+                    @endforeach
                 </tbody>
             </table>
         </div>

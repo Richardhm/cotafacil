@@ -21,6 +21,10 @@
         .faixa-titulo .plano { font-size: 30px; font-weight: bold; }
         .faixa-titulo .contratacao { font-size: 17px; color: #f5a623; font-weight: bold; margin-top: 2px; }
         .faixa-titulo .detalhes { font-size: 17px; margin-top: 8px; line-height: 1.6; color: #e5e7f5; }
+        .promocao { background-color: #f5a623; color: #0f0f6d; padding: 10px 40px; font-weight: bold; font-size: 17px; line-height: 1.5; }
+        tr.desconto td { font-weight: bold; color: #0f0f6d; font-size: 18px; border-bottom: none; padding-top: 6px; }
+        .selo { display: inline-block; background-color: #e11d48; color: #fff; padding: 4px 10px; border-radius: 14px; font-size: 13px; font-weight: bold; }
+
 
         .conteudo { padding: 22px 40px; }
         table.valores { width: 100%; border-collapse: collapse; font-size: 17px; }
@@ -75,6 +79,14 @@
     </div>
 </div>
 
+@if (!empty($promocoes))
+<div class="promocao">
+    @foreach ($promocoes as $promo)
+        <div>PROMOÇÃO{{ $promo['copay'] ? ' (Coparticipação ' . ($promo['copay'] === 'basica' ? 'Básica' : 'Completa') . ')' : '' }}: {{ $promo['texto'] }}</div>
+    @endforeach
+</div>
+@endif
+
 <div class="conteudo">
     <table class="valores">
         <thead>
@@ -123,6 +135,21 @@
                     <td @if ($loop->first) class="divisa" @endif>R$ {{ number_format($totaisBasica[$chave], 2, ',', '.') }}</td>
                 @endforeach
             </tr>
+            {{-- Linhas "com desconto": só nas colunas da copay que a promo cobre --}}
+            @foreach ($promocoes as $promo)
+                @if ($promo['pct'] !== null)
+                <tr class="desconto">
+                    <td class="esq"><span class="selo">{{ $promo['rotulo'] }}</span></td>
+                    <td class="centro"></td>
+                    @foreach ($produtos as $chave => $titulo)
+                        <td>{{ in_array($promo['copay'], [null, 'completa'], true) ? 'R$ ' . number_format($totaisCompleta[$chave] * (1 - $promo['pct'] / 100), 2, ',', '.') : '—' }}</td>
+                    @endforeach
+                    @foreach ($produtos as $chave => $titulo)
+                        <td @if ($loop->first) class="divisa" @endif>{{ in_array($promo['copay'], [null, 'basica'], true) ? 'R$ ' . number_format($totaisBasica[$chave] * (1 - $promo['pct'] / 100), 2, ',', '.') : '—' }}</td>
+                    @endforeach
+                </tr>
+                @endif
+            @endforeach
         </tbody>
     </table>
 

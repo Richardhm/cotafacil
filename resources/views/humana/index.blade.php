@@ -314,6 +314,15 @@
             }
             html += '</div>';
 
+            // Promoções vigentes que valem para a copay selecionada
+            const promos = (planoAtual.promocoes || []).filter(p =>
+                p.coparticipacao === null || p.coparticipacao === selCopay);
+            promos.forEach(p => {
+                html += '<div class="mb-2 px-3 py-2 rounded bg-orange-400 text-blue-950 font-bold text-sm">' +
+                        'PROMOÇÃO' + (p.coparticipacao ? ' (Copart. ' + (p.coparticipacao === 'basica' ? 'Básica' : 'Completa') + ')' : '') +
+                        ': ' + p.texto + '</div>';
+            });
+
             // Linha de identificação da tabela ativa
             html += '<div class="text-[11px] opacity-75 mb-2">ANS nº ' + (tabela.registro_ans || '—') +
                     (tabela.vigencia_inicio ? ' • Vigência ' + tabela.vigencia_inicio + ' a ' + tabela.vigencia_fim : '') +
@@ -366,7 +375,17 @@
                 colunas.forEach(([chave]) => {
                     html += '<td class="py-2 px-2 text-right">' + BRL.format(totais[chave]) + '</td>';
                 });
-                html += '</tr></tbody></table></div>';
+                html += '</tr>';
+                // Linhas "com desconto" (como na Hapvida): total × (1 − pct)
+                promos.filter(p => p.pct_desconto !== null).forEach(p => {
+                    html += '<tr class="text-sm"><td class="py-1.5 pr-2">' +
+                            '<span class="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold whitespace-nowrap">' + p.rotulo + '</span></td><td></td>';
+                    colunas.forEach(([chave]) => {
+                        html += '<td class="py-1.5 px-2 text-right font-semibold">' + BRL.format(totais[chave] * (1 - p.pct_desconto / 100)) + '</td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
 
                 if (temCombos) {
                     html += '<p class="text-[11px] opacity-70 mt-2">' +
