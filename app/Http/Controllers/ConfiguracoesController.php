@@ -180,6 +180,15 @@ class ConfiguracoesController extends Controller
         return back()->with('success', 'Plano cadastrado!');
     }
 
+    // Apelido exibido na 1ª coluna das cotações (vazio volta a ser NOSSO PLANO)
+    public function planosApelido(Plano $plano, Request $request)
+    {
+        $dados = $request->validate(['apelido' => 'nullable|string|max:40']);
+        $plano->update(['apelido' => isset($dados['apelido']) && trim($dados['apelido']) !== '' ? trim($dados['apelido']) : null]);
+
+        return back()->with('success', "Apelido do plano {$plano->nome} salvo.");
+    }
+
     public function planosDestroy(Plano $plano)
     {
         try {

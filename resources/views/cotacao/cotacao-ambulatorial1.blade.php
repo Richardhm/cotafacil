@@ -772,7 +772,7 @@
 
                     <tr>
 
-                        <td class="header-orange" style="text-align:center;">NOSSO PLANO</td>
+                        <td class="header-orange" style="text-align:center;">{{ $apelido_plano ?? 'NOSSO PLANO' }}</td>
 
                     </tr>
 

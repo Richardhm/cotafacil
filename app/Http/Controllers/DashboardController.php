@@ -88,6 +88,7 @@ class DashboardController extends Controller
         $celular = auth()->user()->phone;
 
         $view = \Illuminate\Support\Facades\View::make($viewName,[
+                'apelido_plano' => Plano::find($plano)?->apelido,
             "dados" => $dados,
             "image" => $imagem_user,
             "nome" => $nome,
@@ -177,6 +178,7 @@ class DashboardController extends Controller
         $celular = auth()->user()->phone;
 
         $view = \Illuminate\Support\Facades\View::make($viewName,[
+                'apelido_plano' => Plano::find($plano)?->apelido,
             "dados" => $dados,
             "image" => $imagem_user,
             "nome" => $nome,
@@ -680,6 +682,7 @@ class DashboardController extends Controller
 
 
                 $view = \Illuminate\Support\Facades\View::make($viewName,[
+                'apelido_plano' => Plano::find($plano)?->apelido,
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,
                     'assinatura' => $assinatura,
@@ -727,6 +730,7 @@ class DashboardController extends Controller
 
 
                 $view = \Illuminate\Support\Facades\View::make($cabecalhoName,[
+                'apelido_plano' => Plano::find($plano)?->apelido,
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,
                     'apenas_valores' => $apenasvalores,
@@ -903,6 +907,7 @@ class DashboardController extends Controller
             $sem_coparticipacao_amb = request()->semcoparticipacao == "true" ? 1 : 0;
 
             $view = \Illuminate\Support\Facades\View::make($viewName,[
+                'apelido_plano' => Plano::find($plano)?->apelido,
                 'com_coparticipacao' => $com_coparticipacao_amb,
                 'sem_coparticipacao' => $sem_coparticipacao_amb,
                 'image' => $imagem_user,
@@ -1172,6 +1177,7 @@ class DashboardController extends Controller
                 $pdf_copar = Pdf::where('plano_id', $plano)->first();
             }
             $view = \Illuminate\Support\Facades\View::make("cotacao.cotacao-ambulatorial-pdf",[
+                'apelido_plano' => Plano::find($plano)?->apelido,
                 'image' => $image_user,
                 'dados' => $dados,
                 'pdf' => $pdf_copar,

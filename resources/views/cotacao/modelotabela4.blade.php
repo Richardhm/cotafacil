@@ -550,7 +550,7 @@
             <td class="bloco" style="width: 22%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:0%;'}}">
                 <table width="100%">
                     <tr>
-                        <td class="header-orange" style="text-align:center;">NOSSO PLANO</td>
+                        <td class="header-orange" style="text-align:center;">{{ $apelido_plano ?? 'NOSSO PLANO' }}</td>
                     </tr>
                     <tr>
                         <td class="subheader-blue">FAIXA ETÁRIA</td>

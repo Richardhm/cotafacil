@@ -792,7 +792,7 @@
 
                 <table width="100%">
                     <tr>
-                        <td class="header-orange" style="text-align:center;font-size: 1.2em;">NOSSO PLANO</td>
+                        <td class="header-orange" style="text-align:center;font-size: 1.2em;">{{ $apelido_plano ?? 'NOSSO PLANO' }}</td>
                     </tr>
                     @foreach($dadosComOdonto as $faixaEtaria => $valores)
                         @for($i=0;$i<$valores['quantidade'];$i++)

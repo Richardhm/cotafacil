@@ -168,6 +168,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/administradoras/{administradora}', [ConfiguracoesController::class, 'administradoraDestroy'])->name('administradoras.destroy');
 
         Route::post('/planos', [ConfiguracoesController::class, 'storePlanos'])->name('planos.store');
+        Route::post('/planos/{plano}/apelido', [ConfiguracoesController::class, 'planosApelido'])->name('planos.apelido');
         Route::delete('/planos/{plano}', [ConfiguracoesController::class, 'planosDestroy'])->name('planos.destroy');
 
         Route::get('/assinaturas-cidades/{assinatura}/cidades', [ConfiguracoesController::class, 'getCidades'])->name('assinaturas.cidades');
