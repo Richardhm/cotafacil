@@ -157,6 +157,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['apenasDesenvolvedores'])->group(function () {
         Route::get("/configuracoes", [ConfiguracoesController::class, 'index'])->name('configuracoes.index');
 
+        // Rótulos personalizados da cotação (aba Rótulos de /configuracoes)
+        Route::post('/configuracoes/rotulos', [\App\Http\Controllers\RotulosCotacaoController::class, 'store'])->name('rotulos.store');
+        Route::post('/configuracoes/rotulos/{rotulo}/texto', [\App\Http\Controllers\RotulosCotacaoController::class, 'texto'])->name('rotulos.texto');
+        Route::delete('/configuracoes/rotulos/{rotulo}', [\App\Http\Controllers\RotulosCotacaoController::class, 'destroy'])->name('rotulos.destroy');
+
         // Quem pode usar o módulo Humana (liberação por assinatura)
         Route::get('/configuracoes/humana-acessos', [HumanaAcessosController::class, 'index'])->name('humana-acessos.index');
         Route::post('/configuracoes/humana-acessos/toggle', [HumanaAcessosController::class, 'toggle'])->name('humana-acessos.toggle');

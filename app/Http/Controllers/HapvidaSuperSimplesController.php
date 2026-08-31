@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdministradoraPlano;
+use App\Models\EmailAssinatura;
 use App\Models\Plano;
+use App\Models\RotuloCotacao;
+use App\Support\CoparticipacaoCotacao;
 use App\Models\Tabela;
 use App\Models\TabelaOrigens;
 use Barryvdh\DomPDF\Facade\Pdf as PDFFile;
@@ -18,20 +22,61 @@ class HapvidaSuperSimplesController extends Controller
      * O primeiro é o padrão quando a requisição não manda plano.
      */
     private const PLANOS_PERMITIDOS = [
-        5,  // Super Simples
-        10, // Super Simples - Integrado
-        11, // Super Simples - Pleno
+        5,   // Super Simples
+        10,  // Super Simples - Integrado
+        11,  // Super Simples - Pleno
+        140, // Sindlojas
     ];
 
     /**
-     * Plano vindo da requisição, sempre validado contra a lista permitida —
-     * sem isso daria para cotar qualquer plano mandando outro id no POST.
+     * Planos que só aparecem para quem tem vínculo em administradora_planos.
+     * Os demais de PLANOS_PERMITIDOS continuam visíveis para todo mundo que
+     * abre a tela, como sempre foi.
+     */
+    private const PLANOS_RESTRITOS = [
+        140, // Sindlojas
+    ];
+
+    /** Planos restritos que a assinatura do usuário logado pode cotar. */
+    private function planosRestritosLiberados(): array
+    {
+        $assinaturaId = EmailAssinatura::where('email', auth()->user()->email)
+            ->value('assinatura_id');
+
+        if (!$assinaturaId) {
+            return [];
+        }
+
+        return AdministradoraPlano::where('assinatura_id', $assinaturaId)
+            ->where('administradora_id', self::HAPVIDA_ID)
+            ->whereIn('plano_id', self::PLANOS_RESTRITOS)
+            ->pluck('plano_id')
+            ->unique()
+            ->all();
+    }
+
+    /** Planos que o usuário logado pode ver e cotar nesta tela. */
+    private function planosDisponiveis(): array
+    {
+        $liberados = $this->planosRestritosLiberados();
+
+        return array_values(array_filter(
+            self::PLANOS_PERMITIDOS,
+            fn(int $id) => !in_array($id, self::PLANOS_RESTRITOS, true)
+                || in_array($id, $liberados, true),
+        ));
+    }
+
+    /**
+     * Plano vindo da requisição, sempre validado contra o que ESTE usuário pode
+     * cotar — sem isso daria para cotar um plano restrito mandando o id no POST,
+     * mesmo sem ele aparecer no dropdown.
      */
     private function planoSelecionado(Request $request): int
     {
         $plano = (int) $request->input('plano_id', self::SUPER_SIMPLES_ID);
 
-        return in_array($plano, self::PLANOS_PERMITIDOS, true)
+        return in_array($plano, $this->planosDisponiveis(), true)
             ? $plano
             : self::SUPER_SIMPLES_ID;
     }
@@ -55,8 +100,10 @@ class HapvidaSuperSimplesController extends Controller
     {
         $planoPadrao = self::SUPER_SIMPLES_ID;
 
-        $planos = Plano::whereIn('id', self::PLANOS_PERMITIDOS)
-            ->orderByRaw('FIELD(id, ' . implode(',', self::PLANOS_PERMITIDOS) . ')')
+        $disponiveis = $this->planosDisponiveis();
+
+        $planos = Plano::whereIn('id', $disponiveis)
+            ->orderByRaw('FIELD(id, ' . implode(',', $disponiveis) . ')')
             ->get(['id', 'nome']);
 
         $estados = $this->estadosDoPlano($planoPadrao);
@@ -235,7 +282,7 @@ class HapvidaSuperSimplesController extends Controller
             ];
         });
 
-        $plano_nome  = Plano::find($planoId)->nome;
+        $plano_nome  = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $planoId, Plano::find($planoId)->nome);
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
         $copart_frase = $coparticipacao == 1 ? ' c/ Copart' : ' s/ Copart';
         $odonto_frase = $odonto         == 1 ? ' c/ Odonto' : ' s/ Odonto';
@@ -248,7 +295,20 @@ class HapvidaSuperSimplesController extends Controller
         $layout      = auth()->user()->layout_id ?? 1;
         $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
 
+        // Tabelinhas de coparticipação (mesmo bloco do dashboard) — só a copay escolhida
+        $copart = CoparticipacaoCotacao::montar((int) $planoId, (int) $cidade, self::HAPVIDA_ID);
+
         $view = view("cotacao.modeloempresarial{$layout_user}", [
+            'pdf'                   => $copart['pdf'],
+            'quantidade_copar'      => $copart['quantidade_copar'],
+            'status_excecao'        => $copart['status_excecao'],
+            'linha_01'              => $copart['linha_01'],
+            'linha_02'              => $copart['linha_02'],
+            'copart_com'            => $coparticipacao ? 1 : 0,
+            'copart_sem'            => $coparticipacao ? 0 : 1,
+            'apenas_valores'        => 0,
+            'rotulo_com_copart'     => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+            'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
             'cidade'      => $cidade_nome,
             'label'       => $frase,
             'dadosTabela' => $dadosAgrupados,

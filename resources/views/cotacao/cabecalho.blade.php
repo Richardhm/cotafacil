@@ -340,7 +340,7 @@
             <td class="bloco" style="width: {{ $widths[$totalBlocos] }}; margin: {{ $margins[$totalBlocos] }};">
                 <table width="100%">
                     <tr>
-                        <td colspan="2" class="header-orange" style="text-align:center;">COM COPARTICIPAÇÃO</td>
+                        <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
                     </tr>
                     <tr>
                         <td class="coluna-azul">ENFER</td>
@@ -391,7 +391,7 @@
             <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}} ">
                 <table width="100%">
                     <tr>
-                        <td colspan="2" class="header-orange" style="text-align:center;">SEM COPARTICIPAÇÃO *</td>
+                        <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
                     </tr>
                     <tr>
                         <td class="coluna-azul">ENFER</td>

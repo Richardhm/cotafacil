@@ -67,7 +67,7 @@
 
             position: absolute;
 
-            top: 580px;
+            top: 390px;
 
             left: 50%;
 
@@ -114,7 +114,7 @@
 
 
 
-        .cidade_container {position:absolute;top:190px;left:0%;font-weight: bold;font-size: 3em;color:white;text-align:center;}
+        .cidade_container {position:absolute;top:190px;left:0%;font-weight: bold;font-size: 2em;color:white;text-align:center;}
 
 
 
@@ -122,13 +122,13 @@
 
             position:absolute;
 
-            top:290px;
+            top:260px;
 
             left:0%;
 
             font-weight: bold;
 
-            font-size: 2.5em;
+            font-size: 1.5em;
 
             color:white;
 
@@ -152,7 +152,7 @@
 
             margin: 0 auto;
 
-            border-spacing: 20px; /* Espaço entre blocos */
+            border-spacing: 10px; /* Espaço entre blocos */
 
             border-collapse: separate;
 
@@ -182,35 +182,36 @@
 
             vertical-align: top;
 
-            padding: 15px;
+            padding: 10px;
 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Sombra suave */
 
         }
 
         .header-orange-parcial {
-            background: #F88058;
-            color: white;
-            padding: 20px;
+            background: rgb(254,199,72);
+            color: rgb(8,73,189);
+            padding: 20px 8px;
             border-radius: 55px 55px 0 0;
             font-weight: bold;
             font-size: 1.6em;
+            white-space: nowrap;
         }
 
         .header-orange {
             background: #F88058;
             color: white;
-            padding: 20px;
+            padding: 20px 8px;
             border-radius: 55px 55px 0 0;
             font-weight: bold;
-            font-size: 1.6em;
+            font-size: 1.6em; white-space: nowrap;
         }
 
         .subheader-blue {
             background: white;
             color: white;
             padding: 8px;
-            font-size: 1.5em;
+            font-size: 1.2em;
             color: rgb(8,73,189);
             font-weight:bold;
             text-align:center;
@@ -231,7 +232,7 @@
 
             width: 50%;
 
-            font-size: 1.5em;
+            font-size: 1.2em;
 
             color: rgb(8,73,189);
 
@@ -257,22 +258,14 @@
             display: block;font-size:1.6em;text-align:center;}
 
         .valor-copart-laranja-parcial {
-            background: #F88058;
-
+            background: rgb(254,199,72);
             padding: 12px !important;
-
             margin: 5px 3px;
-
             border-radius: 0 0 55px 55px;
-
-            color: white;
-
+            color: rgb(8,73,189);
             font-weight: bold;
-
             display: block;
-
             font-size:1.6em;
-
             text-align:center;
         }
 
@@ -533,7 +526,7 @@
     $totalBlocos = 1;
     if($com_coparticipacao == 1) $totalBlocos++;
     if($sem_coparticipacao == 1) $totalBlocos++;
-    $widths = [1 => '50%',2 => '38%',3 => '38%'];
+    $widths = [1 => '50%',2 => '38%',3 => '36%'];
     $margins = [1 => '0 auto',2 => '0 1%',3 => '0 1%'];
 @endphp
 
@@ -542,7 +535,7 @@
 <div class="container">
     <table class="bloco-container" align="center" cellpadding="0" cellspacing="0">
         <tr>
-            <td class="bloco" style="width: 22%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:0%;'}}">
+            <td class="bloco" style="width: 24%;{{$totalBlocos <= 2 ? 'margin-left:20%;' : 'margin-left:0%;'}}">
                 <table width="100%">
                     <tr>
                         <td class="header-orange" style="text-align:center;">{{ $apelido_plano ?? 'NOSSO PLANO' }}</td>
@@ -579,7 +572,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
@@ -655,7 +648,7 @@
                 <td class="bloco" style="width: {{ $widths[$totalBlocos] }};{{$totalBlocos <= 2 ? 'margin-left:1%;' : 'margin-left:0%;'}} ">
                     <table width="100%">
                         <tr>
-                            <td colspan="2" class="header-orange-parcial" style="text-align:center;">COM COPART PARCIAL *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'COM COPART PARCIAL *' }}</td>
                         </tr>
                         <tr>
                             <td class="coluna-azul">ENFER</td>
@@ -696,12 +689,12 @@
 
                             <tr>
                                 <td>
-                                    <div class="valor-copart-laranja">
+                                    <div class="valor-copart-laranja-parcial">
                                         {{number_format($totalEnfermaria_sem_copar,2,",",".")}}
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="valor-copart-laranja">
+                                    <div class="valor-copart-laranja-parcial">
                                         {{number_format($totalApartamento_sem_copar,2,",",".")}}
                                     </div>
                                 </td>
@@ -723,6 +716,14 @@
         @endif
         </tr>
     </table>
+
+{{-- Tabelinhas de coparticipação (mesmo bloco do dashboard) --}}
+<div style="clear:both;"></div>
+@include('cotacao.partials.copart1', [
+    'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
+    'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+])
+
 </div>
 
 <div class="footer">

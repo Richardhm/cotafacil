@@ -306,6 +306,8 @@
 
             border-radius: 60px;
 
+            border: 3px solid rgb(12,77,193); /* moldura do modelo3 */
+
             vertical-align: top;
 
             padding: 10px;
@@ -318,7 +320,7 @@
 
         .header-orange {
 
-            background: #F88058;
+            background: rgb(12,77,193); /* padrao do modelo3 do dashboard */
 
             color: white;
 
@@ -577,6 +579,13 @@
             margin-left: 10px;
 
         }
+        /* === Padronizacao com o modelo3 do dashboard (30/08/2026) === */
+        .valor-copart-azul-valores { background: rgb(65,123,231); padding: 12px !important; margin: 5px 3px; border-radius: 8px; color: white; font-weight: bold; display: block; font-size:1.6em; text-align:center; }
+        .valor-copart-azul { background: rgb(8,73,189); padding: 12px !important; margin: 5px 3px; border-radius: 0 0 55px 55px; color: white; font-weight: bold; display: block; font-size:1.6em; text-align:center; }
+        .header-orange-parcial { background: #F88058; color: white; padding: 20px; border-radius: 55px 55px 0 0; font-weight: bold; font-size: 1.6em; white-space: nowrap; text-align: center; }
+        .valor-copart-parcial { background: rgb(254,199,72); padding: 12px !important; margin: 5px 3px; border-radius: 8px; color: rgb(8,73,189); font-weight: bold; display: block; font-size: 1.6em; text-align: center; }
+        .valor-copart-laranja-parcial { background: #F88058; padding: 12px !important; margin: 5px 3px; border-radius: 0 0 55px 55px; color: white; font-weight: bold; display: block; font-size: 1.6em; text-align: center; }
+
 
     </style>
 
@@ -730,7 +739,7 @@
 
                                 <td>
 
-                                    <div class="valor-copart">
+                                    <div class="valor-copart-azul-valores">
 
                                         {{ $faixaEtaria }}
 
@@ -745,7 +754,7 @@
 
                     <tr>
                         <td>
-                            <div class="valor-copart-laranja">TOTAL</div>
+                            <div class="valor-copart-azul">TOTAL</div>
                         </td>
 
                     </tr>
@@ -765,7 +774,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
@@ -795,7 +804,7 @@
 
                                     <td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-azul-valores">
 
                                             @php
 
@@ -811,7 +820,7 @@
 
                                     <td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-azul-valores">
 
                                             @php
 
@@ -833,12 +842,12 @@
 
                         <tr>
                             <td>
-                                <div class="valor-copart-laranja">
+                                <div class="valor-copart-azul">
                                     {{number_format($totalEnfermaria_com_copar,2,",",".")}}
                                 </div>
                             </td>
                             <td>
-                                <div class="valor-copart-laranja">
+                                <div class="valor-copart-azul">
                                     {{number_format($totalApartamento_com_copar,2,",",".")}}
                                 </div>
                             </td>
@@ -876,7 +885,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">SEM COPARTICIPAÇÃO *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
 
                         </tr>
 
@@ -910,7 +919,7 @@
 
                                     <td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-parcial">
 
                                             @php
 
@@ -926,7 +935,7 @@
 
                                     <td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-parcial">
 
                                             @php
 
@@ -948,12 +957,12 @@
 
                         <tr>
                             <td>
-                                <div class="valor-copart-laranja">
+                                <div class="valor-copart-laranja-parcial">
                                     {{number_format($totalEnfermaria_sem_copar,2,",",".")}}
                                 </div>
                             </td>
                             <td>
-                                <div class="valor-copart-laranja">
+                                <div class="valor-copart-laranja-parcial">
                                     {{number_format($totalApartamento_sem_copar,2,",",".")}}
                                 </div>
                             </td>
@@ -981,6 +990,14 @@
         </tr>
 
     </table>
+
+
+{{-- Tabelinhas de coparticipação (mesmo bloco do dashboard) --}}
+<div style="clear:both;"></div>
+@include('cotacao.partials.copart3', [
+    'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
+    'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+])
 
 </div>
 

@@ -615,7 +615,7 @@
                             <td colspan="2" class="header-orange" style="text-align:center;font-size:1.4em;">
 
 
-                                COM COPARTICIPAÇÃO
+                                {{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}
 
                             </td>
 
@@ -669,7 +669,7 @@
                             <td colspan="2" class="header-orange" style="text-align:center;font-size:1.4em;">
 
 
-                                COM COPART PARCIAL *
+                                {{ $rotulo_copart_parcial ?? 'COM COPART PARCIAL *' }}
 
 
                             </td>

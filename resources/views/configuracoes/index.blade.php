@@ -19,6 +19,7 @@
                         <a href="#tab10" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">Carencia</a>
                         <a href="#tab11" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">PDF Exceção</a>
                         <a href="#tab12" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">📥 Importar PDF</a>
+                        <a href="#tab13" class="tab-button whitespace-nowrap py-3 px-2 border-b-2 font-medium text-sm text-white hover:bg-white/10 transition-all border-transparent rounded-tr-lg">Rótulos</a>
 
                     </nav>
                 </div>
@@ -64,6 +65,9 @@
                     </div>
                     <div id="tab12" class="tab-content hidden">
                         <x-configuracoes.importar-tabelas-tab />
+                    </div>
+                    <div id="tab13" class="tab-content hidden">
+                        <x-configuracoes.rotulos-tab />
                     </div>
                 </div>
             </div>

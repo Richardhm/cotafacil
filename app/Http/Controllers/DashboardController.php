@@ -13,6 +13,8 @@ use App\Models\EmailAssinatura;
 use App\Models\Layout;
 use App\Models\PdfExcecao;
 use App\Models\Plano;
+use App\Models\RotuloCotacao;
+use App\Support\CoparticipacaoCotacao;
 use App\Models\Tabela;
 use App\Models\Pdf;
 use App\Models\TabelaOrigens;
@@ -51,7 +53,7 @@ class DashboardController extends Controller
         $plano      = request()->plano;
         $operadora  = request()->operadora;
         $odonto     = request()->odonto;
-        $plano_nome = Plano::find($plano)->nome;
+        $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
         $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
         $frase = "Ambulatorial/".$odonto_frase;
 
@@ -89,12 +91,22 @@ class DashboardController extends Controller
 
         $view = \Illuminate\Support\Facades\View::make($viewName,[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
             "dados" => $dados,
             "image" => $imagem_user,
             "nome" => $nome,
             "celular" => $celular,
             "cidade_nome" => $cidade_nome,
-            "frase" => $frase
+            "frase" => $frase,
+            // Tabelinhas de coparticipação (mesmo bloco do dashboard). A tabela
+            // completa mostra as duas colunas -> as duas tabelinhas (flags do blade)
+            'pdf'              => ($copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora))['pdf'],
+            'quantidade_copar' => $copart['quantidade_copar'],
+            'status_excecao'   => $copart['status_excecao'],
+            'linha_01'         => $copart['linha_01'],
+            'linha_02'         => $copart['linha_02'],
+            'apenas_valores'   => 0,
         ]);
 
         $pdfPath = $this->novoPdfTemporario();
@@ -141,7 +153,7 @@ class DashboardController extends Controller
         $operadora  = request()->operadora;
         $odonto     = request()->odonto;
 
-        $plano_nome = Plano::find($plano)->nome;
+        $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
         $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
         $frase = $plano_nome."/".$odonto_frase;
 
@@ -179,12 +191,22 @@ class DashboardController extends Controller
 
         $view = \Illuminate\Support\Facades\View::make($viewName,[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
             "dados" => $dados,
             "image" => $imagem_user,
             "nome" => $nome,
             "celular" => $celular,
             "cidade_nome" => $cidade_nome,
-            "frase" => $frase
+            "frase" => $frase,
+            // Tabelinhas de coparticipação (mesmo bloco do dashboard). A tabela
+            // completa mostra as duas colunas -> as duas tabelinhas (flags do blade)
+            'pdf'              => ($copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora))['pdf'],
+            'quantidade_copar' => $copart['quantidade_copar'],
+            'status_excecao'   => $copart['status_excecao'],
+            'linha_01'         => $copart['linha_01'],
+            'linha_02'         => $copart['linha_02'],
+            'apenas_valores'   => 0,
         ]);
 
         $pdfPath = $this->novoPdfTemporario();
@@ -428,7 +450,7 @@ class DashboardController extends Controller
         $plano = request()->plano;
         $operadora = request()->operadora;
         $imagem_operadora = Administradora::find($operadora)->logo;
-        $plano_nome = Plano::find($plano)->nome;
+        $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
         $imagem_plano = Administradora::find($operadora)->logo;
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
 
@@ -480,6 +502,9 @@ class DashboardController extends Controller
                 ->get();
             //return $dados;
             $status = $dados->contains('odonto', 0);
+            // Editado à mão em produção (resgatado no deploy de 25/08): a prévia
+            // ambulatorial do servidor usa status_odonto no blade divergente.
+            $status_odonto = $dados->contains('odonto', 1);
 
             $desconto = Desconto::where("tabela_origens_id",$cidade)->where("plano_id",$plano)->where("administradora_id",$operadora)->count();
             $status_desconto = 0;
@@ -489,6 +514,7 @@ class DashboardController extends Controller
 
             return view("cotacao.cotacao-ambulatorial",[
                 "dados" => $dados,
+                "status_odonto" => $status_odonto,
                 "operadora" => $imagem_operadora,
                 "plano_nome" => $plano_nome,
                 "cidade_nome" => $cidade_nome,
@@ -535,7 +561,7 @@ class DashboardController extends Controller
 
         $linhas = count($chaves);
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
-        $plano_nome = Plano::find($plano)->nome;
+        $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
         $linha_01 = "";
         $linha_02 = "";
 
@@ -683,6 +709,8 @@ class DashboardController extends Controller
 
                 $view = \Illuminate\Support\Facades\View::make($viewName,[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,
                     'assinatura' => $assinatura,
@@ -731,6 +759,8 @@ class DashboardController extends Controller
 
                 $view = \Illuminate\Support\Facades\View::make($cabecalhoName,[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
                     'com_coparticipacao' => $com_coparticipacao,
                     'sem_coparticipacao' => $sem_coparticipacao,
                     'apenas_valores' => $apenasvalores,
@@ -908,6 +938,8 @@ class DashboardController extends Controller
 
             $view = \Illuminate\Support\Facades\View::make($viewName,[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
                 'com_coparticipacao' => $com_coparticipacao_amb,
                 'sem_coparticipacao' => $sem_coparticipacao_amb,
                 'image' => $imagem_user,
@@ -996,7 +1028,7 @@ class DashboardController extends Controller
 
         $linhas = count($chaves);
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
-        $plano_nome = Plano::find($plano)->nome;
+        $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
 
         $cidade_uf = TabelaOrigens::find($cidade)->uf;
         $status_excecao = false;
@@ -1178,6 +1210,8 @@ class DashboardController extends Controller
             }
             $view = \Illuminate\Support\Facades\View::make("cotacao.cotacao-ambulatorial-pdf",[
                 'apelido_plano' => Plano::find($plano)?->apelido,
+                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
                 'image' => $image_user,
                 'dados' => $dados,
                 'pdf' => $pdf_copar,

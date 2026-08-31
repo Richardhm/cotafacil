@@ -832,7 +832,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;font-size:1.2em;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
@@ -901,7 +901,7 @@
                     <table width="100%">
 
                         <tr>
-                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.4em;">SEM COPARTICIPAÇÃO *</td>
+                            <td colspan="2" class="header-orange-parcial" style="text-align:center;font-size:1.4em;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
                         </tr>
 
                         @foreach($dadosComOdonto as $faixaEtaria => $valores)

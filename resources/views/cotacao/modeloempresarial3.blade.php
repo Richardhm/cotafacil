@@ -479,6 +479,14 @@
     </table>
 
 
+
+{{-- Tabelinhas de coparticipação (mesmo bloco do dashboard) --}}
+<div style="clear:both;"></div>
+@include('cotacao.partials.copart3', [
+    'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
+    'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+])
+
 </div>
 
 <div class="footer">

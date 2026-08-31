@@ -765,7 +765,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
@@ -868,7 +868,7 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">SEM COPARTICIPAÇÃO *</td>
+                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
 
                         </tr>
 
@@ -966,6 +966,14 @@
         </tr>
 
     </table>
+
+
+{{-- Tabelinhas de coparticipação (mesmo bloco do dashboard) --}}
+<div style="clear:both;"></div>
+@include('cotacao.partials.copart2', [
+    'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
+    'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+])
 
 </div>
 

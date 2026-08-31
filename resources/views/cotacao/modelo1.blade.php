@@ -958,7 +958,7 @@
 
                         <tr>
 
-                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange" style="text-align:center;">COM COPARTICIPAÇÃO</td>
+                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
@@ -1062,7 +1062,7 @@
                         <tr>
 
                             <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange-parcial" style="text-align:center;">
-                                COM COPART PARCIAL *
+                                {{ $rotulo_copart_parcial ?? 'COM COPART PARCIAL *' }}
                                 
 
                             </td>
