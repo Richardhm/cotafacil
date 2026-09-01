@@ -47,6 +47,14 @@
                     volte ao aplicativo e toque em "Já realizei o pagamento".
                 </p>
             @endif
+            @if (!empty($sugerirApp))
+                {{-- App opcional: o navegador do celular funciona normalmente; aqui só sugerimos. --}}
+                <p class="text-sm text-white mb-3 p-2 rounded bg-[rgba(0,0,0,0.25)]">
+                    Prefere usar nosso <strong>aplicativo</strong>?
+                    <a href="https://app.bmsys.com.br/install" target="_blank" class="underline">Instale aqui</a>.
+                    Pelo navegador também funciona normalmente.
+                </p>
+            @endif
             <input type="hidden" name="timezone" id="timezone">
             <input type="hidden" name="screen_resolution" id="screen_resolution">
             <input type="hidden" name="canvas_hash" id="canvas_hash">

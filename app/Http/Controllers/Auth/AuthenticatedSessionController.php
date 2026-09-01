@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
 
     public function create(Request $request)
     {
-        // Mobile browsers devem usar o aplicativo
+        // Detecta navegador de celular (define o banner do app e o modo pagamento)
         $ua = $request->userAgent() ?? '';
         $isMobileBrowser = preg_match('/Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i', $ua)
             && !str_contains($ua, 'iPad');
@@ -46,12 +46,15 @@ class AuthenticatedSessionController extends Controller
 
         $modoPagamento = $isMobileBrowser && $querPagar;
 
-        if ($isMobileBrowser && ! $modoPagamento) {
-            return view('auth.mobile-redirect');
-        }
-
+        // App opcional (01/09/2026): o celular abre o login normal pelo navegador,
+        // com um banner sugerindo o aplicativo. A view auth/mobile-redirect ficou
+        // órfã de propósito — rollback fácil: restaurar aqui o
+        // "if ($isMobileBrowser && ! $modoPagamento) return view('auth.mobile-redirect');".
         return response()
-            ->view('auth.login', ['modoPagamento' => $modoPagamento])
+            ->view('auth.login', [
+                'modoPagamento' => $modoPagamento,
+                'sugerirApp'    => $isMobileBrowser && ! $modoPagamento,
+            ])
             ->header('Accept-CH', 'Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Mobile');
     }
 
@@ -124,11 +127,16 @@ class AuthenticatedSessionController extends Controller
         $device       = null;
         $limitReached = false;
 
+        // App opcional: celular pelo navegador ocupa a MESMA vaga do aplicativo
+        // (device_type 'mobile_app' contra max_mobiles). A API de produção só conta
+        // linhas mobile_app — um tipo próprio faria 1 aparelho queimar 2 vagas.
+        $tipo = $fingerprint['is_mobile'] ? 'mobile_app' : 'desktop';
+
         // Limite por conta (default 1) — antes era ">= 1" fixo em três pontos,
         // e liberar um computador a mais exigia UPDATE na mão em user_devices.
-        $limiteDesktops = Auth::user()->limiteDesktops();
+        $limite = $fingerprint['is_mobile'] ? Auth::user()->limiteMobiles() : Auth::user()->limiteDesktops();
 
-        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, $limiteDesktops, &$device, &$limitReached) {
+        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, $tipo, $limite, &$device, &$limitReached) {
             // Busca qualquer registro existente para este UUID (ativo ou inativo)
             $existing = UserDevice::where('user_id', $userId)
                 ->where('device_uuid', $deviceUuid)
@@ -142,14 +150,14 @@ class AuthenticatedSessionController extends Controller
                     return;
                 }
 
-                // Device inativo — verifica vaga desktop
-                $desktopTotal = UserDevice::where('user_id', $userId)
-                    ->where('device_type', 'desktop')
+                // Device inativo — verifica vaga do tipo
+                $totalAtivos = UserDevice::where('user_id', $userId)
+                    ->where('device_type', $tipo)
                     ->where('is_active', true)
                     ->lockForUpdate()
                     ->count();
 
-                if ($desktopTotal >= $limiteDesktops) {
+                if ($totalAtivos >= $limite) {
                     $limitReached = true;
                     return;
                 }
@@ -162,20 +170,20 @@ class AuthenticatedSessionController extends Controller
             // UUID desconhecido — verifica se o hardware já está cadastrado (outro browser ou aba anônima)
             $byHardware = UserDevice::where('user_id', $userId)
                 ->where('hardware_fingerprint', $fingerprint['hardware_fingerprint'])
-                ->where('device_type', 'desktop')
+                ->where('device_type', $tipo)
                 ->where('is_blocked', false)
                 ->lockForUpdate()
                 ->first();
 
             if ($byHardware) {
                 if (!$byHardware->is_active) {
-                    $desktopTotal = UserDevice::where('user_id', $userId)
-                        ->where('device_type', 'desktop')
+                    $totalAtivos = UserDevice::where('user_id', $userId)
+                        ->where('device_type', $tipo)
                         ->where('is_active', true)
                         ->lockForUpdate()
                         ->count();
 
-                    if ($desktopTotal >= $limiteDesktops) {
+                    if ($totalAtivos >= $limite) {
                         $limitReached = true;
                         return;
                     }
@@ -186,14 +194,36 @@ class AuthenticatedSessionController extends Controller
                 return;
             }
 
-            // Hardware desconhecido — desktop verdadeiramente novo
-            $desktopTotal = UserDevice::where('user_id', $userId)
-                ->where('device_type', 'desktop')
+            // Rede de segurança (mesma filosofia do AuthController da API): identidade
+            // de navegador mobile é instável (iOS limpa localStorage, cookie some).
+            // Com limite 1 e exatamente UMA linha mobile não bloqueada, UUID/hardware
+            // desconhecido REAPROVEITA a vaga trocando o UUID — é o dono trocando de
+            // identidade, não um segundo aparelho ganhando vaga extra.
+            if ($tipo === 'mobile_app' && $limite === 1) {
+                $mobiles = UserDevice::where('user_id', $userId)
+                    ->where('device_type', 'mobile_app')
+                    ->where('is_blocked', false)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($mobiles->count() === 1) {
+                    $mobiles->first()->update([
+                        'device_uuid' => $deviceUuid,
+                        'is_active'   => true,
+                    ]);
+                    $device = $mobiles->first()->fresh();
+                    return;
+                }
+            }
+
+            // Hardware desconhecido — dispositivo verdadeiramente novo
+            $totalAtivos = UserDevice::where('user_id', $userId)
+                ->where('device_type', $tipo)
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->count();
 
-            if ($desktopTotal >= $limiteDesktops) {
+            if ($totalAtivos >= $limite) {
                 $limitReached = true;
                 return;
             }
@@ -205,7 +235,7 @@ class AuthenticatedSessionController extends Controller
                 'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
                 'device_name'          => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
                 'device_model'         => $fingerprint['device_model'],
-                'device_type'          => 'desktop',
+                'device_type'          => $tipo,
                 'is_active'            => true,
                 'is_blocked'           => false,
                 'registered_at'        => now(),
@@ -241,21 +271,38 @@ class AuthenticatedSessionController extends Controller
             ]);
 
             Auth::guard('web')->logout();
+
+            if ($tipo === 'mobile_app') {
+                return back()->withErrors([
+                    'email' => $limite === 1
+                        ? 'Limite de celulares atingido. Sua conta já possui 1 celular registrado. Contate o suporte para trocar de aparelho.'
+                        : "Limite de celulares atingido. Sua conta permite {$limite} celulares e todos já estão registrados. Contate o suporte para trocar de aparelho.",
+                ])->onlyInput('email');
+            }
+
             return back()->withErrors([
-                'email' => $limiteDesktops === 1
+                'email' => $limite === 1
                     ? 'Limite de computadores atingido. Sua conta já possui 1 computador registrado. Contate o suporte para trocar de dispositivo.'
-                    : "Limite de computadores atingido. Sua conta permite {$limiteDesktops} computadores e todos já estão registrados. Contate o suporte para trocar de dispositivo.",
+                    : "Limite de computadores atingido. Sua conta permite {$limite} computadores e todos já estão registrados. Contate o suporte para trocar de dispositivo.",
             ])->onlyInput('email');
         }
 
-        // Atualiza device_name/fingerprint para refletir versão atual do browser
-        $device->update([
-            'last_used_at'        => now(),
-            'device_name'         => trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? '')),
-            'device_fingerprint'  => $fingerprint['device_fingerprint'],
+        // Atualiza fingerprint para refletir versão atual do browser. Em linha
+        // mobile NÃO sobrescreve device_name: o app grava ali o modelo do aparelho
+        // (ex.: "moto g14") e o AuthController da API reencontra a vaga por esse
+        // nome — sobrescrever com "Chrome 138 em Android" quebraria o match.
+        $atualizacao = [
+            'last_used_at'         => now(),
+            'device_fingerprint'   => $fingerprint['device_fingerprint'],
             'hardware_fingerprint' => $fingerprint['hardware_fingerprint'],
-            'device_model'        => $fingerprint['device_model'],
-        ]);
+            'device_model'         => $fingerprint['device_model'],
+        ];
+
+        if ($device->device_type !== 'mobile_app') {
+            $atualizacao['device_name'] = trim(($fingerprint['browser'] ?? '') . ' em ' . ($fingerprint['os'] ?? ''));
+        }
+
+        $device->update($atualizacao);
 
         // Persiste o UUID também em cookie (5 anos) — se o localStorage for limpo, o
         // próximo login reencontra este mesmo dispositivo pelo cookie.
