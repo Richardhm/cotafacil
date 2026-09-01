@@ -189,6 +189,49 @@ test('com 1 vaga, o segundo celular derruba a sessao web do primeiro (e o deskto
     expect($sessaoDesktop->logged_out_at)->toBeNull();
 });
 
+test('sessao de guia anonima (UUID orfao) tambem cai quando outro celular loga', function () {
+    $user = User::factory()->create(['layout_id' => null]);
+
+    // Celular A, navegador normal
+    loginComo($user, UA_MOBILE, [
+        'device_uuid'       => '11111111-aaaa-bbbb-cccc-000000000001',
+        'screen_resolution' => '1080x2400',
+    ]);
+    $this->flushSession();
+    $this->app['auth']->forgetGuards();
+
+    // Guia anonima do MESMO celular A: sem localStorage, inventa UUID novo e entra
+    // pelo match de hardware — a sessao fica com UUID que nao existe em user_devices
+    loginComo($user, UA_MOBILE, [
+        'device_uuid'       => '33333333-aaaa-bbbb-cccc-000000000003',
+        'screen_resolution' => '1080x2400',
+    ]);
+    $this->assertAuthenticated();
+    $sessaoOrfa = \App\Models\LoginSession::where('user_id', $user->id)
+        ->where('device_uuid', '33333333-aaaa-bbbb-cccc-000000000003')
+        ->whereNull('logged_out_at')->first();
+    expect($sessaoOrfa)->not->toBeNull();
+    // ... e de fato o UUID dela e orfao (a linha do aparelho manteve o UUID original)
+    expect(UserDevice::where('user_id', $user->id)->where('device_uuid', '33333333-aaaa-bbbb-cccc-000000000003')->exists())->toBeFalse();
+
+    $this->flushSession();
+    $this->app['auth']->forgetGuards();
+
+    // Celular B (hardware diferente) loga e rouba a vaga
+    loginComo($user, UA_MOBILE, [
+        'device_uuid'       => '22222222-aaaa-bbbb-cccc-000000000002',
+        'screen_resolution' => '720x1600',
+    ]);
+    $this->assertAuthenticated();
+
+    // A sessao orfa caiu junto (derrubada por is_mobile, nao por UUID)
+    expect($sessaoOrfa->fresh()->logged_out_at)->not->toBeNull();
+    expect((bool) $sessaoOrfa->fresh()->was_displaced)->toBeTrue();
+
+    // Sobrou aberta so a sessao mobile do celular B
+    expect(\App\Models\LoginSession::where('user_id', $user->id)->where('is_mobile', true)->whereNull('logged_out_at')->count())->toBe(1);
+});
+
 test('modo pagamento continua sem registrar dispositivo', function () {
     $user = User::factory()->create(['layout_id' => null]);
 

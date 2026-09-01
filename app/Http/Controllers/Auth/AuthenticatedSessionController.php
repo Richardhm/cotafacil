@@ -126,7 +126,6 @@ class AuthenticatedSessionController extends Controller
         // Verifica/registra dispositivo com proteção contra race condition
         $device       = null;
         $limitReached = false;
-        $uuidRoubado  = null; // UUID antigo da linha mobile reaproveitada pela rede de segurança
 
         // App opcional: celular pelo navegador ocupa a MESMA vaga do aplicativo
         // (device_type 'mobile_app' contra max_mobiles). A API de produção só conta
@@ -137,7 +136,7 @@ class AuthenticatedSessionController extends Controller
         // e liberar um computador a mais exigia UPDATE na mão em user_devices.
         $limite = $fingerprint['is_mobile'] ? Auth::user()->limiteMobiles() : Auth::user()->limiteDesktops();
 
-        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, $tipo, $limite, &$device, &$limitReached, &$uuidRoubado) {
+        DB::transaction(function () use ($userId, $deviceUuid, $fingerprint, $tipo, $limite, &$device, &$limitReached) {
             // Busca qualquer registro existente para este UUID (ativo ou inativo)
             $existing = UserDevice::where('user_id', $userId)
                 ->where('device_uuid', $deviceUuid)
@@ -208,7 +207,6 @@ class AuthenticatedSessionController extends Controller
                     ->get();
 
                 if ($mobiles->count() === 1) {
-                    $uuidRoubado = $mobiles->first()->device_uuid;
                     $mobiles->first()->update([
                         'device_uuid' => $deviceUuid,
                         'is_active'   => true,
@@ -310,24 +308,42 @@ class AuthenticatedSessionController extends Controller
         // próximo login reencontra este mesmo dispositivo pelo cookie.
         Cookie::queue(self::DEVICE_COOKIE, $deviceUuid, 60 * 24 * 365 * 5);
 
-        // Desloca sessões anteriores do mesmo dispositivo (outros dispositivos ficam
-        // ativos) — e, se a rede de segurança roubou a vaga de celular, também as
-        // sessões web do UUID antigo da linha: com 1 vaga, fica 1 celular USANDO por
-        // vez. As sessões do app não passam por aqui (token na API) e não são afetadas.
-        $uuidsDeslocar = array_filter([$deviceUuid, $uuidRoubado]);
-
-        $sessoesDeslocadas = LoginSession::where('user_id', $userId)
-            ->whereIn('device_uuid', $uuidsDeslocar)
+        // Desloca sessões anteriores do mesmo dispositivo (outros dispositivos ficam ativos)
+        $sessoesDoMesmoDispositivo = LoginSession::where('user_id', $userId)
+            ->where('device_uuid', $deviceUuid)
             ->whereNull('logged_out_at')
             ->pluck('session_id');
 
-        if ($sessoesDeslocadas->isNotEmpty()) {
+        if ($sessoesDoMesmoDispositivo->isNotEmpty()) {
             LoginSession::where('user_id', $userId)
-                ->whereIn('device_uuid', $uuidsDeslocar)
+                ->where('device_uuid', $deviceUuid)
                 ->whereNull('logged_out_at')
                 ->update(['logged_out_at' => now(), 'was_displaced' => true]);
 
-            DB::table('sessions')->whereIn('id', $sessoesDeslocadas)->delete();
+            DB::table('sessions')->whereIn('id', $sessoesDoMesmoDispositivo)->delete();
+        }
+
+        // App opcional: 1 vaga de celular = 1 celular USANDO por vez. Derruba TODAS
+        // as outras sessões web mobile abertas, pelo flag is_mobile — derrubar por
+        // UUID não alcança sessões de guia anônima, que entram pelo match de
+        // hardware carregando um UUID órfão (visto em produção em 01/09/2026).
+        // Desktop, app (token na API) e sessões de pagamento não são afetados.
+        if ($tipo === 'mobile_app' && $limite === 1) {
+            $outrasSessoesMobile = LoginSession::where('user_id', $userId)
+                ->where('is_mobile', true)
+                ->whereNull('logged_out_at')
+                ->where('os', 'not like', '%(pagamento)')
+                ->pluck('session_id');
+
+            if ($outrasSessoesMobile->isNotEmpty()) {
+                LoginSession::where('user_id', $userId)
+                    ->where('is_mobile', true)
+                    ->whereNull('logged_out_at')
+                    ->where('os', 'not like', '%(pagamento)')
+                    ->update(['logged_out_at' => now(), 'was_displaced' => true]);
+
+                DB::table('sessions')->whereIn('id', $outrasSessoesMobile)->delete();
+            }
         }
 
         $geo = app(GeoIpService::class)->resolve($request->ip());
