@@ -140,6 +140,55 @@ test('desktop continua barrado no limite de computadores como hoje', function ()
     expect(session('errors')->first('email'))->toContain('Limite de computadores');
 });
 
+test('com 1 vaga, o segundo celular derruba a sessao web do primeiro (e o desktop fica de pe)', function () {
+    $user = User::factory()->create(['layout_id' => null]);
+
+    // Computador loga primeiro — nao pode ser afetado pela dança dos celulares
+    loginComo($user, UA_DESKTOP, ['device_uuid' => '99999999-dddd-eeee-ffff-000000000009']);
+    $this->assertAuthenticated();
+    $this->flushSession();
+    $this->app['auth']->forgetGuards();
+
+    // Celular 1 loga (resolucao propria para diferenciar o hardware do celular 2)
+    loginComo($user, UA_MOBILE, [
+        'device_uuid'       => '11111111-aaaa-bbbb-cccc-000000000001',
+        'screen_resolution' => '1080x2400',
+    ]);
+    $this->assertAuthenticated();
+    expect(\App\Models\LoginSession::where('user_id', $user->id)->whereNull('logged_out_at')->count())->toBe(2);
+
+    // Celular 2: outro aparelho, sessao nova (sem passar pelo /logout).
+    // flushSession nao basta: o guard fica em memoria entre requests do teste
+    // e o middleware guest devolveria o POST /login sem executar o store().
+    $this->flushSession();
+    $this->app['auth']->forgetGuards();
+    loginComo($user, UA_MOBILE, [
+        'device_uuid'       => '22222222-aaaa-bbbb-cccc-000000000002',
+        'screen_resolution' => '720x1600',
+    ]);
+    $this->assertAuthenticated();
+
+    // A vaga foi roubada (mesma linha mobile, UUID novo; desktop + mobile = 2 linhas)
+    expect(UserDevice::where('user_id', $user->id)->count())->toBe(2);
+    expect(UserDevice::where('user_id', $user->id)->where('device_type', 'mobile_app')->count())->toBe(1);
+    expect(UserDevice::where('user_id', $user->id)->where('device_type', 'mobile_app')->first()->device_uuid)
+        ->toBe('22222222-aaaa-bbbb-cccc-000000000002');
+
+    // ... e a sessao web do celular 1 foi derrubada na hora
+    $sessaoAntiga = \App\Models\LoginSession::where('user_id', $user->id)
+        ->where('device_uuid', '11111111-aaaa-bbbb-cccc-000000000001')
+        ->first();
+    expect($sessaoAntiga->logged_out_at)->not->toBeNull();
+    expect((bool) $sessaoAntiga->was_displaced)->toBeTrue();
+
+    // Ficam abertas exatamente: a do computador e a do celular 2
+    expect(\App\Models\LoginSession::where('user_id', $user->id)->whereNull('logged_out_at')->count())->toBe(2);
+    $sessaoDesktop = \App\Models\LoginSession::where('user_id', $user->id)
+        ->where('device_uuid', '99999999-dddd-eeee-ffff-000000000009')
+        ->first();
+    expect($sessaoDesktop->logged_out_at)->toBeNull();
+});
+
 test('modo pagamento continua sem registrar dispositivo', function () {
     $user = User::factory()->create(['layout_id' => null]);
 
