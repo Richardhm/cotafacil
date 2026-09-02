@@ -9,6 +9,7 @@
     <h4 class="text-white">{{$plano_nome}}</h4>
     <p class="text-white text-center">{{$cidade_nome}}</p>
 </div>
+@if($status_odonto)
 <div class="flex justify-center items-center w-full
 py-0.5 mb-1 text-sm font-medium
 text-white focus:outline-none bg-gray-700 rounded-lg border
@@ -16,7 +17,9 @@ border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10
 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity-10 dark:hover:text-gray-900">
     Com Odonto
 </div>
+@endif
 
+@if($status_odonto)
 <table class="min-w-full bg-gray-300 bg-opacity-20 rounded-lg bordered" id="tabela_aqui">
     <thead>
 
@@ -53,9 +56,9 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
                 if (!isset($dadosComOdonto[$faixaEtaria])) {
                     $dadosComOdonto[$faixaEtaria] = [
                         'faixa_etaria_id' => $faixaEtaria,
-                        'apartamento_com_copar' => 0,
+                        'apartamento_com_copar' => 0, '1_com_copar' => 0, '2_com_copar' => 0, 'com_copar' => 0,
                         'enfermaria_com_copar' => 0,
-                        'apartamento_sem_copar' => 0,
+                        'apartamento_sem_copar' => 0, '1_sem_copar' => 0, '2_sem_copar' => 0, 'sem_copar' => 0,
                         'enfermaria_sem_copar' => 0,
                         'quantidade' => $quantidade
                     ];
@@ -64,7 +67,8 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
             }
         @endphp
     @endforeach
-
+	@endif
+    @if($status_odonto)
 
     @foreach($dadosComOdonto as $faixaEtaria => $valores)
         @for($i=0;$i<$valores['quantidade'];$i++)
@@ -126,7 +130,7 @@ border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10
 focus:ring-4 focus:ring-gray-200 bg-red-400">
     Gerar Imagem
 </button>
-
+@endif
 
 @if($status)
 
@@ -152,7 +156,10 @@ focus:ring-4 focus:ring-gray-200 bg-red-400">
         @php
             $dadosSemOdontoComCopar = [];
             $dadosSemOdontoSemCopar = [];
-
+			$com_copar = 0;
+        	$totalApartamentoSemOdonto_com_copar = 0;
+        	$totalApartamentoSemOdonto_sem_copar = 0;
+        	$sem_copar = 0;
 
         @endphp
 
@@ -175,9 +182,9 @@ focus:ring-4 focus:ring-gray-200 bg-red-400">
                     if (!isset($dadosSemOdonto[$faixaEtariaSemOdonto])) {
                         $dadosSemOdonto[$faixaEtariaSemOdonto] = [
                             'faixa_etaria_id' => $faixaEtariaSemOdonto,
-                            'apartamento_com_copar' => 0,
+                            'apartamento_com_copar' => 0, '1_com_copar' => 0, '2_com_copar' => 0, 'com_copar' => 0,
                             'enfermaria_com_copar' => 0,
-                            'apartamento_sem_copar' => 0,
+                            'apartamento_sem_copar' => 0, '1_sem_copar' => 0, '2_sem_copar' => 0, 'sem_copar' => 0,
                             'enfermaria_sem_copar' => 0,
                             'quantidade' => $quantidadeSemOdonto
                         ];

@@ -632,11 +632,11 @@
 
                 'faixa_etaria_id' => $faixaEtaria,
 
-                'apartamento_com_copar' => 0,
+                'apartamento_com_copar' => 0, '1_com_copar' => 0, '2_com_copar' => 0, 'com_copar' => 0,
 
                 'enfermaria_com_copar' => 0,
 
-                'apartamento_sem_copar' => 0,
+                'apartamento_sem_copar' => 0, '1_sem_copar' => 0, '2_sem_copar' => 0, 'sem_copar' => 0,
 
                 'enfermaria_sem_copar' => 0,
 

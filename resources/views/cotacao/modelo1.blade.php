@@ -801,11 +801,11 @@
 
                 'faixa_etaria_id' => $faixaEtaria,
 
-                'apartamento_com_copar' => 0,
+                'apartamento_com_copar' => 0, '1_com_copar' => 0, '2_com_copar' => 0, 'com_copar' => 0,
 
                 'enfermaria_com_copar' => 0,
 
-                'apartamento_sem_copar' => 0,
+                'apartamento_sem_copar' => 0, '1_sem_copar' => 0, '2_sem_copar' => 0, 'sem_copar' => 0,
 
                 'enfermaria_sem_copar' => 0,
 
@@ -1256,7 +1256,7 @@
 
                 <div class="lista-coparticipacao" style="margin: 0 0 0 50px; padding: 0; line-height: 1;">
 
-                    @if(isset($pdf->linha03) && !$apenas_valores)
+                    @if(isset($pdf->linha03) && !$apenas_valores && !empty($pdf->linha03))
 
                         <p style="font-size:1.5em;margin:0;padding:0;font-weight:bold;color:white;">** {{$pdf->linha03}}</p>
 
