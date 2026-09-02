@@ -101,7 +101,7 @@ class DashboardController extends Controller
             "frase" => $frase,
             // Tabelinhas de coparticipação (mesmo bloco do dashboard). A tabela
             // completa mostra as duas colunas -> as duas tabelinhas (flags do blade)
-            'pdf'              => ($copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora))['pdf'],
+            'pdf'              => ($copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora, ambulatorial: true))['pdf'],
             'quantidade_copar' => $copart['quantidade_copar'],
             'status_excecao'   => $copart['status_excecao'],
             'linha_01'         => $copart['linha_01'],
@@ -650,9 +650,13 @@ class DashboardController extends Controller
                     $pdf_copar = PdfExcecao::where("plano_id",$plano)->where("tabela_origens_id",$cidade)->first();
                     $quantidade_cop = 1;
                 } else {
+                    // Cotação normal usa SOMENTE as linhas normais (ambulatorial=0):
+                    // a linha ambulatorial=1 (caso Porto Alegre/SS) é exclusiva da
+                    // cotação ambulatorial.
                     $hasFullMatch = Pdf::where('plano_id', $plano)
                         ->where('tabela_origens_id', $cidade)
                         ->where('administradora_id', $administradora)
+                        ->where('ambulatorial', 0)
                         ->exists();
 
                     if ($hasFullMatch) {
@@ -661,12 +665,14 @@ class DashboardController extends Controller
                         $pdf_copar = Pdf::where('plano_id', $plano)
                             ->where('tabela_origens_id', $cidade)
                             ->where('administradora_id', $administradora)
+                            ->where('ambulatorial', 0)
                             ->first();
 
                     } else {
                         // Verifica se existe plano_id e tabela_origens_id
                         $hasTabelaOrigens = Pdf::where('plano_id', $plano)
                             ->where('tabela_origens_id', $cidade)
+                            ->where('ambulatorial', 0)
                             ->exists();
 
                         if ($hasTabelaOrigens) {
@@ -674,11 +680,12 @@ class DashboardController extends Controller
                             $quantidade_cop = 1;
                             $pdf_copar = Pdf::where('plano_id', $plano)
                                 ->where('tabela_origens_id', $cidade)
+                                ->where('ambulatorial', 0)
                                 ->first();
 
                         } else {
                             // Caso apenas plano_id corresponda
-                            $pdf_copar = Pdf::where('plano_id', $plano)->first();
+                            $pdf_copar = Pdf::where('plano_id', $plano)->where('ambulatorial', 0)->first();
 
                         }
                     }
@@ -875,9 +882,10 @@ class DashboardController extends Controller
             if ($hasTabelaOrigens) {
                 $pdf_copar = Pdf::where('plano_id', $plano)
                     ->where('tabela_origens_id',$cidade)
+                    ->orderByDesc('ambulatorial')
                     ->first();
             } else {
-                $pdf_copar = Pdf::where('plano_id', $plano)->first();
+                $pdf_copar = Pdf::where('plano_id', $plano)->orderByDesc('ambulatorial')->first();
             }
 
             $layout = auth()->user()->layout_id;
@@ -902,8 +910,11 @@ class DashboardController extends Controller
                     ->where('tabela_origens_id',$cidade)
                     ->exists();
                 if ($hasTabelaOrigens) {
+                    // Coparticipação própria do ambulatorial (ambulatorial=1) quando
+                    // cadastrada; senão a linha normal da cidade — caso Porto Alegre/SS.
                     $pdf_copar = Pdf::where('plano_id', $plano)
                         ->where('tabela_origens_id',$cidade)
+                        ->orderByDesc('ambulatorial')
                         ->first();
 
                     if($pdf_copar->linha02) {
@@ -917,7 +928,7 @@ class DashboardController extends Controller
 
 
                 } else {
-                    $pdf_copar = Pdf::where('plano_id', $plano)->first();
+                    $pdf_copar = Pdf::where('plano_id', $plano)->orderByDesc('ambulatorial')->first();
                     if(isset($pdf_copar->linha02) && $pdf_copar->linha02) {
                         $itens = explode('|', $pdf_copar->linha02);
                         $itensFormatados = array_map(function($item) {
@@ -1040,9 +1051,10 @@ class DashboardController extends Controller
             if ($hasTabelaOrigens) {
                 $pdf_copar = Pdf::where('plano_id', $plano)
                     ->where('tabela_origens_id',$cidade)
+                    ->orderByDesc('ambulatorial')
                     ->first();
             } else {
-                $pdf_copar = Pdf::where('plano_id', $plano)->first();
+                $pdf_copar = Pdf::where('plano_id', $plano)->orderByDesc('ambulatorial')->first();
             }
         }
 
@@ -1202,9 +1214,10 @@ class DashboardController extends Controller
             if ($hasTabelaOrigens) {
                 $pdf_copar = Pdf::where('plano_id', $plano)
                     ->where('tabela_origens_id',$cidade)
+                    ->orderByDesc('ambulatorial')
                     ->first();
             } else {
-                $pdf_copar = Pdf::where('plano_id', $plano)->first();
+                $pdf_copar = Pdf::where('plano_id', $plano)->orderByDesc('ambulatorial')->first();
             }
             $view = \Illuminate\Support\Facades\View::make("cotacao.cotacao-ambulatorial-pdf",[
                 'apelido_plano' => Plano::find($plano)?->apelido,

@@ -207,6 +207,9 @@ class TabelaController extends Controller
             [
                 'plano_id' => $request->plano_coparticipacao,
                 'tabela_origens_id' => $request->cidade_coparticipacao,
+                // O CRUD só gerencia a linha normal; a linha da cotação
+                // ambulatorial (ambulatorial=1) é cadastrada via SQL.
+                'ambulatorial' => 0,
             ],
             [
                 'linha01' => $request->linha01,
@@ -246,12 +249,12 @@ class TabelaController extends Controller
         if($cidade != 3 && $cidade != 4 && $cidade != 5 && $cidade != 6 && $cidade != 7) {
 
             // Primeiro verifica plano_id e tabela_origens_id
-            $pdf = Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade);
+            $pdf = Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade)->where('ambulatorial', 0);
             if ($pdf->exists()) {
                 return $pdf->first();
             }
             // Caso não encontre, busca apenas por plano_id
-            $pdf = Pdf::where('plano_id', $plano);
+            $pdf = Pdf::where('plano_id', $plano)->where('ambulatorial', 0);
             if ($pdf->exists()) {
                 return $pdf->first();
             }
@@ -264,7 +267,7 @@ class TabelaController extends Controller
                 return $pdf->first();
             }
             // Caso não encontre, busca apenas por plano_id
-            $pdf = Pdf::where('plano_id', $plano);
+            $pdf = Pdf::where('plano_id', $plano)->where('ambulatorial', 0);
             if ($pdf->exists()) {
                 return $pdf->first();
             }

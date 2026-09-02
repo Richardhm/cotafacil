@@ -12,6 +12,7 @@ class Pdf extends Model
     protected $fillable = [
         'plano_id',
         'tabela_origens_id',
+        'ambulatorial',
         'linha01',
         'linha02',
         'linha03',

@@ -15,7 +15,13 @@ use App\Models\PdfExcecao;
 class CoparticipacaoCotacao
 {
     /** @return array{pdf: ?object, quantidade_copar: int, status_excecao: bool, linha_01: string, linha_02: string} */
-    public static function montar(int $plano, int $cidade, ?int $administradora = null): array
+    /**
+     * $ambulatorial: a cotação ambulatorial pode ter coparticipações próprias
+     * (linha da pdf com ambulatorial=1, caso Porto Alegre/Super Simples).
+     * true = prefere a linha ambulatorial e cai na normal se não houver;
+     * false = usa SOMENTE a linha normal (ambulatorial=0).
+     */
+    public static function montar(int $plano, int $cidade, ?int $administradora = null, bool $ambulatorial = false): array
     {
         $resultado = ['pdf' => null, 'quantidade_copar' => 0, 'status_excecao' => false, 'linha_01' => '', 'linha_02' => ''];
 
@@ -27,14 +33,20 @@ class CoparticipacaoCotacao
             return $resultado;
         }
 
+        $filtroAmb = function ($query) use ($ambulatorial) {
+            return $ambulatorial
+                ? $query->orderByDesc('ambulatorial')
+                : $query->where('ambulatorial', 0);
+        };
+
         $pdf = null;
         if ($administradora) {
-            $pdf = Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade)
-                ->where('administradora_id', $administradora)->first();
+            $pdf = $filtroAmb(Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade)
+                ->where('administradora_id', $administradora))->first();
         }
         $pdf = $pdf
-            ?? Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade)->first()
-            ?? Pdf::where('plano_id', $plano)->first();
+            ?? $filtroAmb(Pdf::where('plano_id', $plano)->where('tabela_origens_id', $cidade))->first()
+            ?? $filtroAmb(Pdf::where('plano_id', $plano))->first();
 
         if (!$pdf) {
             return $resultado;
