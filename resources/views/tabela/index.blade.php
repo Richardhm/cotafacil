@@ -80,7 +80,11 @@
                             $.each(response.planos_sem_grupo, function(i, plano) {
                                 planosPermitidos.push(Number(plano.id));
                             });
-                            if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                            if (response.planos_ambulatoriais && response.planos_ambulatoriais.length) {
+                                $.each(response.planos_ambulatoriais, function(i, plano) {
+                                    planosPermitidos.push(Number(plano.id));
+                                });
+                            } else if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
                                 planosPermitidos.push(Number(response.plano_ambulatorial_id));
                             }
 

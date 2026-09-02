@@ -371,36 +371,34 @@ class DashboardController extends Controller
             ];
         });
 
-        // Verificar se existe pelo menos um valor ambulatorial (acomodacao_id=3, valor>0) para operadora+cidade
-        $temAmbulatorial = DB::table('tabelas')
-            ->where('administradora_id', $administradora_id)
-            ->where('tabela_origens_id', $tabela_origens_id)
-            ->where('acomodacao_id', 3)
-            ->where('valor', '>', 0)
-            ->exists();
-
-        // Se existir, buscar o plano_id ambulatorial disponível na assinatura do usuário
-        $planoAmbulatorialId = null;
-        if ($temAmbulatorial) {
-            $planoAmbulatorialId = DB::table('tabelas')
-                ->join('administradora_planos', function ($join) use ($administradora_id, $tabela_origens_id, $assinaturaId) {
-                    $join->on('tabelas.plano_id', '=', 'administradora_planos.plano_id')
-                        ->where('administradora_planos.administradora_id', $administradora_id)
-                        ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
-                        ->where('administradora_planos.assinatura_id', $assinaturaId);
-                })
-                ->where('tabelas.administradora_id', $administradora_id)
-                ->where('tabelas.tabela_origens_id', $tabela_origens_id)
-                ->where('tabelas.acomodacao_id', 3)
-                ->where('tabelas.valor', '>', 0)
-                ->value('tabelas.plano_id');
-        }
+        // Regra dinâmica do Ambulatorial: TODO plano desta operadora+cidade+assinatura
+        // que tenha valor ambulatorial cadastrado (acomodacao_id=3, valor>0) ganha a
+        // opção — não só o Individual. Caso Porto Alegre (63): Individual E Super
+        // Simples têm tabela ambulatorial, então os dois aparecem.
+        $planosAmbulatoriais = DB::table('tabelas')
+            ->join('planos', 'planos.id', '=', 'tabelas.plano_id')
+            ->join('administradora_planos', function ($join) use ($administradora_id, $tabela_origens_id, $assinaturaId) {
+                $join->on('tabelas.plano_id', '=', 'administradora_planos.plano_id')
+                    ->where('administradora_planos.administradora_id', $administradora_id)
+                    ->where('administradora_planos.tabela_origens_id', $tabela_origens_id)
+                    ->where('administradora_planos.assinatura_id', $assinaturaId);
+            })
+            ->where('tabelas.administradora_id', $administradora_id)
+            ->where('tabelas.tabela_origens_id', $tabela_origens_id)
+            ->where('tabelas.acomodacao_id', 3)
+            ->where('tabelas.valor', '>', 0)
+            ->select('planos.id', 'planos.nome')
+            ->distinct()
+            ->orderBy('planos.nome')
+            ->get();
 
         return response()->json([
             'planos_por_grupo'      => $planosPorGrupo,
             'planos_sem_grupo'      => $planosSemGrupo,
-            'tem_ambulatorial'      => $temAmbulatorial,
-            'plano_ambulatorial_id' => $planoAmbulatorialId,
+            // Compat: telas antigas leem tem_ambulatorial/plano_ambulatorial_id (1 só)
+            'tem_ambulatorial'      => $planosAmbulatoriais->isNotEmpty(),
+            'plano_ambulatorial_id' => optional($planosAmbulatoriais->first())->id,
+            'planos_ambulatoriais'  => $planosAmbulatoriais,
         ]);
     }
 

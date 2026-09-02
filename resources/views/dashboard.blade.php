@@ -486,17 +486,22 @@
                            // Inicializa interatividade dos Accordions
                            initAccordion();
 
-                           // Adiciona opção Ambulatorial se disponível para essa operadora+cidade
-                           if (response.tem_ambulatorial && response.plano_ambulatorial_id) {
+                           // Opções Ambulatoriais: um radio por plano que tenha tabela
+                           // ambulatorial nesta operadora+cidade (ex.: Porto Alegre tem
+                           // Individual E Super Simples). Com um plano só, mantém o rótulo
+                           // "Ambulatorial" de sempre; com mais de um, "Nome - Ambulatorial".
+                           let planosAmb = response.planos_ambulatoriais || [];
+                           $.each(planosAmb, function (i, plano) {
+                               let rotuloAmb = planosAmb.length > 1 ? `${plano.nome} - Ambulatorial` : 'Ambulatorial';
                                planosContainer.append(`
-                                   <label class="flex items-center p-2 rounded-lg w-full" style="border:2px solid white;">
+                                   <label class="flex items-center p-2 rounded-lg w-full mb-2" style="border:2px solid white;">
                                        <input type="radio" name="planos-radio"
-                                              value="${response.plano_ambulatorial_id}"
+                                              value="${plano.id}"
                                               class="w-4 h-4 text-purple-600 border-gray-300"
                                               data-ambulatorial="1">
-                                       <span class="ml-2 text-white text-sm">Ambulatorial</span>
+                                       <span class="ml-2 text-white text-sm">${rotuloAmb}</span>
                                    </label>`);
-                           }
+                           });
 
                            planosContainer.removeClass("hidden");
                        },
