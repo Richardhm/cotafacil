@@ -52,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'prevent-simultaneous-logins' => PreventSimultaneousLogins::class,
             'apenasDesenvolvedores' => ApenasDesenvolvedor::class,
+            'apenasVendas' => \App\Http\Middleware\ApenasVendas::class,
             'apenasAdministradores' => ApenasAdministrador::class,
             'check' => CheckSubscription::class,
             'checkExpired' => CheckSubscriptionExpired::class,

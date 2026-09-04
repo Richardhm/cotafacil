@@ -103,6 +103,11 @@ Route::post('/pix/webhook-rec', [CallbackController::class, 'pixWebhookRec'])->n
 Route::post('/assinatura/pix-automatico', [AssinaturaController::class, 'pixAutomatico'])->name('assinatura.pix.automatico');
 Route::post('/pix-automatico/verificar-pagamento', [AssinaturaController::class, 'verificarPagamentoPixAutomatico'])->name('verificar.pagamento.pix.automatico');
 
+// Pagina de vendas (vendedora + desenvolvedores): cadastros desde 20/08/2026
+Route::middleware(['auth', 'apenasVendas'])->group(function () {
+    Route::get('/vendas', [\App\Http\Controllers\VendasController::class, 'index'])->name('vendas.index');
+});
+
 // Dashboard financeiro (apenas desenvolvedores)
 Route::middleware(['auth', 'apenasDesenvolvedores'])->group(function () {
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro.index');
