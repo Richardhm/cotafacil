@@ -13,6 +13,9 @@
         .badge-status-trial    { background:#f59e0b; color:#fff; }
         .badge-status-inativo  { background:#ef4444; color:#fff; }
         .badge-status-pendente { background:#d97706; color:#fff; }
+        .tabela-vendas { background:#1e293b; border:1px solid #f97316; border-radius:12px; overflow:hidden; }
+        .tabela-vendas thead tr { border-bottom:1px solid #f97316; }
+        .tabela-vendas tbody tr + tr { border-top:1px solid #f97316; }
         table thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.85); font-weight: 700; }
         table tbody td { color: #fff; }
 
@@ -77,9 +80,9 @@
             </div>
         </div>
 
-        <div class="bg-[#1e293b] border border-[#f97316] rounded-xl overflow-hidden">
+        <div class="tabela-vendas">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-[#f97316]">
+                <table class="min-w-full">
                     <thead>
                     <tr>
                         <th class="px-4 py-3 text-left">Cadastro</th>
@@ -90,7 +93,7 @@
                         <th class="px-4 py-3 text-center">Próx. cobrança / Fim do teste</th>
                     </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#f97316]">
+                    <tbody>
                     @forelse($contas as $i => $conta)
                         <tr>
                             <td class="px-4 py-3 text-sm whitespace-nowrap">{{ \Carbon\Carbon::parse($conta['created_at'])->format('d/m/Y H:i') }}</td>
