@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Acomodacao;
 use App\Models\Administradora;
+use App\Models\EmailAssinatura;
 use App\Models\AdministradoraPlano;
 use App\Models\FaixaEtaria;
 use App\Models\Pdf;
@@ -17,12 +18,36 @@ class TabelaController extends Controller
 {
     public function index()
     {
-        $cidades = TabelaOrigens::all();
+        $user = auth()->user();
+        $assinaturaId = EmailAssinatura::where('email', $user->email)->first()?->assinatura_id;
+
+        // Igual ao dashboard: UF -> Cidade só com o que a assinatura tem vínculo
+        // (antes o select listava TabelaOrigens::all(), todas as cidades do sistema)
+        $vinculos = AdministradoraPlano::with('cidade')
+            ->where('assinatura_id', $assinaturaId)
+            ->get();
+
+        $estados = $vinculos->pluck('cidade')->filter()->unique('uf')->sortBy('uf')->values();
+
+        // Mapa UF => cidades para o cascateamento no navegador (sem AJAX)
+        $cidadesPorUf = $vinculos->pluck('cidade')->filter()->unique('id')
+            ->groupBy('uf')
+            ->map(fn ($grupo) => $grupo
+                ->map(fn ($c) => ['id' => $c->id, 'nome' => $c->nome])
+                ->sortBy('nome')->values())
+            ->toArray();
+
         // Qualicorp não deve ser listada como operadora na tabela completa.
         $administradoras = Administradora::where('nome', '!=', 'Qualicorp')->get();
         $planos = Plano::all();
-        return view('tabela.index', compact('cidades', 'administradoras','planos'));
 
+        return view('tabela.index', [
+            'estados'         => $estados,
+            'cidadesPorUf'    => $cidadesPorUf,
+            'uf_preferencia'  => $user->uf_preferencia,
+            'administradoras' => $administradoras,
+            'planos'          => $planos,
+        ]);
     }
 
     public function planosAdministradoraSelect(Request $request)

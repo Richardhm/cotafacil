@@ -602,8 +602,10 @@
 
 
 @php
-    $com_coparticipacao = 1;
-   $sem_coparticipacao = 1;
+    $com_coparticipacao = $com_coparticipacao ?? 1;
+    $sem_coparticipacao = $sem_coparticipacao ?? 1;
+    $mostrar_apartamento = $mostrar_apartamento ?? 1;
+    $mostrar_enfermaria = $mostrar_enfermaria ?? 1;
    $dadosComOdontoComCopar = [];
    $dadosComOdontoSemCopar = [];
    $dadosComOdonto = [];
@@ -774,27 +776,27 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
+                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
                         <tr>
 
-                            <td class="coluna-azul">
+                            @if($mostrar_enfermaria)<td class="coluna-azul">
 
                                 ENFER
 
 
 
-                            </td>
+                            </td>@endif
 
-                            <td class="coluna-azul">
+                            @if($mostrar_apartamento)<td class="coluna-azul">
 
                                 APART
 
 
 
-                            </td>
+                            </td>@endif
 
                         </tr>
 
@@ -802,7 +804,7 @@
                             @for($i=0;$i<$valores['quantidade'];$i++)
                                 <tr>
 
-                                    <td>
+                                    @if($mostrar_enfermaria)<td>
 
                                         <div class="valor-copart-azul-valores">
 
@@ -816,9 +818,9 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
-                                    <td>
+                                    @if($mostrar_apartamento)<td>
 
                                         <div class="valor-copart-azul-valores">
 
@@ -832,7 +834,7 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
                                 </tr>
                             @endfor
@@ -841,16 +843,16 @@
                         <tfoot>
 
                         <tr>
-                            <td>
+                            @if($mostrar_enfermaria)<td>
                                 <div class="valor-copart-azul">
                                     {{number_format($totalEnfermaria_com_copar,2,",",".")}}
                                 </div>
-                            </td>
-                            <td>
+                            </td>@endif
+                            @if($mostrar_apartamento)<td>
                                 <div class="valor-copart-azul">
                                     {{number_format($totalApartamento_com_copar,2,",",".")}}
                                 </div>
-                            </td>
+                            </td>@endif
                         </tr>
 
 
@@ -885,21 +887,21 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange-parcial" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
+                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange-parcial" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
 
                         </tr>
 
                         <tr>
 
-                            <td class="coluna-azul">
+                            @if($mostrar_enfermaria)<td class="coluna-azul">
 
                                 ENFER
 
 
 
-                            </td>
+                            </td>@endif
 
-                            <td class="coluna-azul">
+                            @if($mostrar_apartamento)<td class="coluna-azul">
 
                                 APART
 
@@ -907,7 +909,7 @@
 
 
 
-                            </td>
+                            </td>@endif
 
                         </tr>
 
@@ -917,7 +919,7 @@
                             @for($i=0;$i<$valores['quantidade'];$i++)
                                 <tr >
 
-                                    <td>
+                                    @if($mostrar_enfermaria)<td>
 
                                         <div class="valor-copart-parcial">
 
@@ -931,9 +933,9 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
-                                    <td>
+                                    @if($mostrar_apartamento)<td>
 
                                         <div class="valor-copart-parcial">
 
@@ -947,7 +949,7 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
                                 </tr>
                             @endfor
@@ -956,16 +958,16 @@
                         <tfoot>
 
                         <tr>
-                            <td>
+                            @if($mostrar_enfermaria)<td>
                                 <div class="valor-copart-laranja-parcial">
                                     {{number_format($totalEnfermaria_sem_copar,2,",",".")}}
                                 </div>
-                            </td>
-                            <td>
+                            </td>@endif
+                            @if($mostrar_apartamento)<td>
                                 <div class="valor-copart-laranja-parcial">
                                     {{number_format($totalApartamento_sem_copar,2,",",".")}}
                                 </div>
-                            </td>
+                            </td>@endif
                         </tr>
 
 
@@ -997,6 +999,7 @@
 @include('cotacao.partials.copart3', [
     'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
     'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+    'copart_centralizar' => true,
 ])
 
 </div>

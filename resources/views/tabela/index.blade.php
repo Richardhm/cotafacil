@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="max-w-full mx-auto sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-x-4 px-4" style="align-items: flex-start;">
-        <x-informacoes-tabela :cidades="$cidades" class="sm:mx-5"></x-informacoes-tabela>
+        <x-informacoes-tabela :estados="$estados" :ufpreferencia="$uf_preferencia" class="sm:mx-5"></x-informacoes-tabela>
         <x-operadoras-tabela :operadoras="$administradoras" class="sm:mx-5"></x-operadoras-tabela>
         <x-planos-tabela :planos="$planos" class="sm:mx-5"></x-planos-tabela>
         <div class="p-1 rounded mt-2 hidden bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] border w-full lg:w-[30%] sm:mx-5" id="resultado"></div>
@@ -8,28 +8,78 @@
 
 
 
+    {{-- Modal de opções do Gerar Imagem (mesma lógica do modal do /dashboard) --}}
+    <style>
+        /* Celular: modal compacta (CSS puro — classes novas do Tailwind não existem no build de produção) */
+        @media (max-width: 480px) {
+            #modalTabelaCompleta > div { width: 92% !important; max-width: 21rem; padding: 12px 16px !important; border-width: 2px !important; }
+            #modalTabelaCompleta h2 { font-size: 1rem !important; margin-bottom: 8px !important; }
+            #modalTabelaCompleta fieldset { padding: 8px 10px !important; margin-top: 8px !important; border-width: 2px !important; }
+            #modalTabelaCompleta legend { font-size: .9rem !important; }
+            #modalTabelaCompleta span.font-semibold { font-size: .85rem !important; }
+            #modalTabelaCompleta .flex.justify-center { margin-top: 10px !important; }
+            #modalTabelaCompleta #gerarTabelaCompletaBtn { padding: 8px 16px !important; font-size: 1rem !important; }
+        }
+    </style>
+    <div id="modalTabelaCompleta" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" style="z-index:9998;">
+        <div class="bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] px-6 py-10 rounded-lg shadow-lg w-96 text-white border-white border-4">
+            <div class="flex justify-between">
+                <h2 class="text-lg font-bold mb-4 mx-auto">Escolha a Opção</h2>
+                <svg xmlns="http://www.w3.org/2000/svg" id="fecharModalTC" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6 border-white border-4 rounded hover:cursor-pointer">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </div>
+
+            <div class="space-y-2">
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="comCoparticipacaoTC" checked="checked" class="form-checkbox">
+                    <span class="font-semibold">Com Coparticipação</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" id="semCoparticipacaoTC" checked="checked" class="form-checkbox">
+                    <span class="font-semibold">Sem Coparticipação</span>
+                </label>
+            </div>
+
+            <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+                <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
+                <div class="space-y-2">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="apartamentoTC" checked class="form-checkbox">
+                        <span class="font-semibold">Apartamento</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="enfermariaTC" checked class="form-checkbox">
+                        <span class="font-semibold">Enfermaria</span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="flex justify-center mt-3">
+                <button id="gerarTabelaCompletaBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full w-full text-lg">Gerar</button>
+            </div>
+        </div>
+    </div>
+
     @section('scripts')
         <script>
 
             $(document).ready(function(){
                 function scrollToBottom() {
                     if (window.innerWidth <= 768) { // Aplica apenas para mobile
-                        $('html, body').animate({
-                            scrollTop: $(document).height() // Define o scroll para o final do documento
-                        },1500, 'swing'); // Tempo da animação (1 segundo)
+                        // Espera o conteúdo carregado via AJAX aparecer antes de rolar,
+                        // e calcula a altura na hora do scroll (não na do clique)
+                        setTimeout(function () {
+                            $('html, body').stop(true).animate({
+                                scrollTop: $(document).height()
+                            }, 1200, 'swing');
+                        }, 400);
                     }
                 }
 
-                // Exemplo de onde você pode chamar o scrollToBottom:
-                $("input[name='operadoras']").on('change', function(){
-                    // Lógica para mostrar operadoras
-                    scrollToBottom(); // Chama o scroll para o bottom após a mudança de etapa
-                });
-
-                $("input[name='planos-radio']").on('click', function(){
-                    // Lógica para selecionar um plano
-                    scrollToBottom(); // Chama o scroll para o bottom após a seleção do plano
-                });
+                // Delegado no body: pega também os radios de plano injetados via AJAX
+                $("body").on('change', "input[name='operadoras']", scrollToBottom);
+                $("body").on('click', "input[name='planos-radio']", scrollToBottom);
 
                 $("input[type='text']").on('input', function(){
                     // Quando o usuário digitar algo, o scroll segue o progresso
@@ -45,6 +95,26 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     }
                 });
+
+                // UF -> Cidade pelos vínculos da assinatura (mapa montado no servidor, sem AJAX)
+                const cidadesPorUf = @json($cidadesPorUf);
+
+                function preencherCidades(disparaChange) {
+                    let uf = $('#estado').val();
+                    let $cid = $('#cidade');
+                    $cid.empty().append('<option value="" class="text-xs text-black">Escolher Cidade</option>');
+                    (cidadesPorUf[uf] || []).forEach(function (c) {
+                        $cid.append($('<option>', { value: c.id, text: c.nome, 'class': 'text-black' }));
+                    });
+                    if (disparaChange) {
+                        $cid.trigger('change'); // roda os resets que a página já tem no change da cidade
+                    }
+                }
+
+                $('#estado').on('change', function () { preencherCidades(true); });
+
+                // UF preferida já vem selecionada do servidor: carrega as cidades dela
+                if ($('#estado').val()) { preencherCidades(false); }
 
                 function filtrarPlanosPorCidadeEOperadora() {
                     let valor = $("input[name='operadoras']:checked").val();
@@ -96,6 +166,24 @@
                                 } else {
                                     $(this).hide();  // Esconde o plano
                                 }
+                            });
+
+                            // Opções Ambulatoriais como no dashboard: um radio por plano com
+                            // tabela ambulatorial nesta operadora+cidade (substitui o antigo
+                            // botão verde "Ambulatorial" que ficava embaixo do resultado)
+                            $('#planos div[data-plano-ambulatorial]').remove();
+                            let planosAmbTC = response.planos_ambulatoriais || [];
+                            $.each(planosAmbTC, function (i, plano) {
+                                let rotuloAmb = planosAmbTC.length > 1 ? plano.nome + ' - Ambulatorial' : 'Ambulatorial';
+                                $('#planos').append(`
+                                    <div data-plano-ambulatorial="${plano.id}" class="py-1 w-full px-1 me-2 mb-2 text-sm font-medium text-white focus:outline-none rounded-lg bg-gray-500 bg-opacity-10 dark:hover:text-gray-900" style="border:2px solid white;">
+                                        <label class="flex justify-between items-center">
+                                            <div class="flex w-[100%] p-3">
+                                                <input type="radio" value="${plano.id}" name="planos-radio" data-ambulatorial="1" class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300">
+                                                <span class="ms-2 text-white flex justify-between text-sm font-medium">${rotuloAmb}</span>
+                                            </div>
+                                        </label>
+                                    </div>`);
                             });
                         },
                         error: function() {
@@ -247,7 +335,7 @@
                 $("body").on('click',"input[name='planos-radio']",function(){
                     let valor = $(this).val();
                     //console.log(valor);
-                    atualizarResultado();
+                    atualizarResultado($(this).data('ambulatorial') ? 1 : 0);
                 });
 
 
@@ -531,9 +619,24 @@
 
 
 
+                // Gerar Imagem abre o modal de opções; a geração acontece no Gerar do modal
+                let odontoTabelaSelecionado = 0;
                 $("body").on('click','.gerar_imagem',function() {
+                    odontoTabelaSelecionado = $(this).data('odonto');
+                    $("#modalTabelaCompleta").removeClass("hidden");
+                });
+
+                $("#fecharModalTC").on("click", function () {
+                    $("#modalTabelaCompleta").addClass("hidden");
+                });
+                $("#modalTabelaCompleta").on("click", function (event) {
+                    if (event.target === this) { $(this).addClass("hidden"); }
+                });
+
+                $("body").on('click','#gerarTabelaCompletaBtn',function() {
+                    $("#modalTabelaCompleta").addClass("hidden");
                     let load = $(".ajax_load");
-                    let odonto = $(this).data('odonto');
+                    let odonto = odontoTabelaSelecionado;
                     let cidade = "";
                     let plano = "";
                     let operadora = "";
@@ -570,7 +673,13 @@
                             cidade,
                             plano,
                             operadora,
-                            odonto
+                            odonto,
+                            comcoparticipacao: $("#comCoparticipacaoTC").is(":checked") ? "true" : "false",
+                            semcoparticipacao: $("#semCoparticipacaoTC").is(":checked") ? "true" : "false",
+                            mostrar_apartamento: $("#apartamentoTC").is(":checked") ? "true" : "false",
+                            mostrar_enfermaria: $("#enfermariaTC").is(":checked") ? "true" : "false",
+                            tipo_documento: "imagem"
+
                         },
                         beforeSend: function () {
                             load.fadeIn(100).css("display", "flex");

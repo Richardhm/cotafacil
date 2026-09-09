@@ -269,14 +269,6 @@ focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 bg-gray-500 bg-opacity
 @endif
 
 
-<div class="flex justify-around items-center w-full mt-4 py-2">
-
-    <div>
-        <button class="btn_ambulatorial focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">
-            Ambulatorial
-        </button>
-    </div>
-
-</div>
-
+{{-- Botão verde "Ambulatorial" removido (03/09/2026): o ambulatorial agora é
+     uma opção na lista de Planos, igual ao dashboard. --}}
 </div>

@@ -48,14 +48,18 @@ class DashboardController extends Controller
     {
         $layout = auth()->user()->layout_id;
         $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
-        $viewName   = "cotacao.modelotabelaambulatorial".$layout_user;
+
+        // Mesma view do ambulatorial do /dashboard (cotacao-ambulatorial{1-4}):
+        // padrão visual único, com cidade, adesão, copart e carências. As antigas
+        // modelotabelaambulatorial1-4 (4 cópias do layout laranja) ficaram órfãs.
+        $viewName   = "cotacao.cotacao-ambulatorial{$layout_user}";
         $cidade     = request()->cidade;
         $plano      = request()->plano;
         $operadora  = request()->operadora;
         $odonto     = request()->odonto;
         $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
-        $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
-        $frase = "Ambulatorial/".$odonto_frase;
+        $odonto_frase = $odonto == 1 ? " c/ Odonto" : " s/ Odonto";
+        $frase = "Ambulatorial ".$odonto_frase;
 
         $sql = "";
         $chaves = [];
@@ -81,32 +85,61 @@ class DashboardController extends Controller
             ->orderBy('tabelas.faixa_etaria_id')
             ->get();
 
+        $codigo = CodigoAmbulatorial::where("tabela_origens_id",$cidade)
+            ->where("plano_id",$plano)
+            ->where("administradora_id",$operadora)
+            ->where("odonto",$odonto)->first();
+
+        $admin_nome = Administradora::find($operadora)->nome;
+        $layout_folder = auth()->user()->isFolder() ?: '';
+
+        // Mesmo tratamento de imagem do criarPDF (campo imagem + disco public)
         $imagem_user = "";
-        $image = auth()->user()->image;
-        if($image != "") {
-            $imagem_user = auth()->user()->image;
+        $image = auth()->user()->imagem;
+        if($image != "" && \Illuminate\Support\Facades\Storage::disk('public')->exists($image)) {
+            $imagem_user = "storage/".auth()->user()->imagem;
         }
         $nome = auth()->user()->name;
         $celular = auth()->user()->phone;
 
+        // Copart própria do ambulatorial (fallback na linha normal)
+        $copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora, ambulatorial: true);
+
+        // Tabela completa não leva a linha de adesão ("** ...") nem carências
+        if (isset($copart['pdf'])) {
+            $copart['pdf'] = clone $copart['pdf'];
+            $copart['pdf']->linha03 = null;
+        }
+
         $view = \Illuminate\Support\Facades\View::make($viewName,[
-                'apelido_plano' => Plano::find($plano)?->apelido,
-                'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
-                'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
-            "dados" => $dados,
-            "image" => $imagem_user,
-            "nome" => $nome,
-            "celular" => $celular,
-            "cidade_nome" => $cidade_nome,
-            "frase" => $frase,
-            // Tabelinhas de coparticipação (mesmo bloco do dashboard). A tabela
-            // completa mostra as duas colunas -> as duas tabelinhas (flags do blade)
-            'pdf'              => ($copart = CoparticipacaoCotacao::montar((int) $plano, (int) $cidade, (int) $operadora, ambulatorial: true))['pdf'],
-            'quantidade_copar' => $copart['quantidade_copar'],
-            'status_excecao'   => $copart['status_excecao'],
-            'linha_01'         => $copart['linha_01'],
-            'linha_02'         => $copart['linha_02'],
-            'apenas_valores'   => 0,
+            'apelido_plano' => Plano::find($plano)?->apelido,
+            'rotulo_com_copart' => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
+            'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
+            'com_coparticipacao' => 1,
+            'sem_coparticipacao' => 1,
+            'image' => $imagem_user,
+            'dados' => $dados,
+            'codigo' => $codigo,
+            'folder' => $layout_folder,
+            'pdf' => $copart['pdf'],
+            'plano_nome' => "Individual",
+            'linha_01' => $copart['linha_01'],
+            'linha_02' => $copart['linha_02'],
+            'nome' => $nome,
+            'desconto' => 0,
+            'valor_desconto' => 0,
+            'texto_desconto' => '',
+            'cidade' => $cidade_nome,
+            'plano' => $plano_nome,
+            'odonto_frase' => $odonto_frase,
+            'administradora' => $admin_nome,
+            'frase' => $frase,
+            'carencia' => 0,
+            'status_desconto' => 0,
+            'odonto' => $odonto,
+            'celular' => $celular,
+            'linhas' => count($chaves),
+            'corretora' => auth()->user()->corretora_id,
         ]);
 
         $pdfPath = $this->novoPdfTemporario();
@@ -152,6 +185,14 @@ class DashboardController extends Controller
         $plano      = request()->plano;
         $operadora  = request()->operadora;
         $odonto     = request()->odonto;
+
+        // Opções do modal (mesma semântica do criarPDF do dashboard).
+        // Defaults 'true' preservam chamadas antigas sem os campos.
+        $com_coparticipacao  = request()->input('comcoparticipacao', 'true')   == "true" ? 1 : 0;
+        $sem_coparticipacao  = request()->input('semcoparticipacao', 'true')   == "true" ? 1 : 0;
+        $mostrar_apartamento = request()->input('mostrar_apartamento', 'true') == "true" ? 1 : 0;
+        $mostrar_enfermaria  = request()->input('mostrar_enfermaria', 'true')  == "true" ? 1 : 0;
+        $tipo_documento      = request()->input('tipo_documento', 'imagem');
 
         $plano_nome = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $plano, Plano::find($plano)->nome);
         $odonto_frase = $odonto ? "Com Odonto" : "Sem Odonto";
@@ -207,7 +248,16 @@ class DashboardController extends Controller
             'linha_01'         => $copart['linha_01'],
             'linha_02'         => $copart['linha_02'],
             'apenas_valores'   => 0,
+            'com_coparticipacao'  => $com_coparticipacao,
+            'sem_coparticipacao'  => $sem_coparticipacao,
+            'mostrar_apartamento' => $mostrar_apartamento,
+            'mostrar_enfermaria'  => $mostrar_enfermaria,
         ]);
+
+        if ($tipo_documento === 'pdf') {
+            $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');
+            return $pdf->download('tabela-' . date('dmY-His') . '-' . uniqid() . '.pdf');
+        }
 
         $pdfPath = $this->novoPdfTemporario();
         $pdf = PDFFile::loadHTML($view)->setPaper('A3', 'portrait');

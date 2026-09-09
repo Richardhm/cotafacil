@@ -306,6 +306,8 @@
 
             border-radius: 60px;
 
+            border: 3px solid rgb(12,77,193); /* moldura do modelo2 do dashboard */
+
             vertical-align: top;
 
             padding: 10px;
@@ -318,7 +320,7 @@
 
         .header-orange {
 
-            background: #F88058;
+            background: rgb(12,77,193); /* padrao do modelo2 do dashboard */
 
             color: white;
 
@@ -441,6 +443,13 @@
             text-align:center;
 
         }
+
+        /* === Padronizacao com o modelo2 do dashboard (08/09/2026) === */
+        .valor-copart-azul-valores { background: rgb(65,123,231); padding: 12px !important; margin: 5px 3px; border-radius: 8px; color: white; font-weight: bold; display: block; font-size:1.6em; text-align:center; }
+        .valor-copart-azul { background: rgb(8,73,189); padding: 12px !important; margin: 5px 3px; border-radius: 0 0 55px 55px; color: white; font-weight: bold; display: block; font-size:1.6em; text-align:center; }
+        .header-orange-parcial { background: #F88058; color: white; padding: 20px; border-radius: 55px 55px 0 0; font-weight: bold; font-size: 1.6em; white-space: nowrap; text-align: center; }
+        .valor-copart-parcial { background: rgb(254,199,72); padding: 12px !important; margin: 5px 3px; border-radius: 8px; color: rgb(8,73,189); font-weight: bold; display: block; font-size: 1.6em; text-align: center; }
+        .valor-copart-laranja-parcial { background: #F88058; padding: 12px !important; margin: 5px 3px; border-radius: 0 0 55px 55px; color: white; font-weight: bold; display: block; font-size: 1.6em; text-align: center; }
 
 
 
@@ -593,8 +602,10 @@
 
 
 @php
-    $com_coparticipacao = 1;
-   $sem_coparticipacao = 1;
+    $com_coparticipacao = $com_coparticipacao ?? 1;
+    $sem_coparticipacao = $sem_coparticipacao ?? 1;
+    $mostrar_apartamento = $mostrar_apartamento ?? 1;
+    $mostrar_enfermaria = $mostrar_enfermaria ?? 1;
    $dadosComOdontoComCopar = [];
    $dadosComOdontoSemCopar = [];
    $dadosComOdonto = [];
@@ -730,7 +741,7 @@
 
                                 <td>
 
-                                    <div class="valor-copart">
+                                    <div class="valor-copart-azul-valores">
 
                                         {{ $faixaEtaria }}
 
@@ -745,7 +756,7 @@
 
                         <tr>
                             <td>
-                                <div class="valor-copart-laranja">TOTAL</div>
+                                <div class="valor-copart-azul">TOTAL</div>
                             </td>
 
                         </tr>
@@ -765,27 +776,27 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
+                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange" style="text-align:center;">{{ $rotulo_com_copart ?? 'COM COPARTICIPAÇÃO' }}</td>
 
                         </tr>
 
                         <tr>
 
-                            <td class="coluna-azul">
+                            @if($mostrar_enfermaria)<td class="coluna-azul">
 
                                 ENFER
 
 
 
-                            </td>
+                            </td>@endif
 
-                            <td class="coluna-azul">
+                            @if($mostrar_apartamento)<td class="coluna-azul">
 
                                 APART
 
 
 
-                            </td>
+                            </td>@endif
 
                         </tr>
 
@@ -793,9 +804,9 @@
                             @for($i=0;$i<$valores['quantidade'];$i++)
                                 <tr>
 
-                                    <td>
+                                    @if($mostrar_enfermaria)<td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-azul-valores">
 
                                             @php
 
@@ -807,11 +818,11 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
-                                    <td>
+                                    @if($mostrar_apartamento)<td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-azul-valores">
 
                                             @php
 
@@ -823,7 +834,7 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
                                 </tr>
                             @endfor
@@ -832,16 +843,16 @@
                         <tfoot>
 
                         <tr>
-                            <td>
-                                <div class="valor-copart-laranja">
+                            @if($mostrar_enfermaria)<td>
+                                <div class="valor-copart-azul">
                                     {{number_format($totalEnfermaria_com_copar,2,",",".")}}
                                 </div>
-                            </td>
-                            <td>
-                                <div class="valor-copart-laranja">
+                            </td>@endif
+                            @if($mostrar_apartamento)<td>
+                                <div class="valor-copart-azul">
                                     {{number_format($totalApartamento_com_copar,2,",",".")}}
                                 </div>
-                            </td>
+                            </td>@endif
                         </tr>
 
 
@@ -868,21 +879,21 @@
 
                         <tr>
 
-                            <td colspan="2" class="header-orange" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
+                            <td colspan="{{ $mostrar_enfermaria + $mostrar_apartamento }}" class="header-orange-parcial" style="text-align:center;">{{ $rotulo_copart_parcial ?? 'SEM COPARTICIPAÇÃO *' }}</td>
 
                         </tr>
 
                         <tr>
 
-                            <td class="coluna-azul">
+                            @if($mostrar_enfermaria)<td class="coluna-azul">
 
                                 ENFER
 
 
 
-                            </td>
+                            </td>@endif
 
-                            <td class="coluna-azul">
+                            @if($mostrar_apartamento)<td class="coluna-azul">
 
                                 APART
 
@@ -890,7 +901,7 @@
 
 
 
-                            </td>
+                            </td>@endif
 
                         </tr>
 
@@ -900,9 +911,9 @@
                             @for($i=0;$i<$valores['quantidade'];$i++)
                                 <tr >
 
-                                    <td>
+                                    @if($mostrar_enfermaria)<td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-parcial">
 
                                             @php
 
@@ -914,11 +925,11 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
-                                    <td>
+                                    @if($mostrar_apartamento)<td>
 
-                                        <div class="valor-copart">
+                                        <div class="valor-copart-parcial">
 
                                             @php
 
@@ -930,7 +941,7 @@
 
                                         </div>
 
-                                    </td>
+                                    </td>@endif
 
                                 </tr>
                             @endfor
@@ -939,16 +950,16 @@
                         <tfoot>
 
                             <tr>
-                                <td>
-                                    <div class="valor-copart-laranja">
+                                @if($mostrar_enfermaria)<td>
+                                    <div class="valor-copart-laranja-parcial">
                                         {{number_format($totalEnfermaria_sem_copar,2,",",".")}}
                                     </div>
-                                </td>
-                                <td>
-                                    <div class="valor-copart-laranja">
+                                </td>@endif
+                                @if($mostrar_apartamento)<td>
+                                    <div class="valor-copart-laranja-parcial">
                                         {{number_format($totalApartamento_sem_copar,2,",",".")}}
                                     </div>
-                                </td>
+                                </td>@endif
                             </tr>
 
                         </tfoot>
@@ -973,6 +984,7 @@
 @include('cotacao.partials.copart2', [
     'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
     'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+    'copart_centralizar' => true,
 ])
 
 </div>

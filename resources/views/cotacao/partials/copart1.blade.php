@@ -28,7 +28,7 @@
 .copart-bloco .procedimento-left, .copart-bloco .procedimento-right { float: none; height: auto; min-height: 0; }
 .copart-bloco .lista-coparticipacao { display: none; }
 </style>
-<div class="copart-bloco" style="width:50%;margin-top:30px;">
+<div class="copart-bloco" style="width:50%;margin-top:30px;{{ !empty($copart_centralizar) ? 'margin-left:490px;' : '' }}">
             <!-- Primeiro Bloco -->
 
             <div>
