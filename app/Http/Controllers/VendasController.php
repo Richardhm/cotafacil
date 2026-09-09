@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class VendasController extends Controller
 {
     // Data em que a vendedora começou: só cadastros a partir daqui aparecem
-    public const INICIO_VENDAS = '2026-08-20';
+    public const INICIO_VENDAS = '2026-08-14';
 
     public function index()
     {
