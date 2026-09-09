@@ -166,6 +166,19 @@
     </div>
 
     {{-- Modal: gerar imagem/PDF por cenário --}}
+    <style>
+        /* Celular: modal compacta (CSS puro — classes novas do Tailwind não existem no build de produção) */
+        @media (max-width: 480px) {
+            #modalGerarImagem > div { width: 92% !important; max-width: 21rem; padding: 12px 16px !important; border-width: 2px !important; }
+            #modalGerarImagem h2 { font-size: 1rem !important; }
+            #modalGerarImagem fieldset { padding: 8px 10px !important; margin-top: 8px !important; border-width: 2px !important; }
+            #modalGerarImagem legend { font-size: .9rem !important; }
+            #modalGerarImagem span.font-semibold { font-size: .85rem !important; }
+            #modalGerarImagem span.text-xs { font-size: .68rem !important; }
+            #modalGerarImagem .flex.justify-center { margin-top: 10px !important; }
+            #modalGerarImagem #confirmarGerar { padding: 8px 16px !important; font-size: 1rem !important; }
+        }
+    </style>
     <div id="modalGerarImagem" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
         <div class="bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] px-6 py-10 rounded-lg shadow-lg w-96 text-white border-white border-4">
             <div class="flex justify-between mb-4">
@@ -186,6 +199,34 @@
                     <label class="flex items-center space-x-2">
                         <input type="radio" name="tipo_gerar" value="pdf">
                         <span class="font-semibold">PDF</span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+                <legend class="text-lg font-semibold px-2 mx-auto">Opções</legend>
+                <div class="flex flex-col gap-2">
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="opcao_gerar" value="completa" checked>
+                        <span class="font-semibold">Completa <span class="text-xs font-normal opacity-75">(com Preços Unitários)</span></span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="radio" name="opcao_gerar" value="resumida">
+                        <span class="font-semibold">Resumida <span class="text-xs font-normal opacity-75">(sem Preços Unitários)</span></span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+                <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
+                <div class="flex justify-between items-center">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="apartamentoGerar" checked>
+                        <span class="font-semibold">Apartamento</span>
+                    </label>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="enfermariaGerar" checked>
+                        <span class="font-semibold">Enfermaria</span>
                     </label>
                 </div>
             </fieldset>
@@ -471,6 +512,14 @@
                     success: function (html) {
                         if (primeiraVez) {
                             $('#resultado').removeClass('hidden').slideDown('fast').html(html);
+                            // No celular o resultado fica abaixo do formulário: rola até ele
+                            if (window.innerWidth < 1024) {
+                                setTimeout(function () {
+                                    $('html, body').animate({
+                                        scrollTop: $('#resultado').offset().top - 10
+                                    }, 1000, 'swing');
+                                }, 250);
+                            }
                         } else {
                             $('#resultado').html(html);
                         }
@@ -530,10 +579,16 @@
                 });
 
                 let touchStartX = 0;
+                let touchNaTabela = false;
                 $res.off('touchstart').on('touchstart', function (e) {
                     touchStartX = e.originalEvent.touches[0].clientX;
+                    // Swipe iniciado numa tabela que rola na horizontal (celular) é
+                    // rolagem da tabela, não troca de cenário — usar setas/bolinhas
+                    const $scroll = $(e.target).closest('.tabela-scroll');
+                    touchNaTabela = $scroll.length > 0 && $scroll[0].scrollWidth > $scroll[0].clientWidth + 2;
                 });
                 $res.off('touchend').on('touchend', function (e) {
+                    if (touchNaTabela) return;
                     const diff = touchStartX - e.originalEvent.changedTouches[0].clientX;
                     if (Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
                 });
@@ -559,11 +614,19 @@
             $('#confirmarGerar').on('click', function (e) {
                 e.preventDefault();
                 let tipo   = $("input[name='tipo_gerar']:checked").val();
+                let opcao  = $("input[name='opcao_gerar']:checked").val();
+                let apart  = $('#apartamentoGerar').is(':checked');
+                let enfer  = $('#enfermariaGerar').is(':checked');
                 let faixas = getFaixas();
                 let cidade = $('#cidade').val();
                 let copart = cenarioSelecionado.copart;
                 let odonto = cenarioSelecionado.odonto;
                 let load   = $(".ajax_load");
+
+                if (!apart && !enfer) {
+                    alert('Selecione pelo menos uma acomodação (Apartamento ou Enfermaria).');
+                    return;
+                }
 
                 $.ajax({
                     url: '{{ route('hapvida-ss.gerar') }}',
@@ -575,6 +638,9 @@
                         faixas:         faixas,
                         odonto:         odonto,
                         tipo_documento: tipo,
+                        mostrar_unitarios:   opcao === 'resumida' ? 'false' : 'true',
+                        mostrar_apartamento: apart ? 'true' : 'false',
+                        mostrar_enfermaria:  enfer ? 'true' : 'false',
                         _token:         '{{ csrf_token() }}'
                     },
                     xhrFields: { responseType: 'blob' },

@@ -233,6 +233,16 @@ class HapvidaSuperSimplesController extends Controller
         $odonto         = (int) $request->input('odonto', 1);
         $cidade         = $request->input('tabela_origem');
         $tipo           = $request->input('tipo_documento', 'jpg');
+
+        // Opções do modal Gerar Documento: Completa mostra as colunas de Preços
+        // Unitários, Resumida esconde; Apartamento/Enfermaria filtram as colunas
+        $mostrarUnitarios   = $request->input('mostrar_unitarios', 'true')   === 'true' ? 1 : 0;
+        $mostrarApartamento = $request->input('mostrar_apartamento', 'true') === 'true' ? 1 : 0;
+        $mostrarEnfermaria  = $request->input('mostrar_enfermaria', 'true')  === 'true' ? 1 : 0;
+        if (!$mostrarApartamento && !$mostrarEnfermaria) {
+            $mostrarApartamento = 1;
+            $mostrarEnfermaria  = 1;
+        }
         $planoId        = $this->planoSelecionado($request);
         $faixasInput    = $request->input('faixas')[0];
 
@@ -284,9 +294,9 @@ class HapvidaSuperSimplesController extends Controller
 
         $plano_nome  = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $planoId, Plano::find($planoId)->nome);
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
-        $copart_frase = $coparticipacao == 1 ? ' c/ Copart' : ' s/ Copart';
-        $odonto_frase = $odonto         == 1 ? ' c/ Odonto' : ' s/ Odonto';
-        $frase = $plano_nome . $copart_frase . $odonto_frase;
+        // Título sem a parte de copart (pedido de 08/09): só plano + odonto
+        $odonto_frase = $odonto == 1 ? ' c/ Odonto' : ' s/ Odonto';
+        $frase = $plano_nome . $odonto_frase;
 
         $imagem_user = '';
         $img = auth()->user()->imagem ?? '';
@@ -309,6 +319,10 @@ class HapvidaSuperSimplesController extends Controller
             'apenas_valores'        => 0,
             'rotulo_com_copart'     => RotuloCotacao::resolver(auth()->user(), 'com_copart', null, null),
             'rotulo_copart_parcial' => RotuloCotacao::resolver(auth()->user(), 'copart_parcial', null, null),
+            'mostrar_unitarios'   => $mostrarUnitarios,
+            'mostrar_apartamento' => $mostrarApartamento,
+            'mostrar_enfermaria'  => $mostrarEnfermaria,
+            'plano_titulo'        => $plano_nome, // vira o cabeçalho do bloco IDADE
             'cidade'      => $cidade_nome,
             'label'       => $frase,
             'dadosTabela' => $dadosAgrupados,

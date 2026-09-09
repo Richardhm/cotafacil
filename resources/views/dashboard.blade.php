@@ -190,6 +190,18 @@
 
    @section('css')
        <style>
+           /* Celular: modais do Gerar compactas (CSS puro — classes novas do
+              Tailwind não existem no build de produção) */
+           @media (max-width: 480px) {
+               #modalPlano > div, #modalPlanoAmbulatorial > div { width: 92% !important; max-width: 21rem; padding: 12px 16px !important; border-width: 2px !important; }
+               #modalPlano h2, #modalPlanoAmbulatorial h2 { font-size: 1rem !important; margin-bottom: 8px !important; }
+               #modalPlano fieldset, #modalPlanoAmbulatorial fieldset { padding: 8px 10px !important; margin-top: 8px !important; border-width: 2px !important; }
+               #modalPlano legend, #modalPlanoAmbulatorial legend { font-size: .9rem !important; }
+               #modalPlano span.font-semibold, #modalPlanoAmbulatorial span.font-semibold { font-size: .85rem !important; }
+               #modalPlano .flex.justify-center, #modalPlanoAmbulatorial .flex.justify-center { margin-top: 10px !important; }
+               #modalPlano #gerarImagem, #modalPlanoAmbulatorial #gerarImagemAmbulatorial { padding: 8px 16px !important; font-size: 1rem !important; }
+           }
+
            @keyframes blink {
                0% { border-color: #ffcc00; }
                50% { border-color: transparent; }
@@ -363,22 +375,19 @@
 
                function scrollToBottom() {
                    if (window.innerWidth <= 768) { // Aplica apenas para mobile
-                       $('html, body').animate({
-                           scrollTop: $(document).height() // Define o scroll para o final do documento
-                       },1500,'swing'); // Tempo da animação (1 segundo)
+                       // Espera o conteúdo carregado via AJAX aparecer antes de rolar,
+                       // e calcula a altura na hora do scroll (não na do clique)
+                       setTimeout(function () {
+                           $('html, body').stop(true).animate({
+                               scrollTop: $(document).height()
+                           }, 1200, 'swing');
+                       }, 400);
                    }
                }
 
-               // Exemplo de onde você pode chamar o scrollToBottom:
-               $("input[name='operadoras']").on('change', function(){
-                   // Lógica para mostrar operadoras
-                   scrollToBottom(); // Chama o scroll para o bottom após a mudança de etapa
-               });
-
-               $("input[name='planos-radio']").on('click', function(){
-                   // Lógica para selecionar um plano
-                   scrollToBottom(); // Chama o scroll para o bottom após a seleção do plano
-               });
+               // Delegado no body: pega também os radios de plano injetados via AJAX
+               $("body").on('change', "input[name='operadoras']", scrollToBottom);
+               $("body").on('click', "input[name='planos-radio']", scrollToBottom);
 
                $("input[type='text']").on('input', function(){
                    // Quando o usuário digitar algo, o scroll segue o progresso

@@ -16,6 +16,19 @@
             background: linear-gradient(90deg,#7c3aed,#db2777);
             animation: hapvidaSsPulse 1.6s infinite;
         }
+        /* Humana: cores da marca (azul #0f0f6d + laranja) */
+        @keyframes humanaPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,122,0,0.6); }
+            50% { box-shadow: 0 0 0 6px rgba(255,122,0,0); }
+        }
+        .humana-highlight {
+            background: #0f0f6d;
+            border: 2px solid #ff7a00;
+            animation: humanaPulse 1.6s infinite;
+        }
+        .humana-highlight .hapvida-ss-arrow {
+            color: #ff7a00;
+        }
         .tabela-completa-highlight {
             background: linear-gradient(90deg,#2563eb,#0891b2);
             animation: tabelaCompletaPulse 1.6s infinite;
@@ -27,9 +40,19 @@
         @media (prefers-reduced-motion: reduce), (prefers-reduced-data: reduce) {
             .hapvida-ss-highlight,
             .tabela-completa-highlight,
+            .humana-highlight,
             .hapvida-ss-arrow {
                 animation: none;
             }
+        }
+        /* Celular: menu do hambúrguer compacto (fontes e paddings menores) */
+        @media (max-width: 640px) {
+            .menu-mobile .text-lg { font-size: .95rem !important; }
+            .menu-mobile .text-sm { font-size: .72rem !important; }
+            .menu-mobile nav a, .menu-mobile nav button { font-size: .8rem !important; padding: 8px 10px !important; white-space: nowrap; }
+            .menu-mobile nav { padding: 10px 12px !important; }
+            .menu-mobile .px-6.py-4 { padding: 10px 14px !important; }
+            .menu-mobile form button { font-size: .85rem !important; padding: 8px 10px !important; }
         }
     </style>
     <!-- Primary Navigation Menu -->
@@ -111,7 +134,7 @@
                     @if (Auth::user()->temAcessoHumana())
                         <a href="{{ route('humanas.index') }}"
                            title="Cotação Humana — Teresina (PI)"
-                           class="hapvida-ss-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
+                           class="humana-highlight text-white flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-bold mr-2">
                             <span class="hapvida-ss-arrow">➜</span>
                             Humana
                             <span class="hapvida-ss-arrow">➜</span>
@@ -236,7 +259,7 @@
 
     <!-- Responsive Navigation Menu -->
     <div :class="open ? 'block' : 'hidden'"
-         class="fixed top-0 left-0 w-64 h-full bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] text-black shadow-lg transform transition-transform duration-300 sm:hidden z-50">
+         class="menu-mobile fixed top-0 left-0 w-64 h-full bg-[rgba(254,254,254,0.18)] backdrop-blur-[15px] text-black shadow-lg transform transition-transform duration-300 sm:hidden z-50">
 
         <div class="flex flex-col h-full">
             <!-- Usuário -->
@@ -247,7 +270,8 @@
 
             <!-- Links -->
             <nav class="flex-1 px-6 py-4 space-y-2">
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                {{-- active fixo: o fundo do link fica sempre visível, em qualquer página --}}
+                <x-responsive-nav-link :href="route('dashboard')" :active="true">
                     📊 Dashboard
                 </x-responsive-nav-link>
 
@@ -256,7 +280,7 @@
                 </a>
 
                 @if (Auth::user()->temAcessoHumana())
-                    <a href="{{ route('humanas.index') }}" class="hapvida-ss-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
+                    <a href="{{ route('humanas.index') }}" class="humana-highlight text-white flex items-center gap-2 p-3 rounded-lg font-bold">
                         <span class="hapvida-ss-arrow">➜</span> Humana <span class="hapvida-ss-arrow">➜</span>
                     </a>
                 @endif

@@ -4,21 +4,29 @@
     </div>
 @else
 @php
-$colFaixa   = '18%';
-$colQtd     = '12%';
-$colApartU  = '17%';
-$colEnferU  = '17%';
-$colApartT  = '18%';
-$colEnferT  = '18%';
+// Faixa/Qtd estreitas (08/09): menos espaço morto entre elas, mais largura pros valores
+$colFaixa   = '13%';
+$colQtd     = '9%';
+$colApartU  = '19%';
+$colEnferU  = '19%';
+$colApartT  = '20%';
+$colEnferT  = '20%';
 
 $sepStyle   = 'border-left:2px solid rgba(255,255,255,0.5);';
-$headerBase = 'color:white;font-weight:700;font-size:.85rem;text-align:center;padding:4px 3px;';
-$cellBase   = 'color:white;font-size:.88rem;text-align:center;padding:4px 3px;';
+$headerBase = 'color:white;font-weight:700;font-size:.78rem;text-align:center;padding:4px 1px;';
+$cellBase   = 'color:white;font-size:.8rem;text-align:center;padding:4px 1px;';
 @endphp
 
 <style>
     @media (max-width: 480px) {
-        .carousel-slide { padding: 0 22px !important; }
+        /* celular: card ocupa quase toda a largura e a tabela quase todo o card */
+        .carousel-slide { padding: 0 4px !important; }
+        .card-cenario { padding: 8px 3px !important; }
+        /* fonte reduzida SÓ no celular: as 6 colunas cabem na tela, sem scroll */
+        .tabela-cenario { min-width: 0 !important; }
+        .tabela-cenario div { font-size: .66rem !important; }
+        .tabela-cenario .chip-rs { font-size: .64rem !important; padding-left: 1px !important; padding-right: 1px !important; }
+        .tabela-cenario .chip-vidas { font-size: .8rem !important; }
     }
 </style>
 
@@ -41,7 +49,7 @@ $cellBase   = 'color:white;font-size:.88rem;text-align:center;padding:4px 3px;';
 
         @foreach($resultados as $i => $cenario)
         <div class="carousel-slide" data-label="{{ $cenario['label'] }}" style="min-width:100%;box-sizing:border-box;padding:0 42px;">
-        <div style="border:2px solid white;border-radius:1.5rem;background:rgba(254,254,254,0.18);backdrop-filter:blur(15px);box-shadow:0 20px 25px -5px rgba(0,0,0,.1);padding:8px 10px;">
+        <div class="card-cenario" style="border:2px solid white;border-radius:1.5rem;background:rgba(254,254,254,0.18);backdrop-filter:blur(15px);box-shadow:0 20px 25px -5px rgba(0,0,0,.1);padding:8px 10px;">
 
             {{-- Título --}}
             <div style="border:1px solid white;border-radius:.75rem;color:white;text-align:center;font-weight:700;font-size:.95rem;background:rgba(254,254,254,0.18);backdrop-filter:blur(15px);text-transform:uppercase;padding:5px 8px;margin-bottom:10px;">
@@ -54,9 +62,10 @@ $cellBase   = 'color:white;font-size:.88rem;text-align:center;padding:4px 3px;';
                 $totalVidas = 0;
             @endphp
 
-            {{-- Tabela de dados: rola na horizontal se a tela for estreita demais para as 6 colunas --}}
-            <div style="width:100%;overflow-x:auto;">
-            <div style="width:100%;min-width:300px;">
+            {{-- Tabela de dados: rola na horizontal se a tela for estreita demais para as 6
+                 colunas (min-width garante espaço legível para cada coluna no celular) --}}
+            <div class="tabela-scroll" style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+            <div class="tabela-cenario" style="width:100%;min-width:430px;">
 
                 {{-- Cabeçalho grupo (linha 1) --}}
                 <div style="display:flex;align-items:stretch;">
@@ -123,14 +132,14 @@ $cellBase   = 'color:white;font-size:.88rem;text-align:center;padding:4px 3px;';
 
                 {{-- Linha de totais gerais --}}
                 <div style="display:flex;align-items:center;border-top:2px solid white;margin-top:4px;padding-top:4px;">
-                    <div style="flex-basis:{{ $colFaixa }};color:white;font-size:.85rem;font-weight:700;text-align:center;padding:6px 3px;">TOTAL</div>
-                    <div style="flex-basis:{{ $colQtd }};color:white;font-size:1.15rem;font-weight:800;text-align:center;padding:6px 3px;background:rgba(180,130,0,0.45);border-radius:6px;border:1px solid rgba(251,191,36,0.5);">{{ $totalVidas }}</div>
+                    <div style="flex-basis:{{ $colFaixa }};color:white;font-size:.78rem;font-weight:700;text-align:center;padding:6px 1px;">TOTAL</div>
+                    <div class="chip-vidas" style="flex-basis:{{ $colQtd }};color:white;font-size:1rem;font-weight:800;text-align:center;padding:6px 1px;background:rgba(180,130,0,0.45);border-radius:6px;border:1px solid rgba(251,191,36,0.5);">{{ $totalVidas }}</div>
                     <div style="flex-basis:{{ $colApartU }};{{ $cellBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);"></div>
                     <div style="flex-basis:{{ $colEnferU }};{{ $cellBase }}background:rgba(255,255,255,0.06);"></div>
-                    <div style="flex-basis:{{ $colApartT }};{{ $sepStyle }}background:rgba(0,150,70,0.5);border:1px solid rgba(0,230,118,0.5);border-radius:6px;color:white;font-size:1.05rem;font-weight:800;text-align:center;padding:6px 3px;">
+                    <div class="chip-rs" style="flex-basis:{{ $colApartT }};{{ $sepStyle }}background:rgba(0,150,70,0.5);border:1px solid rgba(0,230,118,0.5);border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
                         R$ {{ number_format($totalApart, 2, ',', '.') }}
                     </div>
-                    <div style="flex-basis:{{ $colEnferT }};background:rgba(180,0,30,0.5);border:1px solid rgba(255,23,68,0.5);border-radius:6px;color:white;font-size:1.05rem;font-weight:800;text-align:center;padding:6px 3px;">
+                    <div class="chip-rs" style="flex-basis:{{ $colEnferT }};background:rgba(180,0,30,0.5);border:1px solid rgba(255,23,68,0.5);border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
                         R$ {{ number_format($totalEnfer, 2, ',', '.') }}
                     </div>
                 </div>

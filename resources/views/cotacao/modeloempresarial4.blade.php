@@ -177,6 +177,9 @@
     $dadosComOdontoComCopar = [];
     $dadosComOdontoSemCopar = [];
     $dadosComOdonto = [];
+    $mostrar_unitarios = $mostrar_unitarios ?? 1;
+    $mostrar_apartamento = $mostrar_apartamento ?? 1;
+    $mostrar_enfermaria = $mostrar_enfermaria ?? 1;
     $total_apartamento = 0;
     $total_enfermaria = 0;
 @endphp
@@ -245,7 +248,18 @@
             <td class="bloco" style="width: 18%;">
                 <table width="100%">
                     <tr>
-                        <td class="header-orange-blue" style="text-align:center;">IDADE</td>
+                        @php
+                            // Nome do plano no lugar do "IDADE" fixo (08/09/2026). A fonte
+                            // encolhe conforme o nome cresce; só o span diminui, então a
+                            // altura do cabeçalho não muda e os blocos seguem alinhados.
+                            $tituloPlano = mb_strtoupper($plano_titulo ?? 'IDADE');
+                            $lenTitulo = mb_strlen($tituloPlano);
+                            $fatorTitulo = $lenTitulo <= 9 ? 1 : ($lenTitulo <= 13 ? 0.75 : ($lenTitulo <= 18 ? 0.62 : 0.5));
+                            // fonte menor = linha mais baixa no dompdf; o padding vertical
+                            // extra devolve a altura para alinhar com os blocos vizinhos
+                            $padTitulo = round(20 + 15.4 * (1 - $fatorTitulo), 1);
+                        @endphp
+                        <td class="header-orange-blue" style="text-align:center;white-space:nowrap;{{ $lenTitulo > 9 ? "padding:{$padTitulo}px 5px;" : '' }}"><span style="font-size:{{ $fatorTitulo }}em;">{{ $tituloPlano }}</span></td>
                     </tr>
                     <tr>
                         <td class="subheader-blue">FAIXA ETÁRIA</td>
@@ -290,28 +304,29 @@
                 </table>
             </td>
 
+            @if($mostrar_unitarios)
             <td class="bloco" style="width: 30%;margin-right: 20px;">
                 <table width="100%">
                     <tr>
-                        <td class="header-orange" style="text-align:center;" colspan="2">Preços Unitários</td>
+                        <td class="header-orange" style="text-align:center;" colspan="{{ $mostrar_apartamento + $mostrar_enfermaria }}">Preços Unitários</td>
                     </tr>
                     <!-- Linha para cabeçalhos "Apart" e "Enfer" -->
                     <tr>
-                        <td class="subheader-blue">APART</td>
-                        <td class="subheader-blue">ENFER</td>
+                        @if($mostrar_apartamento)<td class="subheader-blue">APART</td>@endif
+                        @if($mostrar_enfermaria)<td class="subheader-blue">ENFER</td>@endif
                     </tr>
                     <!-- Iteração para Dados -->
                     @foreach($unitarios as $u)
                         <tr>
                             <!-- Dado para Apart -->
-                            <td style="text-align: left;">
+                            @if($mostrar_apartamento)<td style="text-align: left;">
                                 <span class="valor-copart-col">{{ $u['apartamento'] }}</span>
-                            </td>
+                            </td>@endif
                             <!-- Dado para Enfer -->
-                            <td style="text-align: right;">
+                            @if($mostrar_enfermaria)<td style="text-align: right;">
 
                                 <span class="valor-copart-col">{{ $u['enfermaria'] }}</span>
-                            </td>
+                            </td>@endif
                         </tr>
                     @endforeach
 
@@ -327,21 +342,22 @@
 
             </td>
 
+            @endif
             <td class="bloco" style="width: 30%;">
                 <table width="100%">
                     <tr>
 
-                        <td class="header-orange-totais" style="text-align:center;" colspan="2">Preços Totais</td>
+                        <td class="header-orange-totais" style="text-align:center;" colspan="{{ $mostrar_apartamento + $mostrar_enfermaria }}">Preços Totais</td>
                     </tr>
                     <tr>
-                        <td class="subheader-blue" style="text-align: center;">APART</td>
-                        <td class="subheader-blue" style="text-align: center;">ENFER</td>
+                        @if($mostrar_apartamento)<td class="subheader-blue" style="text-align: center;">APART</td>@endif
+                        @if($mostrar_enfermaria)<td class="subheader-blue" style="text-align: center;">ENFER</td>@endif
                     </tr>
                     @foreach($totais as $t => $tt)
 
                         <tr>
                             <!-- Dado para Apart -->
-                            <td style="text-align: left;color: rgb(8,73,189);">
+                            @if($mostrar_apartamento)<td style="text-align: left;color: rgb(8,73,189);">
                                 <span class="valor-copart-col-totais">
                                     {{ $tt['apartamento'] }}
                                     @php
@@ -349,9 +365,9 @@
                                         $total_apartamento += (float) $valor;
                                     @endphp
                                 </span>
-                            </td>
+                            </td>@endif
                             <!-- Dado para Enfer -->
-                            <td style="text-align: right;color: rgb(8,73,189);">
+                            @if($mostrar_enfermaria)<td style="text-align: right;color: rgb(8,73,189);">
                                 <span class="valor-copart-col-totais">
                                     {{ $tt['enfermaria'] }}
                                     @php
@@ -359,7 +375,7 @@
                                         $total_enfermaria += (float) $valor_e;
                                     @endphp
                                 </span>
-                            </td>
+                            </td>@endif
                         </tr>
                     @endforeach
 
@@ -373,7 +389,7 @@
 
 
         <tr>
-            <td colspan="3" style="padding:0px;">
+            <td colspan="{{ 2 + ($mostrar_unitarios ? 1 : 0) }}" style="padding: 0 15px;">
                 <div class="valor-copart-laranja-parcial">
             <span style="padding:3px;display: block;">
                 Totais
@@ -381,19 +397,15 @@
                 </div>
             </td>
 
-            <td class="bloco" style="padding:0;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
+            <td class="bloco" style="padding: 0 15px;">
+                <table width="100%">
                     <tr>
-                        <td style="padding:3px;">
-                    <span class="valor-copart-col-totais-foot" style="width: 83%;text-align: center;margin: 0 auto;">
-                        {{ number_format($total_apartamento,2,",",".") }}
-                    </span>
-                        </td>
-                        <td style="padding:3px;">
-                    <span class="valor-copart-col-totais-foot" style="width: 83%;text-align: center;margin: 0 auto;">
-                        {{ number_format($total_enfermaria,2,",",".") }}
-                    </span>
-                        </td>
+                        @if($mostrar_apartamento)<td style="text-align: left;color: rgb(8,73,189);">
+                            <span class="valor-copart-col-totais-foot">{{ number_format($total_apartamento,2,",",".") }}</span>
+                        </td>@endif
+                        @if($mostrar_enfermaria)<td style="text-align: right;color: rgb(8,73,189);">
+                            <span class="valor-copart-col-totais-foot">{{ number_format($total_enfermaria,2,",",".") }}</span>
+                        </td>@endif
                     </tr>
                 </table>
             </td>
@@ -418,6 +430,7 @@
 @include('cotacao.partials.copart4', [
     'com_coparticipacao' => $copart_com ?? $com_coparticipacao,
     'sem_coparticipacao' => $copart_sem ?? $sem_coparticipacao,
+    'copart_centralizar' => true,
 ])
 
 </div>

@@ -3,6 +3,26 @@
      Os preços da linha chegam num único POST /humanas/precos (cacheado por
      plano no JS) — alternar pill não faz nova requisição. --}}
 <x-app-layout>
+    <style>
+        /* Celular: resultado compacto (CSS puro — classes novas do Tailwind não
+           existem no build de produção). Desktop segue intacto. */
+        @media (max-width: 640px) {
+            #resultado { padding: 8px 6px !important; }
+            #resultado table { font-size: .68rem !important; }
+            #resultado th, #resultado td { padding: 4px 2px !important; }
+            /* some a linha do unitário ("1 × R$ 156,74"): só o subtotal, colunas bem
+               mais estreitas — o unitário continua no desktop e nos documentos */
+            #resultado td .opacity-60 { display: none !important; }
+            #resultado td br { display: none !important; }
+            #resultado tr.font-bold.text-base { font-size: .76rem !important; }
+            #resultado .pill { font-size: .65rem !important; padding: 3px 8px !important; }
+            #resultado button:not(.pill) { font-size: .76rem !important; padding: 6px 10px !important; }
+            #resultado .text-sm { font-size: .78rem !important; }
+            #resultado td .rounded-full { font-size: .55rem !important; padding: 2px 6px !important; }
+            /* promoções em uma linha só no celular */
+            #resultado .promo-humana { font-size: .6rem !important; padding: 6px 8px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        }
+    </style>
     <div class="max-w-full mx-auto sm:px-6 lg:px-8 px-4">
 
         {{-- Cabeçalho --}}
@@ -318,7 +338,7 @@
             const promos = (planoAtual.promocoes || []).filter(p =>
                 p.coparticipacao === null || p.coparticipacao === selCopay);
             promos.forEach(p => {
-                html += '<div class="mb-2 px-3 py-2 rounded bg-orange-400 text-blue-950 font-bold text-sm">' +
+                html += '<div class="promo-humana mb-2 px-3 py-2 rounded bg-orange-400 text-white font-bold text-sm">' +
                         'PROMOÇÃO' + (p.coparticipacao ? ' (Copart. ' + (p.coparticipacao === 'basica' ? 'Básica' : 'Completa') + ')' : '') +
                         ': ' + p.texto + '</div>';
             });

@@ -81,6 +81,13 @@
             transform: scale(1.1);
         }
 
+        /* Celular: o botão flutuante de Suporte cobre o conteúdo — esconder (08/09/2026) */
+        @media (max-width: 768px) {
+            .whatsapp-container {
+                display: none !important;
+            }
+        }
+
         #user-modal {
             transition: opacity 0.2s ease;
         }
