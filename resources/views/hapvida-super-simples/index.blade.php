@@ -53,6 +53,13 @@
                             @foreach($planos as $plano)
                                 <option value="{{ $plano->id }}" {{ $planoSelecionado == $plano->id ? 'selected' : '' }}>{{ $plano->nome }}</option>
                             @endforeach
+                            {{-- Variantes ambulatoriais (regra dinâmica: só planos com
+                                 tabela acomodacao_id=3 e valor > 0 em alguma cidade) --}}
+                            @foreach($planos as $plano)
+                                @if(in_array($plano->id, $planosAmbulatoriais ?? []))
+                                    <option value="amb-{{ $plano->id }}">{{ $plano->nome }} - Ambulatorial</option>
+                                @endif
+                            @endforeach
                         </select>
                     </div>
                     <div class="w-full flex">
@@ -217,7 +224,7 @@
                 </div>
             </fieldset>
 
-            <fieldset class="border-4 border-gray-300 rounded-lg p-4 mt-4">
+            <fieldset id="fieldsetAcomodacaoGerar" class="border-4 border-gray-300 rounded-lg p-4 mt-4">
                 <legend class="text-lg font-semibold px-2 mx-auto">Acomodação</legend>
                 <div class="flex justify-between items-center">
                     <label class="flex items-center space-x-2">
@@ -337,7 +344,12 @@
             });
 
             function planoAtual() {
-                return $('#plano').val();
+                // "amb-5" = variante ambulatorial do plano 5
+                return String($('#plano').val()).replace('amb-', '');
+            }
+
+            function ambulatorialAtual() {
+                return String($('#plano').val()).indexOf('amb-') === 0 ? 1 : 0;
             }
 
             // ------- Plano → UFs -------
@@ -360,7 +372,7 @@
                     url: '{{ route('hapvida-ss.estados') }}',
                     type: 'POST',
                     dataType: 'json',
-                    data: { plano_id: planoAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
+                    data: { plano_id: planoAtual(), ambulatorial: ambulatorialAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
                     success: function (data) {
                         $.each(data, function (i, v) {
                             $('#estado').append('<option value="' + v.uf + '">' + v.uf + '</option>');
@@ -390,7 +402,7 @@
                     url: '{{ route('hapvida-ss.cidades') }}',
                     type: 'POST',
                     dataType: 'json',
-                    data: { uf: uf, plano_id: planoAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
+                    data: { uf: uf, plano_id: planoAtual(), ambulatorial: ambulatorialAtual(), _token: $('meta[name="csrf-token"]').attr('content') },
                     success: function (data) {
                         $.each(data, function (i, v) {
                             $('#cidade').append('<option value="' + v.id + '">' + v.nome + '</option>');
@@ -499,6 +511,7 @@
                     data: {
                         tabela_origem: cidade,
                         plano_id: planoAtual(),
+                        ambulatorial: ambulatorialAtual(),
                         faixas: faixas,
                         _token: '{{ csrf_token() }}'
                     },
@@ -600,6 +613,8 @@
                 cenarioSelecionado.copart = $(this).data('coparticipacao');
                 cenarioSelecionado.odonto = $(this).data('odonto');
                 cenarioSelecionado.label  = $(this).data('label');
+                // Ambulatorial tem coluna única: escolha de acomodação não se aplica
+                $('#fieldsetAcomodacaoGerar').toggle(!ambulatorialAtual());
                 $('#modalGerarImagem').removeClass('hidden');
             });
 
@@ -623,7 +638,7 @@
                 let odonto = cenarioSelecionado.odonto;
                 let load   = $(".ajax_load");
 
-                if (!apart && !enfer) {
+                if (!ambulatorialAtual() && !apart && !enfer) {
                     alert('Selecione pelo menos uma acomodação (Apartamento ou Enfermaria).');
                     return;
                 }
@@ -635,6 +650,7 @@
                         coparticipacao: copart,
                         tabela_origem:  cidade,
                         plano_id:       planoAtual(),
+                        ambulatorial:   ambulatorialAtual(),
                         faixas:         faixas,
                         odonto:         odonto,
                         tipo_documento: tipo,

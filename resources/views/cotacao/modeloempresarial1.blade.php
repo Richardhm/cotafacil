@@ -313,7 +313,7 @@
                     <!-- Linha para cabeçalhos "Apart" e "Enfer" -->
                     <tr>
                         @if($mostrar_apartamento)<td class="subheader-blue">APART</td>@endif
-                        @if($mostrar_enfermaria)<td class="subheader-blue">ENFER</td>@endif
+                        @if($mostrar_enfermaria)<td class="subheader-blue">{{ $rotulo_enfer ?? 'ENFER' }}</td>@endif
                     </tr>
                     <!-- Iteração para Dados -->
                     @foreach($unitarios as $u)
@@ -351,7 +351,7 @@
                     </tr>
                     <tr>
                         @if($mostrar_apartamento)<td class="subheader-blue" style="text-align: center;">APART</td>@endif
-                        @if($mostrar_enfermaria)<td class="subheader-blue" style="text-align: center;">ENFER</td>@endif
+                        @if($mostrar_enfermaria)<td class="subheader-blue" style="text-align: center;">{{ $rotulo_enfer ?? 'ENFER' }}</td>@endif
                     </tr>
                     @foreach($totais as $t => $tt)
 

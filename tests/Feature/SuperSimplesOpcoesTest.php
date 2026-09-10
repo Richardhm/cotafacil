@@ -122,6 +122,62 @@ test('cabecalho IDADE vira o nome do plano nos 4 layouts', function () {
     }
 });
 
+// 10/09/2026: variante "Super Simples - Ambulatorial" no select — documento em
+// coluna única com rótulo AMBUL. (slot da enfermaria) e cards com coluna única.
+test('documento ambulatorial sai em coluna unica com rotulo AMBUL nos 4 layouts', function () {
+    foreach ([1, 2, 3, 4] as $layout) {
+        $html = renderModeloEmpresarial($layout, [
+            'mostrar_apartamento' => 0,
+            'mostrar_enfermaria'  => 1,
+            'rotulo_enfer'        => 'AMBUL.',
+            'plano_titulo'        => 'Super Simples - Ambulatorial',
+        ]);
+        expect($html)->toContain('AMBUL.');
+        expect($html)->not->toContain('>ENFER<');
+        expect($html)->not->toContain('APART');
+        expect($html)->toContain('SUPER SIMPLES - AMBULATORIAL');
+        expect($html)->toContain('222,22'); // valor no slot da enfermaria
+        expect($html)->not->toContain('111,11');
+    }
+});
+
+test('cards do cenario ambulatorial mostram coluna unica Ambul', function () {
+    $row = [
+        'faixa_etaria'      => 'Faixa 1',
+        'quantidade'        => 1,
+        'valor_apartamento' => 0,
+        'valor_enfermaria'  => 142.54,
+        'total_apartamento' => 0,
+        'total_enfermaria'  => 142.54,
+    ];
+    $html = view('hapvida-super-simples.cards', ['resultados' => [[
+        'label' => 'Com Copart - Com Odonto',
+        'rows' => [$row],
+        'copart' => 1,
+        'odonto' => 1,
+        'ambulatorial' => 1,
+        'total_apartamento' => 0,
+        'total_enfermaria' => 142.54,
+    ]]])->render();
+
+    expect($html)->toContain('Ambul.');
+    expect($html)->not->toContain('Apart.');
+    expect($html)->toContain('142,54');
+
+    // cenário normal continua com Apart./Enfer.
+    $htmlNormal = view('hapvida-super-simples.cards', ['resultados' => [[
+        'label' => 'Com Copart - Com Odonto',
+        'rows' => [array_merge($row, ['valor_apartamento' => 200.10, 'total_apartamento' => 200.10])],
+        'copart' => 1,
+        'odonto' => 1,
+        'ambulatorial' => 0,
+        'total_apartamento' => 200.10,
+        'total_enfermaria' => 142.54,
+    ]]])->render();
+    expect($htmlNormal)->toContain('Apart.');
+    expect($htmlNormal)->toContain('Enfer.');
+});
+
 test('Resumida com uma acomodacao so tambem funciona', function () {
     foreach ([1, 2, 3, 4] as $layout) {
         $html = renderModeloEmpresarial($layout, ['mostrar_unitarios' => 0, 'mostrar_enfermaria' => 0]);

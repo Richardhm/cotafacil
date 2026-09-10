@@ -81,13 +81,44 @@ class HapvidaSuperSimplesController extends Controller
             : self::SUPER_SIMPLES_ID;
     }
 
-    /** UFs que têm tabela para o plano informado. */
-    private function estadosDoPlano(int $planoId)
+    /**
+     * Variante ambulatorial escolhida no select ("{Plano} - Ambulatorial")?
+     * O plano_id continua o mesmo; muda o filtro de acomodação (id 3).
+     */
+    private function ambulatorialDaRequisicao(Request $request): bool
     {
-        $cidadeIds = Tabela::where('administradora_id', self::HAPVIDA_ID)
-            ->where('plano_id', $planoId)
-            ->pluck('tabela_origens_id')
-            ->unique();
+        return (int) $request->input('ambulatorial', 0) === 1;
+    }
+
+    /**
+     * Regra dinâmica (mesma do /dashboard): plano ganha a opção Ambulatorial
+     * quando existe tabela com acomodacao_id=3 e valor > 0 em alguma cidade.
+     */
+    private function planosComAmbulatorial(array $planoIds): array
+    {
+        return Tabela::where('administradora_id', self::HAPVIDA_ID)
+            ->whereIn('plano_id', $planoIds)
+            ->where('acomodacao_id', 3)
+            ->where('valor', '>', 0)
+            ->pluck('plano_id')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /** UFs que têm tabela para o plano informado (na variante pedida). */
+    private function estadosDoPlano(int $planoId, bool $ambulatorial = false)
+    {
+        $query = Tabela::where('administradora_id', self::HAPVIDA_ID)
+            ->where('plano_id', $planoId);
+
+        if ($ambulatorial) {
+            $query->where('acomodacao_id', 3)->where('valor', '>', 0);
+        } else {
+            $query->where('acomodacao_id', '!=', 3);
+        }
+
+        $cidadeIds = $query->pluck('tabela_origens_id')->unique();
 
         return TabelaOrigens::whereIn('id', $cidadeIds)
             ->groupBy('uf')
@@ -106,11 +137,13 @@ class HapvidaSuperSimplesController extends Controller
             ->orderByRaw('FIELD(id, ' . implode(',', $disponiveis) . ')')
             ->get(['id', 'nome']);
 
+        $planosAmbulatoriais = $this->planosComAmbulatorial($disponiveis);
+
         $estados = $this->estadosDoPlano($planoPadrao);
 
         $ufpreferencia = auth()->user()->uf_preferencia ?? '';
 
-        return view('hapvida-super-simples.index', compact('estados', 'ufpreferencia', 'planos'))
+        return view('hapvida-super-simples.index', compact('estados', 'ufpreferencia', 'planos', 'planosAmbulatoriais'))
             ->with('hapvidaId', self::HAPVIDA_ID)
             ->with('planoSelecionado', $planoPadrao);
     }
@@ -118,17 +151,26 @@ class HapvidaSuperSimplesController extends Controller
     /** UFs disponíveis para o plano — usado quando o usuário troca de plano na tela. */
     public function getEstados(Request $request)
     {
-        return response()->json($this->estadosDoPlano($this->planoSelecionado($request)));
+        return response()->json($this->estadosDoPlano(
+            $this->planoSelecionado($request),
+            $this->ambulatorialDaRequisicao($request)
+        ));
     }
 
     public function getCidades(Request $request)
     {
         $uf = $request->input('uf');
 
-        $cidadeIds = Tabela::where('administradora_id', self::HAPVIDA_ID)
-            ->where('plano_id', $this->planoSelecionado($request))
-            ->pluck('tabela_origens_id')
-            ->unique();
+        $query = Tabela::where('administradora_id', self::HAPVIDA_ID)
+            ->where('plano_id', $this->planoSelecionado($request));
+
+        if ($this->ambulatorialDaRequisicao($request)) {
+            $query->where('acomodacao_id', 3)->where('valor', '>', 0);
+        } else {
+            $query->where('acomodacao_id', '!=', 3);
+        }
+
+        $cidadeIds = $query->pluck('tabela_origens_id')->unique();
 
         $cidades = TabelaOrigens::whereIn('id', $cidadeIds)
             ->where('uf', $uf)
@@ -143,6 +185,7 @@ class HapvidaSuperSimplesController extends Controller
     {
         $cidade = $request->input('tabela_origem');
         $planoId = $this->planoSelecionado($request);
+        $ambulatorial = $this->ambulatorialDaRequisicao($request);
         $faixasInput = $request->input('faixas')[0];
 
         $sqlCase = '';
@@ -175,7 +218,9 @@ class HapvidaSuperSimplesController extends Controller
                 ->where('tabelas.administradora_id', self::HAPVIDA_ID)
                 ->where('tabelas.coparticipacao', $cenario['copart'])
                 ->where('tabelas.odonto', $cenario['odonto'])
-                ->where('tabelas.acomodacao_id', '!=', 3)
+                ->when($ambulatorial,
+                    fn ($q) => $q->where('tabelas.acomodacao_id', 3)->where('tabelas.valor', '>', 0),
+                    fn ($q) => $q->where('tabelas.acomodacao_id', '!=', 3))
                 ->whereIn('tabelas.faixa_etaria_id', $faixasIds)
                 ->get();
 
@@ -188,6 +233,7 @@ class HapvidaSuperSimplesController extends Controller
                     'rows'              => $totais['rows'],
                     'copart'            => $cenario['copart'],
                     'odonto'            => $cenario['odonto'],
+                    'ambulatorial'      => $ambulatorial ? 1 : 0,
                     'total_apartamento' => $totais['total_apartamento'],
                     'total_enfermaria'  => $totais['total_enfermaria'],
                 ];
@@ -218,7 +264,9 @@ class HapvidaSuperSimplesController extends Controller
             if ($dado->acomodacao_id == 1) {
                 $dadosAgrupados[$faixaId]['valor_apartamento'] = $dado->valor;
                 $dadosAgrupados[$faixaId]['total_apartamento'] = $dado->valor * $dadosAgrupados[$faixaId]['quantidade'];
-            } elseif ($dado->acomodacao_id == 2) {
+            } elseif ($dado->acomodacao_id == 2 || $dado->acomodacao_id == 3) {
+                // Ambulatorial (3) ocupa o slot da enfermaria: a variante mostra
+                // uma coluna única, e o normal filtra acomodacao_id != 3 antes
                 $dadosAgrupados[$faixaId]['valor_enfermaria'] = $dado->valor;
                 $dadosAgrupados[$faixaId]['total_enfermaria'] = $dado->valor * $dadosAgrupados[$faixaId]['quantidade'];
             }
@@ -241,6 +289,14 @@ class HapvidaSuperSimplesController extends Controller
         $mostrarEnfermaria  = $request->input('mostrar_enfermaria', 'true')  === 'true' ? 1 : 0;
         if (!$mostrarApartamento && !$mostrarEnfermaria) {
             $mostrarApartamento = 1;
+            $mostrarEnfermaria  = 1;
+        }
+
+        // Variante Ambulatorial: coluna única (usa o slot da enfermaria com
+        // rótulo próprio), a escolha de acomodação do modal não se aplica
+        $ambulatorial = $this->ambulatorialDaRequisicao($request);
+        if ($ambulatorial) {
+            $mostrarApartamento = 0;
             $mostrarEnfermaria  = 1;
         }
         $planoId        = $this->planoSelecionado($request);
@@ -266,6 +322,9 @@ class HapvidaSuperSimplesController extends Controller
             ->where('tabelas.administradora_id', self::HAPVIDA_ID)
             ->where('tabelas.coparticipacao', $coparticipacao)
             ->where('tabelas.odonto', $odonto)
+            ->when($ambulatorial,
+                fn ($q) => $q->where('tabelas.acomodacao_id', 3)->where('tabelas.valor', '>', 0),
+                fn ($q) => $q->where('tabelas.acomodacao_id', '!=', 3))
             ->whereIn('tabelas.faixa_etaria_id', $faixasIds)
             ->get();
 
@@ -280,7 +339,7 @@ class HapvidaSuperSimplesController extends Controller
             foreach ($items as $item) {
                 $quantidade = $item->quantidade;
                 if ($item->acomodacao_id == 1) $valorApartamento = $item->valor;
-                elseif ($item->acomodacao_id == 2) $valorEnfermaria = $item->valor;
+                elseif ($item->acomodacao_id == 2 || $item->acomodacao_id == 3) $valorEnfermaria = $item->valor;
             }
             return [
                 'faixa_etaria'      => "Faixa {$faixaId}",
@@ -293,6 +352,9 @@ class HapvidaSuperSimplesController extends Controller
         });
 
         $plano_nome  = RotuloCotacao::resolver(auth()->user(), 'nome_plano', (int) $planoId, Plano::find($planoId)->nome);
+        if ($ambulatorial) {
+            $plano_nome .= ' - Ambulatorial';
+        }
         $cidade_nome = TabelaOrigens::find($cidade)->nome;
         // Título sem a parte de copart (pedido de 08/09): só plano + odonto
         $odonto_frase = $odonto == 1 ? ' c/ Odonto' : ' s/ Odonto';
@@ -305,8 +367,9 @@ class HapvidaSuperSimplesController extends Controller
         $layout      = auth()->user()->layout_id ?? 1;
         $layout_user = in_array($layout, [1, 2, 3, 4]) ? $layout : 1;
 
-        // Tabelinhas de coparticipação (mesmo bloco do dashboard) — só a copay escolhida
-        $copart = CoparticipacaoCotacao::montar((int) $planoId, (int) $cidade, self::HAPVIDA_ID);
+        // Tabelinhas de coparticipação (mesmo bloco do dashboard) — só a copay
+        // escolhida; ambulatorial prefere a linha própria da pdf (com fallback)
+        $copart = CoparticipacaoCotacao::montar((int) $planoId, (int) $cidade, self::HAPVIDA_ID, ambulatorial: $ambulatorial);
 
         $view = view("cotacao.modeloempresarial{$layout_user}", [
             'pdf'                   => $copart['pdf'],
@@ -322,6 +385,7 @@ class HapvidaSuperSimplesController extends Controller
             'mostrar_unitarios'   => $mostrarUnitarios,
             'mostrar_apartamento' => $mostrarApartamento,
             'mostrar_enfermaria'  => $mostrarEnfermaria,
+            'rotulo_enfer'        => $ambulatorial ? 'AMBUL.' : null,
             'plano_titulo'        => $plano_nome, // vira o cabeçalho do bloco IDADE
             'cidade'      => $cidade_nome,
             'label'       => $frase,

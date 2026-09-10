@@ -60,6 +60,15 @@ $cellBase   = 'color:white;font-size:.8rem;text-align:center;padding:4px 1px;';
                 $totalApart = 0;
                 $totalEnfer = 0;
                 $totalVidas = 0;
+                // Variante Ambulatorial: coluna única de valores (vem no slot da
+                // enfermaria) — larguras e rótulos próprios para este cenário
+                $ehAmb   = !empty($cenario['ambulatorial']);
+                $wFaixa  = $ehAmb ? '22%' : $colFaixa;
+                $wQtd    = $ehAmb ? '14%' : $colQtd;
+                $wEnU    = $ehAmb ? '30%' : $colEnferU;
+                $wEnT    = $ehAmb ? '34%' : $colEnferT;
+                $rotAcom = $ehAmb ? 'Ambul.' : 'Enfer.';
+                $sepAmb  = $ehAmb ? $sepStyle : '';
             @endphp
 
             {{-- Tabela de dados: rola na horizontal se a tela for estreita demais para as 6
@@ -69,24 +78,24 @@ $cellBase   = 'color:white;font-size:.8rem;text-align:center;padding:4px 1px;';
 
                 {{-- Cabeçalho grupo (linha 1) --}}
                 <div style="display:flex;align-items:stretch;">
-                    <div style="flex-basis:{{ $colFaixa }};{{ $headerBase }}"></div>
-                    <div style="flex-basis:{{ $colQtd }};{{ $headerBase }}"></div>
-                    <div style="flex-basis:calc({{ $colApartU }} + {{ $colEnferU }});{{ $headerBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);border-radius:6px 6px 0 0;">
+                    <div style="flex-basis:{{ $wFaixa }};{{ $headerBase }}"></div>
+                    <div style="flex-basis:{{ $wQtd }};{{ $headerBase }}"></div>
+                    <div style="flex-basis:{{ $ehAmb ? $wEnU : 'calc('.$colApartU.' + '.$colEnferU.')' }};{{ $headerBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.08);border-radius:6px 6px 0 0;">
                         Preços Unitários
                     </div>
-                    <div style="flex-basis:calc({{ $colApartT }} + {{ $colEnferT }});{{ $headerBase }}{{ $sepStyle }}background:rgba(255,255,255,0.15);border-radius:6px 6px 0 0;">
+                    <div style="flex-basis:{{ $ehAmb ? $wEnT : 'calc('.$colApartT.' + '.$colEnferT.')' }};{{ $headerBase }}{{ $sepStyle }}background:rgba(255,255,255,0.15);border-radius:6px 6px 0 0;">
                         Total
                     </div>
                 </div>
 
                 {{-- Cabeçalho sub-colunas (linha 2) --}}
                 <div style="display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,0.4);padding-bottom:3px;margin-bottom:3px;">
-                    <div style="flex-basis:{{ $colFaixa }};{{ $headerBase }}">Faixa</div>
-                    <div style="flex-basis:{{ $colQtd }};{{ $headerBase }}">Qtd.</div>
-                    <div style="flex-basis:{{ $colApartU }};{{ $headerBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);">Apart.</div>
-                    <div style="flex-basis:{{ $colEnferU }};{{ $headerBase }}background:rgba(255,255,255,0.06);">Enfer.</div>
-                    <div style="flex-basis:{{ $colApartT }};{{ $headerBase }}{{ $sepStyle }}background:rgba(255,255,255,0.12);">Apart.</div>
-                    <div style="flex-basis:{{ $colEnferT }};{{ $headerBase }}background:rgba(255,255,255,0.12);">Enfer.</div>
+                    <div style="flex-basis:{{ $wFaixa }};{{ $headerBase }}">Faixa</div>
+                    <div style="flex-basis:{{ $wQtd }};{{ $headerBase }}">Qtd.</div>
+                    @if(!$ehAmb)<div style="flex-basis:{{ $colApartU }};{{ $headerBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);">Apart.</div>@endif
+                    <div style="flex-basis:{{ $wEnU }};{{ $headerBase }}{{ $sepAmb }}background:rgba(255,255,255,0.06);">{{ $rotAcom }}</div>
+                    @if(!$ehAmb)<div style="flex-basis:{{ $colApartT }};{{ $headerBase }}{{ $sepStyle }}background:rgba(255,255,255,0.12);">Apart.</div>@endif
+                    <div style="flex-basis:{{ $wEnT }};{{ $headerBase }}{{ $sepAmb }}background:rgba(255,255,255,0.12);">{{ $rotAcom }}</div>
                 </div>
 
                 {{-- Linhas de dados --}}
@@ -110,18 +119,18 @@ $cellBase   = 'color:white;font-size:.8rem;text-align:center;padding:4px 1px;';
                     $totalVidas += (int)$row['quantidade'];
                 @endphp
                 <div style="display:flex;align-items:center;margin-bottom:2px;">
-                    <div style="flex-basis:{{ $colFaixa }};{{ $cellBase }}font-weight:700;">{{ $faixa }}</div>
-                    <div style="flex-basis:{{ $colQtd }};{{ $cellBase }}font-weight:700;">{{ $row['quantidade'] }}</div>
-                    <div style="flex-basis:{{ $colApartU }};{{ $cellBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);">
+                    <div style="flex-basis:{{ $wFaixa }};{{ $cellBase }}font-weight:700;">{{ $faixa }}</div>
+                    <div style="flex-basis:{{ $wQtd }};{{ $cellBase }}font-weight:700;">{{ $row['quantidade'] }}</div>
+                    @if(!$ehAmb)<div style="flex-basis:{{ $colApartU }};{{ $cellBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);">
                         {{ number_format($row['valor_apartamento'], 2, ',', '.') }}
-                    </div>
-                    <div style="flex-basis:{{ $colEnferU }};{{ $cellBase }}background:rgba(255,255,255,0.06);">
+                    </div>@endif
+                    <div style="flex-basis:{{ $wEnU }};{{ $cellBase }}{{ $sepAmb }}background:rgba(255,255,255,0.06);">
                         {{ number_format($row['valor_enfermaria'], 2, ',', '.') }}
                     </div>
-                    <div style="flex-basis:{{ $colApartT }};{{ $cellBase }}{{ $sepStyle }}background:rgba(255,255,255,0.12);">
+                    @if(!$ehAmb)<div style="flex-basis:{{ $colApartT }};{{ $cellBase }}{{ $sepStyle }}background:rgba(255,255,255,0.12);">
                         {{ number_format($row['total_apartamento'], 2, ',', '.') }}
-                    </div>
-                    <div style="flex-basis:{{ $colEnferT }};{{ $cellBase }}background:rgba(255,255,255,0.12);">
+                    </div>@endif
+                    <div style="flex-basis:{{ $wEnT }};{{ $cellBase }}{{ $sepAmb }}background:rgba(255,255,255,0.12);">
                         {{ number_format($row['total_enfermaria'], 2, ',', '.') }}
                     </div>
                 </div>
@@ -132,14 +141,15 @@ $cellBase   = 'color:white;font-size:.8rem;text-align:center;padding:4px 1px;';
 
                 {{-- Linha de totais gerais --}}
                 <div style="display:flex;align-items:center;border-top:2px solid white;margin-top:4px;padding-top:4px;">
-                    <div style="flex-basis:{{ $colFaixa }};color:white;font-size:.78rem;font-weight:700;text-align:center;padding:6px 1px;">TOTAL</div>
-                    <div class="chip-vidas" style="flex-basis:{{ $colQtd }};color:white;font-size:1rem;font-weight:800;text-align:center;padding:6px 1px;background:rgba(180,130,0,0.45);border-radius:6px;border:1px solid rgba(251,191,36,0.5);">{{ $totalVidas }}</div>
-                    <div style="flex-basis:{{ $colApartU }};{{ $cellBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);"></div>
-                    <div style="flex-basis:{{ $colEnferU }};{{ $cellBase }}background:rgba(255,255,255,0.06);"></div>
-                    <div class="chip-rs" style="flex-basis:{{ $colApartT }};{{ $sepStyle }}background:rgba(0,150,70,0.5);border:1px solid rgba(0,230,118,0.5);border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
+                    <div style="flex-basis:{{ $wFaixa }};color:white;font-size:.78rem;font-weight:700;text-align:center;padding:6px 1px;">TOTAL</div>
+                    <div class="chip-vidas" style="flex-basis:{{ $wQtd }};color:white;font-size:1rem;font-weight:800;text-align:center;padding:6px 1px;background:rgba(180,130,0,0.45);border-radius:6px;border:1px solid rgba(251,191,36,0.5);">{{ $totalVidas }}</div>
+                    @if(!$ehAmb)<div style="flex-basis:{{ $colApartU }};{{ $cellBase }}border-left:2px solid rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);"></div>@endif
+                    <div style="flex-basis:{{ $wEnU }};{{ $cellBase }}{{ $sepAmb }}background:rgba(255,255,255,0.06);"></div>
+                    @if(!$ehAmb)<div class="chip-rs" style="flex-basis:{{ $colApartT }};{{ $sepStyle }}background:rgba(0,150,70,0.5);border:1px solid rgba(0,230,118,0.5);border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
                         R$ {{ number_format($totalApart, 2, ',', '.') }}
-                    </div>
-                    <div class="chip-rs" style="flex-basis:{{ $colEnferT }};background:rgba(180,0,30,0.5);border:1px solid rgba(255,23,68,0.5);border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
+                    </div>@endif
+                    {{-- no ambulatorial (coluna única) o total usa o chip verde --}}
+                    <div class="chip-rs" style="flex-basis:{{ $wEnT }};{{ $ehAmb ? 'background:rgba(0,150,70,0.5);border:1px solid rgba(0,230,118,0.5);' : 'background:rgba(180,0,30,0.5);border:1px solid rgba(255,23,68,0.5);' }}border-radius:6px;color:white;font-size:.88rem;font-weight:800;text-align:center;padding:6px 2px;white-space:nowrap;">
                         R$ {{ number_format($totalEnfer, 2, ',', '.') }}
                     </div>
                 </div>
