@@ -188,6 +188,8 @@
 <div id="app-container" class="min-h-screen transition-all duration-300">
     @include('layouts.navigation')
 
+    @include('layouts.alerta-vencimento')
+
     <!-- Conteúdo da página -->
     <main>
         {{ $slot }}

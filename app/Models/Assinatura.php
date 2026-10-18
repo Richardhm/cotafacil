@@ -12,6 +12,12 @@ class Assinatura extends Model
      */
     public const CARENCIA_CARTAO_DIAS = 3;
 
+    /**
+     * Dias antes do vencimento do PIX em que o sistema avisa o administrador
+     * (e-mail via pix:alerta-vencimento e barra no topo das telas).
+     */
+    public const ALERTA_PIX_DIAS = 3;
+
     protected $casts = [
         'next_charge'            => 'datetime',
         'alerta_pix_enviado_at'  => 'datetime',
@@ -102,6 +108,19 @@ class Assinatura extends Model
         return in_array($this->tipoPagamento(), ['PIX', 'PIX_AUTOMATICO'])
             && $this->next_charge
             && now()->gt($this->next_charge);
+    }
+
+    /**
+     * PIX perto de vencer (mas ainda em dia): janela em que o administrador vê a
+     * barra de aviso para regularizar antes do bloqueio travar a equipe toda.
+     */
+    public function pixAVencer(int $dias = self::ALERTA_PIX_DIAS): bool
+    {
+        return in_array($this->tipoPagamento(), ['PIX', 'PIX_AUTOMATICO'])
+            && $this->status === 'ativo'
+            && $this->next_charge
+            && $this->next_charge->isFuture()
+            && $this->next_charge->lte(now()->addDays($dias));
     }
 
     /**
