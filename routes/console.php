@@ -16,14 +16,16 @@ Artisan::command('inspire', function () {
 // app(Schedule::class)->command('email:send-pending-verifications')->dailyAt('00:00');
 // app(Schedule::class)->command('pix:alerta-vencimento')->dailyAt('08:00');
 
+// 00:00/00:30 de propósito (pedido do Richard 18/10): se algo der errado,
+// sobra a madrugada e a manhã inteira para corrigir antes do movimento.
 app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:sincronizar')
-    ->dailyAt('06:00');
+    ->dailyAt('00:00');
 
 // Reconcilia o valor das assinaturas de cartão na Efi com o preco_total do banco
 // (rede de segurança para quando o espelhamento em tempo real falhar).
 app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:corrigir-valores')
-    ->dailyAt('06:30');
+    ->dailyAt('00:30');
 
 
