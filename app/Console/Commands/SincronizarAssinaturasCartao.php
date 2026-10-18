@@ -50,11 +50,27 @@ class SincronizarAssinaturasCartao extends Command
             'canceled'  => 'cancelado',
         ];
 
+        $notificationUrl = config('gerencianet.notification_url');
+
         foreach ($assinaturas as $assinatura) {
             try {
                 $resposta   = $this->efi->detailSubscription(['id' => $assinatura->subscription_id]);
                 $statusEfi  = $resposta['data']['status'] ?? null;
                 $status     = $statusMap[$statusEfi] ?? $statusEfi;
+
+                // Assinaturas antigas foram criadas na Efi sem notification_url e por
+                // isso nunca disparam webhook (pagamento/inadimplência só chegariam por
+                // aqui). Reinscrever é idempotente, então garante em toda sincronização.
+                if ($notificationUrl && $status !== 'cancelado') {
+                    try {
+                        $this->efi->updateSubscriptionMetadata(
+                            ['id' => $assinatura->subscription_id],
+                            ['notification_url' => $notificationUrl]
+                        );
+                    } catch (\Exception $e) {
+                        $this->warn("Assinatura {$assinatura->id}: nao registrou notification_url ({$e->getMessage()})");
+                    }
+                }
 
                 // Busca a última cobrança paga
                 $charges    = $resposta['data']['charges'] ?? [];

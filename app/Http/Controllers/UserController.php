@@ -29,7 +29,10 @@ class UserController extends Controller
         $options = [
             'client_id' => $client_id,
             'client_secret' => $client_secret,
-            'sandbox' => true,
+            'certificate' => $certificate_path,
+            // Era 'sandbox' => true fixo: toda atualização de valor na Efi feita por
+            // este controller ia para o ambiente de testes e nunca chegava à real.
+            'sandbox' => config('gerencianet.is_sandbox'),
             'debug' => false
         ];
 
@@ -98,6 +101,40 @@ class UserController extends Controller
 
     }
 
+    /**
+     * Recalcula emails_extra e preco_total a partir da contagem REAL de usuários
+     * ativos (users.status = 1) da assinatura: desativou vendedor, o valor cai
+     * R$ 29,90; reativou, volta. Vale para PIX (o QR da renovação usa preco_total)
+     * e cartão (o valor é espelhado na Efi por sincronizarValorCartaoEfi).
+     * Retorna quantos usuários são cobrados além do limite gratuito.
+     */
+    private function recalcularPrecoPorAtivos(Assinatura $assinatura): int
+    {
+        // A regra vive no modelo (compartilhada com o comando assinaturas:recalcular-ativos).
+        return $assinatura->recalcularPrecoPorAtivos();
+    }
+
+    /**
+     * Espelha o preco_total na assinatura de cartão da Efi. Falha na Efi não pode
+     * desfazer a mudança local (o banco é a fonte da verdade e o comando
+     * cartao:corrigir-valores reconcilia): só registra no log.
+     */
+    private function sincronizarValorCartaoEfi(Assinatura $assinatura): void
+    {
+        if ($assinatura->tipoPagamento() !== 'CARTAO' || ! $assinatura->subscription_id) {
+            return;
+        }
+
+        try {
+            $this->atualizarAssinaturaEFi($assinatura);
+        } catch (\Throwable $e) {
+            \Log::warning(
+                "Assinatura {$assinatura->id}: preco_total mudou para {$assinatura->preco_total} "
+                . "mas a Efi (subscription {$assinatura->subscription_id}) nao foi atualizada: " . $e->getMessage()
+            );
+        }
+    }
+
     public function storeUser(Request $request)
     {
 
@@ -149,74 +186,7 @@ class UserController extends Controller
 
 
 
-            if(!$assinatura->free) {
-
-                if (!$assinatura) {
-                    throw new \Exception("Assinatura não encontrada.");
-                }
-
-                $cupom_status = false;
-                if($assinatura->cupom_id and empty($assinatura->tipo_plano_id)) {
-                    $cupom = Cupom::find($assinatura->cupom_id);
-                    $preco_base = $assinatura->preco_base;
-                    $limite_gratuito = $assinatura->emails_permitidos;
-                    $preco_extra_por_email = $assinatura->preco_base;
-                    $cupom_status = true;
-                } elseif (empty($assinatura->cupom_id) && in_array($assinatura->tipo_plano_id, [1, 2])) {
-
-
-
-
-                    $plan = TipoPlano::find($assinatura->tipo_plano_id);
-
-
-
-
-
-                    $preco_base = $plan->valor_base;
-                    $limite_gratuito = $assinatura->emails_permitidos;
-                    $preco_extra_por_email = $plan->valor_por_email;
-                }
-                $assinatura->emails_extra += 1;
-
-
-                //            // Verifica se já passou do limite gratuito
-                if ($assinatura->emails_extra > $limite_gratuito) {
-                    $emails_cobrados = $assinatura->emails_extra - $limite_gratuito;
-                    if($cupom_status) {
-                        $valor_total_sem_desconto = $preco_base + ($emails_cobrados * $preco_extra_por_email);
-                        $assinatura->preco_total = max($valor_total_sem_desconto - $cupom->desconto_plano, 0); // nunca menor que 0
-                    } else {
-                        $assinatura->preco_total = $preco_base + ($emails_cobrados * $preco_extra_por_email);
-                    }
-                } else {
-                    $assinatura->preco_total = $preco_base; // Se ainda está no limite gratuito, mantém o preço base
-                }
-//
-
-                $assinatura->save();
-
-//                if($assinatura->status != "trial" && $assinatura->tipo != "PIX") {
-//                    $this->atualizarAssinaturaEFi($assinatura);
-//                }
-
-
-            }
-
-
-
-
-//
-//
-
-//
-
-//
-//            // Passo 3: Cadastrar o novo e-mail na Tabela `emails_assinatura`
-
-
-
-
+            // Passo 3: Cadastrar o novo e-mail na Tabela `emails_assinatura`
             EmailAssinatura::create([
                 'assinatura_id' => (int) $assinatura->id,
                 'email' => $validated['email'],
@@ -224,7 +194,17 @@ class UserController extends Controller
                 'is_administrador' => false,
             ]);
 
+            // O usuário novo nasce ativo (users.status default 1), então o recálculo
+            // pela contagem de ativos já o inclui — mesma regra do ativar/desativar.
+            if (! $assinatura->free) {
+                $emails_cobrados = $this->recalcularPrecoPorAtivos($assinatura);
+            }
+
             DB::commit(); // Confirma as transações
+
+            // Cartão: espelha o valor novo na Efi (antes esta chamada estava comentada,
+            // e era por isso que adicionar vendedor não subia o valor da cobrança).
+            $this->sincronizarValorCartaoEfi($assinatura);
 
             // Recuperar todos os usuários da assinatura
             $users = User::whereIn(
@@ -393,71 +373,22 @@ class UserController extends Controller
             }
 
 
-            $cupom_status = false;
-            if($assinatura->cupom_id and empty($assinatura->tipo_plano_id)) {
-                $cupom = Cupom::find($assinatura->cupom_id);
-                $preco_base = $assinatura->preco_base;
-                $limite_gratuito = $assinatura->emails_permitidos;
-                $preco_extra_por_email = $assinatura->preco_base;
-                $cupom_status = true;
-            } elseif (empty($assinatura->cupom_id) && in_array($assinatura->tipo_plano_id, [1,2])) {
-                $tipo_plano_id = (int) $assinatura->tipo_plano_id;
-                $plan = TipoPlano::find($tipo_plano_id);
-                $preco_base = $plan->valor_base;
-                $limite_gratuito = $assinatura->emails_permitidos; // 5 por padrão
-                $preco_extra_por_email = $plan->valor_por_email;
-            }
-
-
-
-
-
-
-
-            // Definir valores do plano
-
-
-            // Verificar se está ativando ou desativando
-            if ($status == 1) {
-                // Se estiver ativando e o usuário estava desativado, incrementar emails_extra
-                if ($user->status == 0) {
-                    $assinatura->emails_extra += 1;
-                }
-            } else {
-                // Se estiver desativando e emails_extra for maior que zero, decrementa
-                if ($user->status == 1 && $assinatura->emails_extra > 0) {
-                    $assinatura->emails_extra -= 1;
-                }
-            }
-            //dd($assinatura->emails_extra);
-            // Recalcular o preço total da assinatura
-            if ($assinatura->emails_extra > $limite_gratuito) {
-                $emails_cobrados = $assinatura->emails_extra - $limite_gratuito;
-
-                if($cupom_status) {
-                    $valor_total_sem_desconto = $preco_base + ($emails_cobrados * $preco_extra_por_email);
-                    $assinatura->preco_total = max($valor_total_sem_desconto - $cupom->desconto_plano, 29.90); // nunca menor que 0
-                } else {
-                    $valor_total_sem_desconto = $preco_base + ($emails_cobrados * $preco_extra_por_email);
-                    $assinatura->preco_total = max($valor_total_sem_desconto, 29.90); // nunca menor que 0
-                }
-            } else {
-
-                $emails_cobrados = 0;
-                $assinatura->preco_total = max($preco_base, 29.90);
-            }
-
-            // Salvar a assinatura
-            $assinatura->save();
-
-
-
-
-            // Atualizar o status do usuário
+            // Atualiza o status primeiro: o preço é recalculado a partir da contagem
+            // REAL de usuários ativos da assinatura. O ±1 antigo acumulava erro quando
+            // o status mudava por fora (financeiro, SQL direto) e nunca se corrigia.
             $user->status = $status;
             $user->save();
 
+            $emails_cobrados = 0;
+            if (! $assinatura->free) {
+                $emails_cobrados = $this->recalcularPrecoPorAtivos($assinatura);
+            }
+
             DB::commit();
+
+            // Cartão: espelha o valor novo na Efi (fora da transação — falha na Efi
+            // não desfaz o toggle; o cartao:corrigir-valores reconcilia depois).
+            $this->sincronizarValorCartaoEfi($assinatura);
 
             return response()->json([
                 'success' => true,
@@ -601,7 +532,16 @@ class UserController extends Controller
             $user->delete();
         }
 
-        $assinatura_id = Assinatura::where("user_id", auth()->user()->id)->first()->id;
+        $assinatura = Assinatura::where("user_id", auth()->user()->id)->first();
+
+        // Removeu usuário da equipe: recalcula o preço pela contagem de ativos e
+        // espelha na Efi quando for cartão — mesma regra do ativar/desativar.
+        if ($assinatura && ! $assinatura->free) {
+            $this->recalcularPrecoPorAtivos($assinatura);
+            $this->sincronizarValorCartaoEfi($assinatura);
+        }
+
+        $assinatura_id = $assinatura->id;
         $users = User::whereIn(
             'id',
             EmailAssinatura::where('assinatura_id', $assinatura_id)

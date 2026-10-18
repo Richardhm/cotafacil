@@ -22,7 +22,10 @@ class CheckSubscriptionExpired
             $assinatura = $user->assinaturas;
 
 
-            if (!$this->isSubscriptionExpired($assinatura) && !$this->isPixExpired($assinatura)) {
+            // Usa a mesma regra do CheckSubscription (trial, PIX e cartão): se a
+            // página de expirada só reconhecesse trial/PIX, a equipe de uma
+            // assinatura de cartão vencida entraria em loop de redirect.
+            if (! $assinatura->estaVencida()) {
                 return redirect()->route('dashboard');
             }
 
@@ -30,19 +33,5 @@ class CheckSubscriptionExpired
         }
 
         return $next($request);
-    }
-
-    private function isSubscriptionExpired($assinatura): bool
-    {
-        return $assinatura->status === 'trial' &&
-            $assinatura->trial_ends_at &&
-            now()->gt($assinatura->trial_ends_at);
-    }
-
-    private function isPixExpired($assinatura): bool
-    {
-        return $assinatura->tipo === 'PIX' &&
-            $assinatura->next_charge &&
-            now()->gt($assinatura->next_charge);
     }
 }

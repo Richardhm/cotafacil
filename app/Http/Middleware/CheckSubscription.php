@@ -22,7 +22,7 @@ class CheckSubscription
             $isAdmin = ($user->id === $assinatura->user_id);
 
             // Trial expirado
-            if ($assinatura->status === 'trial' && now()->gt($assinatura->trial_ends_at)) {
+            if ($assinatura->trialVencido()) {
                 if ($isAdmin) {
                     return redirect()->route('assinatura.edit')
                         ->with('error', 'Seu período de teste acabou. Por favor, atualize sua assinatura!');
@@ -33,7 +33,7 @@ class CheckSubscription
             }
 
             // PIX expirado (vencimento não renovado)
-            if (in_array($assinatura->tipo, ['PIX', 'PIX_AUTOMATICO']) && now()->gt($assinatura->next_charge)) {
+            if ($assinatura->pixVencido()) {
                 if ($isAdmin) {
                     return redirect()->route('assinatura.edit')
                         ->with('error', 'Sua assinatura PIX expirou. Por favor, renove-a para continuar utilizando nossos serviços.');
@@ -43,13 +43,10 @@ class CheckSubscription
                     ->with('error', 'Assinatura expirada. Entre em contato com o administrador.');
             }
 
-            // Cartão — bloqueia por status inativo OU next_charge vencido há mais de 5 dias
-            $cartaoInadimplente = $assinatura->tipo === 'cartao' && (
-                !in_array($assinatura->status, ['ativo', 'trial']) ||
-                ($assinatura->next_charge && now()->gt($assinatura->next_charge->addDays(5)))
-            );
-
-            if ($cartaoInadimplente) {
+            // Cartão — bloqueia por status inativo OU vencido além da carência.
+            // A regra vive no modelo (Assinatura::cartaoInadimplente), que compara o
+            // tipo sem diferenciar maiúsculas: o banco tem 'cartao' E 'CARTAO'.
+            if ($assinatura->cartaoInadimplente()) {
                 if ($isAdmin) {
                     return redirect()->route('assinatura.edit')
                         ->with('error', 'Sua assinatura está com pagamento pendente. Por favor, atualize seu cartão.');

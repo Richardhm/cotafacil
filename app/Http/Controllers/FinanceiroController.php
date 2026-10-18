@@ -96,6 +96,7 @@ class FinanceiroController extends Controller
                     'telefone' => $e->user?->phone  ?? '—',
                     'email'    => $e->user?->email  ?? $e->email,
                     'admin'    => (bool) $e->is_administrador,
+                    'ativo'    => (bool) ($e->user?->status ?? false),
                 ]);
 
                 // IDs de todos os usuários vinculados a esta assinatura
@@ -128,10 +129,15 @@ class FinanceiroController extends Controller
         $receitaMensal = $contas->sum('preco_total');
 
         // --- Evolução mensal (últimos 12 meses) baseado em created_at de assinaturas ativas ---
+        // DATE_FORMAT é do MySQL; o sqlite dos testes usa strftime.
+        $formatoMes = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', created_at)"
+            : "DATE_FORMAT(created_at, '%Y-%m')";
+
         $evolucao = Assinatura::where('status', 'ativo')
             ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
             ->select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as mes"),
+                DB::raw("{$formatoMes} as mes"),
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(preco_total) as receita')
             )

@@ -31,6 +31,9 @@
         .usuario-card .u-tel  { color:rgba(255,255,255,0.7); font-size:0.78rem; margin-top:2px; }
         .usuario-card .u-email { color:rgba(255,255,255,0.55); font-size:0.74rem; }
         .crown { color:#fbbf24; font-size:0.7rem; margin-left:4px; }
+        .u-status { display:inline-block; margin-top:4px; padding:1px 8px; border-radius:9999px; font-size:0.68rem; font-weight:600; }
+        .u-status.ativado    { background:rgba(34,197,94,0.18);  color:#4ade80; border:1px solid rgba(34,197,94,0.4); }
+        .u-status.desativado { background:rgba(239,68,68,0.18); color:#f87171; border:1px solid rgba(239,68,68,0.4); }
 
         /* Modal */
         .modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; }
@@ -299,6 +302,11 @@
                                         </p>
                                         <p class="u-tel">{{ $u['telefone'] }}</p>
                                         <p class="u-email">{{ $u['email'] }}</p>
+                                        @if($u['ativo'] ?? true)
+                                            <span class="u-status ativado">Ativado</span>
+                                        @else
+                                            <span class="u-status desativado">Desativado</span>
+                                        @endif
                                     </div>
                                     @endforeach
                                 </div>

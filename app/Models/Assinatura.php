@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Assinatura extends Model
 {
+    /**
+     * Dias de tolerância após o vencimento de uma assinatura de cartão antes de
+     * bloquear o acesso — cobre as retentativas automáticas de cobrança da Efi.
+     */
+    public const CARENCIA_CARTAO_DIAS = 3;
 
     protected $casts = [
         'next_charge'            => 'datetime',
@@ -20,6 +25,7 @@ class Assinatura extends Model
         'emails_permitidos',
         'emails_extra',
         'preco_total',
+        'preco_fixo',
         'status',
         'subscription_id',
         'last_updated',
@@ -72,6 +78,103 @@ class Assinatura extends Model
     public function emailsAssinaturaUser()
     {
         return $this->hasMany(EmailAssinatura::class)->with('user');
+    }
+
+    /**
+     * Tipo de pagamento normalizado: o banco tem 'cartao' e 'CARTAO' misturados
+     * (o fluxo trial→cartão gravava maiúsculo), e comparação === em PHP é
+     * case-sensitive — era isso que deixava o bloqueio de cartão sem efeito.
+     */
+    public function tipoPagamento(): string
+    {
+        return mb_strtoupper(trim((string) $this->tipo));
+    }
+
+    public function trialVencido(): bool
+    {
+        return $this->status === 'trial'
+            && $this->trial_ends_at
+            && now()->gt($this->trial_ends_at);
+    }
+
+    public function pixVencido(): bool
+    {
+        return in_array($this->tipoPagamento(), ['PIX', 'PIX_AUTOMATICO'])
+            && $this->next_charge
+            && now()->gt($this->next_charge);
+    }
+
+    /**
+     * Cartão inadimplente: a Efi derrubou o status da assinatura (inativo/cancelado),
+     * ou a mensalidade venceu e passou da carência sem confirmação de pagamento.
+     */
+    public function cartaoInadimplente(): bool
+    {
+        if ($this->tipoPagamento() !== 'CARTAO') {
+            return false;
+        }
+
+        return ! in_array($this->status, ['ativo', 'trial'])
+            || ($this->next_charge && now()->gt($this->next_charge->copy()->addDays(self::CARENCIA_CARTAO_DIAS)));
+    }
+
+    /**
+     * Regra única de "assinatura vencida", usada pelos middlewares CheckSubscription
+     * (bloqueio) e CheckSubscriptionExpired (acesso à página /assinatura/expirada).
+     */
+    public function estaVencida(): bool
+    {
+        return $this->trialVencido() || $this->pixVencido() || $this->cartaoInadimplente();
+    }
+
+    /**
+     * Recalcula emails_extra e preco_total a partir da contagem REAL de usuários
+     * ativos (users.status = 1): desativou vendedor, o valor cai R$ 29,90;
+     * reativou, volta. Vale para PIX (o QR da renovação usa preco_total) e
+     * cartão (o valor é espelhado na Efi pelo chamador / cartao:corrigir-valores).
+     * Retorna quantos usuários são cobrados além do limite gratuito.
+     */
+    public function recalcularPrecoPorAtivos(): int
+    {
+        $ativos = EmailAssinatura::where('assinatura_id', $this->id)
+            ->join('users', 'users.id', '=', 'emails_assinatura.user_id')
+            ->where('users.status', 1)
+            ->count();
+
+        // Preço combinado na mão com o cliente: atualiza só a contagem de ativos.
+        if ($this->preco_fixo) {
+            $this->emails_extra = $ativos;
+            $this->save();
+
+            return max(0, $ativos - $this->emails_permitidos);
+        }
+
+        $cupom = null;
+        if ($this->cupom_id && empty($this->tipo_plano_id)) {
+            $cupom                 = Cupom::find($this->cupom_id);
+            $preco_base            = $this->preco_base;
+            $preco_extra_por_email = $this->preco_base;
+        } elseif (empty($this->cupom_id) && in_array($this->tipo_plano_id, [1, 2])) {
+            $plan                  = TipoPlano::find($this->tipo_plano_id);
+            $preco_base            = $plan->valor_base;
+            $preco_extra_por_email = $plan->valor_por_email;
+        } else {
+            $preco_base            = $this->preco_base;
+            $preco_extra_por_email = $this->preco_base;
+        }
+
+        $emails_cobrados = max(0, $ativos - $this->emails_permitidos);
+
+        $total = $preco_base + ($emails_cobrados * $preco_extra_por_email);
+        if ($cupom) {
+            $total -= $cupom->desconto_plano;
+        }
+
+        $this->emails_extra = $ativos;
+        $this->preco_total  = max($total, 29.90);
+        $this->save();
+
+        return $emails_cobrados;
     }
 
     public function calcularPrecoTotal()

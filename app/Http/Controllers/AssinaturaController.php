@@ -334,6 +334,28 @@ class AssinaturaController extends Controller
         return $vinculo->administradora_id . '-' . $vinculo->plano_id . '-' . $vinculo->tabela_origens_id;
     }
 
+    /**
+     * Cancela na Efi a assinatura de cartão que está sendo substituída (por PIX
+     * Automático ou por um cartão novo). Falha da Efi não derruba a troca: mantém
+     * o subscription_id para o cartao:sincronizar continuar acompanhando e loga.
+     */
+    private function cancelarCartaoAntigoEfi(?Assinatura $assinatura): void
+    {
+        if (! $assinatura || ! $assinatura->subscription_id || $assinatura->tipoPagamento() !== 'CARTAO') {
+            return;
+        }
+
+        try {
+            $this->efi->cancelSubscription(['id' => $assinatura->subscription_id]);
+            $assinatura->subscription_id = null;
+        } catch (\Throwable $e) {
+            \Log::warning(
+                "Trocou a forma de pagamento mas nao cancelou a assinatura de cartao {$assinatura->subscription_id} na Efi: "
+                . $e->getMessage()
+            );
+        }
+    }
+
     public function pixTrial(Request $request)
     {
 
@@ -511,6 +533,10 @@ class AssinaturaController extends Controller
 
             $user       = auth()->user();
             $assinatura = $user->assinaturas()->first();
+
+            // Migrou do cartão: cancela a assinatura antiga na Efi (senão o cartão
+            // segue sendo cobrado todo mês junto com o PIX Automático).
+            $this->cancelarCartaoAntigoEfi($assinatura);
 
             $assinatura->next_charge   = Carbon::now()->addMonth();
             $assinatura->tipo          = 'PIX_AUTOMATICO';
@@ -854,13 +880,21 @@ class AssinaturaController extends Controller
                 $response = $this->efi->createOneStepSubscription($params, $body);
 
                 $assinatura = Assinatura::where("user_id",$user->id)->first();
+
+                // Trocou de cartão: cancela a assinatura anterior na Efi antes de
+                // apontar para a nova, para o cartão antigo não seguir sendo cobrado.
+                if ($assinatura->subscription_id
+                    && $assinatura->subscription_id != $response['data']['subscription_id']) {
+                    $this->cancelarCartaoAntigoEfi($assinatura);
+                }
+
                 $assinatura->preco_base = 29.90;
                 $assinatura->preco_total = $request->preco_base;
                 $assinatura->status = 'ativo';
                 $assinatura->subscription_id = $response['data']['subscription_id'];
                 $assinatura->next_charge = now()->addMonth();
                 $assinatura->trial_ends_at = null;
-                $assinatura->tipo = "CARTAO";
+                $assinatura->tipo = 'cartao';
                 $assinatura->save();
 
                 session()->flash('success', 'Assinatura Atualizada com sucesso');

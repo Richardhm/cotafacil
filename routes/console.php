@@ -22,4 +22,10 @@ app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:sincronizar')
     ->dailyAt('06:00');
 
+// Reconcilia o valor das assinaturas de cartão na Efi com o preco_total do banco
+// (rede de segurança para quando o espelhamento em tempo real falhar).
+app(\Illuminate\Console\Scheduling\Schedule::class)
+    ->command('cartao:corrigir-valores')
+    ->dailyAt('06:30');
+
 
