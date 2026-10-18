@@ -61,8 +61,8 @@ class CorrigirValoresCartao extends Command
 
             try {
                 $resposta       = $this->efi->detailSubscription(['id' => $assinatura->subscription_id]);
-                $itemsEfi       = $resposta['data']['plan']['items'] ?? [];
-                $valorAtualEfi  = collect($itemsEfi)->sum('value');
+                // O valor vigente vem em data.value, em centavos (data.plan não traz items).
+                $valorAtualEfi  = (int) ($resposta['data']['value'] ?? 0);
                 $valorAtualFmt  = 'R$ ' . number_format($valorAtualEfi / 100, 2, ',', '.');
 
                 if ($valorAtualEfi === $valorCorreto) {
