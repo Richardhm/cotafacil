@@ -18,14 +18,18 @@ Artisan::command('inspire', function () {
 
 // 00:00/00:30 de propósito (pedido do Richard 18/10): se algo der errado,
 // sobra a madrugada e a manhã inteira para corrigir antes do movimento.
+// O timezone é obrigatório: a aplicação roda em UTC, e sem ele o "00:00"
+// cairia às 21:00 de Brasília.
 app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:sincronizar')
-    ->dailyAt('00:00');
+    ->dailyAt('00:00')
+    ->timezone('America/Sao_Paulo');
 
 // Reconcilia o valor das assinaturas de cartão na Efi com o preco_total do banco
 // (rede de segurança para quando o espelhamento em tempo real falhar).
 app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:corrigir-valores')
-    ->dailyAt('00:30');
+    ->dailyAt('00:30')
+    ->timezone('America/Sao_Paulo');
 
 
