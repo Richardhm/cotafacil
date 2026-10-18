@@ -8,15 +8,13 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-app(Schedule::class)->command('email:send-reminder')->hourly();
-
-app(\Illuminate\Console\Scheduling\Schedule::class)
-    ->command('email:send-pending-verifications')
-    ->dailyAt('00:00');
-
-app(\Illuminate\Console\Scheduling\Schedule::class)
-    ->command('pix:alerta-vencimento')
-    ->dailyAt('08:00');
+// E-mails automáticos DESATIVADOS a pedido do Richard (18/10/2026): nenhum
+// cliente deve receber e-mail por enquanto. O aviso de vencimento do PIX fica
+// por conta da barra no topo do sistema (layouts/alerta-vencimento). Reativar
+// só depois de validar o envio de e-mail de produção com um destinatário nosso.
+// app(Schedule::class)->command('email:send-reminder')->hourly();
+// app(Schedule::class)->command('email:send-pending-verifications')->dailyAt('00:00');
+// app(Schedule::class)->command('pix:alerta-vencimento')->dailyAt('08:00');
 
 app(\Illuminate\Console\Scheduling\Schedule::class)
     ->command('cartao:sincronizar')
