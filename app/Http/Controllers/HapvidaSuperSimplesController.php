@@ -26,6 +26,8 @@ class HapvidaSuperSimplesController extends Controller
         10,  // Super Simples - Integrado
         11,  // Super Simples - Pleno
         140, // Sindlojas
+        144, // Vale (Porto Alegre)
+        145, // Vale - Empresarial (Porto Alegre)
     ];
 
     /**
@@ -35,6 +37,8 @@ class HapvidaSuperSimplesController extends Controller
      */
     private const PLANOS_RESTRITOS = [
         140, // Sindlojas
+        144, // Vale
+        145, // Vale - Empresarial
     ];
 
     /** Planos restritos que a assinatura do usuário logado pode cotar. */
