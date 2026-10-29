@@ -13,6 +13,7 @@ use App\Models\EmailAssinatura;
 use App\Models\User;
 use Efi\Exception\EfiException;
 use Efi\EfiPay;
+use Illuminate\Support\Facades\Log;
 
 
 class CallbackController extends Controller
@@ -290,8 +291,17 @@ class CallbackController extends Controller
                     'next_charge'  => Carbon::parse($chargeEvent['received_by_bank_at'])->addMonth(),
                 ]);
         } elseif (in_array($chargeStatus, ['unpaid', 'overdue', 'canceled'])) {
-            Assinatura::where('subscription_id', $chargeEvent['identifiers']['subscription_id'])
-                ->update(['status' => 'inativo']);
+            // Evento de COBRANÇA não derruba mais o status da assinatura: marcar
+            // 'inativo' aqui bloqueava o cliente no minuto da recusa do cartão e
+            // anulava a carência de 3 dias (caso Nara Jane, 29/10/2026 — a Efi
+            // mantinha a assinatura "Ativa" e só a cobrança falhou). Quem manda no
+            // status é o evento de ASSINATURA (processSubscription) e o
+            // cartao:sincronizar; a cobrança em atraso bloqueia pela data em
+            // Assinatura::cartaoInadimplente (next_charge + CARENCIA_CARTAO_DIAS).
+            Log::info("Efi: cobrança {$chargeStatus} recebida, status da assinatura preservado", [
+                'subscription_id' => $chargeEvent['identifiers']['subscription_id'],
+                'charge_id'       => $chargeEvent['identifiers']['charge_id'],
+            ]);
         }
     }
 
