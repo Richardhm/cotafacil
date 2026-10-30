@@ -72,24 +72,37 @@ class SincronizarAssinaturasCartao extends Command
                     }
                 }
 
-                // Busca a última cobrança paga
-                $charges    = $resposta['data']['charges'] ?? [];
-                $ultimaPaga = collect($charges)
+                // Busca a última cobrança paga. A Efi devolve o histórico em
+                // data.history (charge_id/status/created_at) — NÃO existe
+                // data.charges nem paid_at (mesma família do bug data.plan.items,
+                // descoberto em 30/10 no caso Nilo: o comando nunca tinha
+                // conseguido atualizar next_charge de ninguém).
+                $historico  = $resposta['data']['history'] ?? [];
+                $ultimaPaga = collect($historico)
                     ->where('status', 'paid')
-                    ->sortByDesc('paid_at')
+                    ->sortByDesc('created_at')
                     ->first();
 
                 $updates = ['status' => $status];
 
                 if ($ultimaPaga) {
-                    $updates['last_payment'] = Carbon::parse($ultimaPaga['paid_at']);
-                    $updates['next_charge']  = Carbon::parse($ultimaPaga['paid_at'])->addMonth();
+                    $pagoEm = Carbon::parse($ultimaPaga['created_at']);
+                    $updates['last_payment'] = $pagoEm;
+
+                    // Nunca RECUA o vencimento: protege ajustes manuais (ex.: um
+                    // perdão com data futura) e o inadimplente real (última paga
+                    // antiga ⇒ o vencimento atual já está certo e o bloqueio
+                    // corre pela carência, não por aqui).
+                    $novoVencimento = $pagoEm->copy()->addMonth();
+                    if (! $assinatura->next_charge || $novoVencimento->gt($assinatura->next_charge)) {
+                        $updates['next_charge'] = $novoVencimento;
+                    }
                 }
 
                 $assinatura->update($updates);
 
                 $this->info("Assinatura {$assinatura->id} → status: {$status}" .
-                    ($ultimaPaga ? ", próxima cobrança: " . $updates['next_charge']->format('d/m/Y') : ''));
+                    (isset($updates['next_charge']) ? ", próxima cobrança: " . $updates['next_charge']->format('d/m/Y') : ''));
 
             } catch (\Exception $e) {
                 $this->error("Erro na assinatura {$assinatura->id}: " . $e->getMessage());

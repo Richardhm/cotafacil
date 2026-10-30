@@ -284,11 +284,18 @@ class CallbackController extends Controller
         $chargeStatus = $chargeEvent['status']['current'];
 
         if ($chargeStatus === 'paid') {
+            // Evento de CARTÃO vem sem received_by_bank_at (campo de PIX/boleto):
+            // o acesso direto estourava "Undefined array key" e a renovação
+            // automática nunca gravava (caso Nilo, 29/10/2026). Usa a data que vier.
+            $pagoEm = isset($chargeEvent['received_by_bank_at'])
+                ? Carbon::parse($chargeEvent['received_by_bank_at'])
+                : Carbon::parse($chargeEvent['created_at'] ?? now());
+
             Assinatura::where('subscription_id', $chargeEvent['identifiers']['subscription_id'])
                 ->update([
                     'status'       => 'ativo',
-                    'last_payment' => Carbon::parse($chargeEvent['received_by_bank_at']),
-                    'next_charge'  => Carbon::parse($chargeEvent['received_by_bank_at'])->addMonth(),
+                    'last_payment' => $pagoEm,
+                    'next_charge'  => $pagoEm->copy()->addMonth(),
                 ]);
         } elseif (in_array($chargeStatus, ['unpaid', 'overdue', 'canceled'])) {
             // Evento de COBRANÇA não derruba mais o status da assinatura: marcar
